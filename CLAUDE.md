@@ -35,6 +35,7 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 * Henüz çizilmemiş bir öğeye `requestFocus()` sessizce başarısız olur → oynatıcıda `pendingFocus` + kısa gecikme kullanılıyor.
 * ExoPlayer dinleyicisi ilk bileşimde kurulur; içinde değişen değerler `rememberUpdatedState` ile okunmalı.
 * Hesaplar genelde tek bağlantılı: canlı yayında kanal değişince aynı oynatıcıda kaynak değiştirilir; aynı anda iki oynatıcı açma.
+* Geri dönünce odak: her `ScreenLayer` kendi `FocusMemory`'sini verir; odaklanabilir öğelere `Modifier.rememberFocus()` ekle (kartlar, Btn, Chip, SettingRow… ekli). Eklenmezse geri dönüşte odak üst çubuğa düşebilir ve sekme "üzerinde durunca açılır" kuralıyla yanlış sekme açılır. Sekme değiştirip odak verirken önce sekmeyi değiştir, odağı yeniden bağlanınca (gecikmeyle) iste.
 * `BasicTextField` TV'de odaklanınca klavye açmasın diye `showKeyboardOnFocus = false`; OK tuşu açar.
 * Platform logoları `app/src/main/assets/brands/` (kaynaklar README'de); Marvel/TOD/Exxen/Gain dışındakiler beyaza boyanır.
 

@@ -1,5 +1,6 @@
 package com.fitifiti.tv.ui.components
 
+import com.fitifiti.tv.ui.rememberFocus
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -75,7 +76,7 @@ fun Btn(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, kind: 
         BtnKind.Ghost -> Color.Transparent to Color.White
     }
     Button(
-        onClick = onClick, enabled = enabled, modifier = modifier,
+        onClick = onClick, enabled = enabled, modifier = modifier.rememberFocus(),
         shape = ButtonDefaults.shape(RoundedCornerShape(50)),
         colors = ButtonDefaults.colors(containerColor = bg, contentColor = fg, focusedContainerColor = if (kind == BtnKind.Primary) Color.White else Color(0x33FFFFFF), focusedContentColor = fg),
         scale = ButtonDefaults.scale(focusedScale = 1.06f),
@@ -91,7 +92,7 @@ fun Btn(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, kind: 
 @Composable
 fun Chip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
-        onClick = onClick, modifier = modifier,
+        onClick = onClick, modifier = modifier.rememberFocus(),
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(50)),
         colors = ClickableSurfaceDefaults.colors(
             containerColor = if (selected) Color.White else C.fill2, contentColor = if (selected) Color.Black else Color(0xD9FFFFFF),

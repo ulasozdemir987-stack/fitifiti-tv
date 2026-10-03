@@ -1,5 +1,6 @@
 package com.fitifiti.tv.ui.screens
 
+import com.fitifiti.tv.ui.rememberFocus
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
@@ -185,7 +186,7 @@ private fun EpisodeCard(s: Series, ep: Episode, tmdb: EpisodeArt?, p: ProgressEn
     val watched = p?.finished == true
     Column(Modifier.width(300.dp)) {
         Surface(
-            onClick = onClick, modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
+            onClick = onClick, modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).rememberFocus(),
             shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
             colors = ClickableSurfaceDefaults.colors(containerColor = C.panel, focusedContainerColor = C.panel),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),

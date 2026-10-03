@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import androidx.tv.material3.*
 import com.fitifiti.tv.App
 import com.fitifiti.tv.data.catalog.CatalogStatus
@@ -52,8 +53,17 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
     val profileId by app.user.profileId.collectAsStateWithLifecycle()
     val profile by produceState<com.fitifiti.tv.data.local.ProfileEntity?>(null, profileId) { value = app.db.profiles().get(profileId) }
 
-    LaunchedEffect(Unit) { com.fitifiti.tv.data.remote.RemoteBus.home.collect { tab = Tab.Home; bar.hidden = false; runCatching { tabFocus.requestFocus() } } }
-    BackHandler(enabled = tab != Tab.Home && LocalScreenActive.current) { tab = Tab.Home; bar.hidden = false; runCatching { tabFocus.requestFocus() } }
+    // Geri / ana sayfa: önce sekme değişir, odak yeni seçili sekmeye yeniden bağlanınca verilir. Eskiden odak hemen
+    // isteniyordu → hâlâ ESKİ sekmeye bağlı olduğundan oraya gidiyor, "üzerinde durunca açılır" kuralı da eski sekmeyi
+    // geri açıyordu (geri tuşu çalışmıyor gibi görünüyordu).
+    val scope = rememberCoroutineScope()
+    val goHome = {
+        tab = Tab.Home; bar.hidden = false
+        scope.launch { repeat(3) { kotlinx.coroutines.delay(60); runCatching { tabFocus.requestFocus() } } }
+        Unit
+    }
+    LaunchedEffect(Unit) { com.fitifiti.tv.data.remote.RemoteBus.home.collect { goHome() } }
+    BackHandler(enabled = tab != Tab.Home && LocalScreenActive.current) { goHome() }
 
     if (catalog.isEmpty) {
         when (val s = status) {

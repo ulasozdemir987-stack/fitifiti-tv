@@ -1,5 +1,6 @@
 package com.fitifiti.tv.ui.screens
 
+import com.fitifiti.tv.ui.rememberFocus
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
@@ -85,7 +86,7 @@ private fun CastCard(c: CastMember) {
     var focused by remember { mutableStateOf(false) }
     Column(Modifier.width(110.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(
-            onClick = {}, modifier = Modifier.size(96.dp),
+            onClick = {}, modifier = Modifier.size(96.dp).rememberFocus(),
             shape = ClickableSurfaceDefaults.shape(CircleShape),
             colors = ClickableSurfaceDefaults.colors(containerColor = C.fill2, focusedContainerColor = C.fill3),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.08f),

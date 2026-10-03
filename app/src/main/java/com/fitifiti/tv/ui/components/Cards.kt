@@ -1,5 +1,6 @@
 package com.fitifiti.tv.ui.components
 
+import com.fitifiti.tv.ui.rememberFocus
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -57,7 +58,7 @@ fun PosterCard(item: Item, onClick: () -> Unit, modifier: Modifier = Modifier, w
         Column(Modifier.width(width)) {
             Surface(
                 onClick = onClick,
-                modifier = Modifier.fillMaxWidth().aspectRatio(2f / 3f).then(if (onFocus != null) Modifier.focusReport(onFocus = onFocus) else Modifier),
+                modifier = Modifier.fillMaxWidth().aspectRatio(2f / 3f).rememberFocus().then(if (onFocus != null) Modifier.focusReport(onFocus = onFocus) else Modifier),
                 shape = ClickableSurfaceDefaults.shape(CardShape),
                 colors = ClickableSurfaceDefaults.colors(containerColor = C.panel, focusedContainerColor = C.panel),
                 scale = ClickableSurfaceDefaults.scale(focusedScale = 1.08f),
@@ -103,7 +104,7 @@ fun LandscapeCard(title: String, subtitle: String?, image: String?, onClick: () 
     Column(modifier.width(width)) {
         Surface(
             onClick = onClick,
-            modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).then(if (onFocus != null) Modifier.focusReport(onFocus = onFocus) else Modifier),
+            modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).rememberFocus().then(if (onFocus != null) Modifier.focusReport(onFocus = onFocus) else Modifier),
             shape = ClickableSurfaceDefaults.shape(CardShape),
             colors = ClickableSurfaceDefaults.colors(containerColor = C.panel, focusedContainerColor = C.panel),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),

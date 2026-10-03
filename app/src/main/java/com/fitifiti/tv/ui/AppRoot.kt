@@ -98,10 +98,20 @@ private fun CrashReport(text: String, onClose: () -> Unit) {
 @Composable
 private fun ScreenLayer(active: Boolean, content: @Composable () -> Unit) {
     val fr = remember { FocusRequester() }
+    val mem = remember { FocusMemory() }
     var wasInactive by remember { mutableStateOf(false) }
     LaunchedEffect(active) {
         if (!active) wasInactive = true
-        else if (wasInactive) { delay(30); runCatching { fr.restoreFocusedChild() || run { fr.requestFocus(); true } } }
+        else if (wasInactive) {
+            // Önce tam olarak en son odaklanan kart; çizilmemişse (ilk karede) kısa aralıklarla tekrar dener
+            delay(30)
+            var ok = false
+            val target = mem.last
+            if (target != null) repeat(5) {
+                if (!ok) { runCatching { target.requestFocus() }; ok = mem.current === target; if (!ok) delay(40) }
+            }
+            if (!ok) runCatching { fr.restoreFocusedChild() || run { fr.requestFocus(); true } }
+        }
     }
     Box(
         Modifier.fillMaxSize()
@@ -111,6 +121,6 @@ private fun ScreenLayer(active: Boolean, content: @Composable () -> Unit) {
             .focusRestorer()
             .focusGroup(),
     ) {
-        CompositionLocalProvider(LocalScreenActive provides active) { content() }
+        CompositionLocalProvider(LocalScreenActive provides active, LocalFocusMemory provides mem) { content() }
     }
 }

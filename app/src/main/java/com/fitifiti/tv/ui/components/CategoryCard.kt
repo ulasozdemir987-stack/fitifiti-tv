@@ -1,5 +1,6 @@
 package com.fitifiti.tv.ui.components
 
+import com.fitifiti.tv.ui.rememberFocus
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,7 +32,7 @@ fun brandTint(key: String?): ColorFilter? = if (key in setOf("marvel", "tod", "e
 fun CategoryCard(rawName: String, onClick: () -> Unit, modifier: Modifier = Modifier, width: Dp = 240.dp, posters: List<String> = emptyList()) {
     val st = categoryStyle(rawName)
     Surface(
-        onClick = onClick, modifier = modifier.width(width).height(width * 0.5f),
+        onClick = onClick, modifier = modifier.width(width).height(width * 0.5f).rememberFocus(),
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(14.dp)),
         colors = ClickableSurfaceDefaults.colors(containerColor = C.panel, focusedContainerColor = C.panel),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),

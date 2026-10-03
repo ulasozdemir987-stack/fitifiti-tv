@@ -1,5 +1,6 @@
 package com.fitifiti.tv.ui.components
 
+import com.fitifiti.tv.ui.rememberFocus
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -78,7 +79,7 @@ private object RemoteOwner { var owner: Any? = null }
 @Composable
 fun SettingRow(title: String, value: String? = null, hint: String? = null, onClick: () -> Unit, modifier: Modifier = Modifier, icon: ImageVector? = null) {
     Surface(
-        onClick = onClick, modifier = modifier.fillMaxWidth(),
+        onClick = onClick, modifier = modifier.fillMaxWidth().rememberFocus(),
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(14.dp)),
         colors = ClickableSurfaceDefaults.colors(containerColor = C.fill1, focusedContainerColor = C.fill3, contentColor = Color.White, focusedContentColor = Color.White),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.02f),
