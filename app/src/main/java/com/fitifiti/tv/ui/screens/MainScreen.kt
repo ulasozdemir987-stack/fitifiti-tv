@@ -22,6 +22,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -92,7 +95,15 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
         Box(Modifier.fillMaxSize()) {
             // Üst çubuktan ↓: odak doğrudan içeriğe (son odaklanan öğeye) iner. Yön araması yalnız alt alta hizalı öğe
             // arar; sağdaki Ara/Ayarlar simgelerinin altında öğe olmayınca (Ayarlar satırları solda) hiç inmiyordu.
-            Box(Modifier.fillMaxSize().mainContentFocus(contentFocus)) {
+            // İçerikte yukarıda gidilecek öğe kalmayınca (ilk şerit) ↑ = üst çubuktaki seçili sekme. Vitrin alanında
+            // odaklanabilir öğe olmadığından yön araması üst çubuğu bulamıyordu (gerçek kutuda görüldü: Ayarlar'a çıkılamıyordu).
+            val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+            Box(Modifier.fillMaxSize().mainContentFocus(contentFocus).onPreviewKeyEvent { e ->
+                if (e.type == androidx.compose.ui.input.key.KeyEventType.KeyDown && e.key == androidx.compose.ui.input.key.Key.DirectionUp) {
+                    if (!focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Up)) { bar.hidden = false; runCatching { tabFocus.requestFocus() } }
+                    true
+                } else false
+            }) {
             CompositionLocalProvider(com.fitifiti.tv.ui.LocalFocusMemory provides contentMem) {
             holder.SaveableStateProvider(tab.name) {
                 when (tab) {
