@@ -14,8 +14,8 @@ android {
         applicationId = "com.fitifiti.tv"
         minSdk = 23
         targetSdk = 35
-        versionCode = 8
-        versionName = "2.1.3"
+        versionCode = 9
+        versionName = "2.2.0"
     }
 
     signingConfigs {
@@ -40,8 +40,12 @@ android {
     }
 
     buildTypes {
+        // Release = optimize (R8 + debuggable değil). Debug derlemesinde Android uygulamayı bilerek yavaş çalıştırır;
+        // düşük güçlü TV'lerde (ör. SEI Robotics Nova) Compose arayüzü açılışta 4 sn+ donuyordu.
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             val rel = signingConfigs.getByName("release")
             signingConfig = if (rel.storeFile != null) rel else signingConfigs.getByName("debug")
         }

@@ -11,9 +11,10 @@ Fıtıfıtı Stream web sitesinin (ayrı repo: `streaming-platform-interfaceozul
 
 ## Derleme
 ```bash
-./gradlew --no-daemon assembleDebug   # app/build/outputs/apk/debug/app-debug.apk
+./gradlew --no-daemon assembleRelease   # app/build/outputs/apk/release/app-release.apk (R8; dağıtılan sürüm)
+./gradlew --no-daemon assembleDebug     # geliştirme (TV'de çok yavaş: debuggable, R8 yok)
 ```
-GitHub Actions (`.github/workflows/android.yml`) her push'ta debug APK'yı artifact olarak yükler. Release imzası: `FITIFITI_KEYSTORE`, `FITIFITI_KEYSTORE_PASSWORD`, `FITIFITI_KEY_ALIAS`, `FITIFITI_KEY_PASSWORD` ortam değişkenleri (yoksa debug imzası).
+GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalıştırır, release APK'yı derleyip `latest` sürümüne yükler (ozul.com.tr/tv.apk). Debug ve release aynı ortak anahtarla imzalı (`app/debug.keystore`) → birbirinin üstüne kurulur. Release imzası: `FITIFITI_KEYSTORE`, `FITIFITI_KEYSTORE_PASSWORD`, `FITIFITI_KEY_ALIAS`, `FITIFITI_KEY_PASSWORD` ortam değişkenleri (yoksa debug imzası).
 
 ## Mimari
 * `data/xtream/` — `XtreamClient` (player_api.php: kategoriler, film/dizi/kanal listeleri, `get_vod_info`, `get_series_info` (episodes nesne YA DA dizi gelebilir), `get_short_epg` (base64 başlıklar)), oynatma adresleri.
