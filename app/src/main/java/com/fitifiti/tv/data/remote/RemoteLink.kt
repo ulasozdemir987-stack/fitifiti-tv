@@ -70,7 +70,9 @@ class RemoteLink(ctx: Context, http: OkHttpClient) {
     val peers: StateFlow<Int> = _peers
     private val _code = MutableStateFlow(prefs.getString("code", null) ?: newCode())
     val code: StateFlow<String> = _code
-    private var key: String = prefs.getString("key", null) ?: newKey()
+    // 128 bit anahtar (22 karakter): QR'daki adres kısa kalır → daha az, daha iri kare; TV'de uzaktan okunur.
+    // Eski sürümlerin 256 bit (43 karakter) anahtarı yenilenir.
+    private var key: String = prefs.getString("key", null)?.takeIf { it.length == 22 } ?: newKey().also { prefs.edit().putString("key", it).apply() }
 
     val url get() = "$REMOTE_BASE/tv?k=${_code.value}#$key"
 
@@ -84,7 +86,7 @@ class RemoteLink(ctx: Context, http: OkHttpClient) {
         val r = SecureRandom()
         return (1..10).map { abc[r.nextInt(abc.length)] }.joinToString("")
     }
-    private fun newKey(): String = ByteArray(32).also { SecureRandom().nextBytes(it) }.let { Base64.encodeToString(it, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP) }
+    private fun newKey(): String = ByteArray(16).also { SecureRandom().nextBytes(it) }.let { Base64.encodeToString(it, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP) }
 
     /** Eski QR'ın fotoğrafını çeken biri bağlanamasın diye: yeni kod + anahtar */
     fun regenerate() {

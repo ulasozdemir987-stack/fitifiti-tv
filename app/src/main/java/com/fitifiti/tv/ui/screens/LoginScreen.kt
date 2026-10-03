@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.fitifiti.tv.App
@@ -81,21 +82,31 @@ fun LoginScreen(editId: String?, onDone: () -> Unit, onCancel: (() -> Unit)?) {
 
     Box(Modifier.fillMaxSize().background(C.bg)) {
         Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(C.primary.copy(alpha = 0.16f), Color.Transparent), radius = 1100f)))
-        Row(Modifier.fillMaxSize().padding(horizontal = 80.dp, vertical = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f).padding(end = 64.dp)) {
-                Wordmark(56)
-                Spacer(Modifier.height(24.dp))
-                Text(if (existing == null) "IPTV hesabını bağla" else "Hesabı düzenle", style = MaterialTheme.typography.displaySmall)
-                Spacer(Modifier.height(12.dp))
-                Text("Sağlayıcının verdiği Xtream Codes bilgilerini gir. Filmler, diziler ve canlı kanallar kendi hesabından gelir.",
-                    style = MaterialTheme.typography.bodyLarge, color = C.muted)
-                Spacer(Modifier.height(18.dp))
-                Text("Bilgiler yalnız bu cihazda şifreli saklanır.", style = MaterialTheme.typography.bodyMedium, color = C.faint)
-                Spacer(Modifier.height(28.dp))
-                RemoteQrCard("Telefondan gir", "QR'ı telefonun kamerasıyla okut; bilgileri telefonun klavyesiyle yaz. Sonra telefon kumanda olarak da kullanılır.", qrSize = 140.dp)
+        Row(Modifier.fillMaxSize().padding(horizontal = 56.dp, vertical = 40.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).padding(end = 40.dp)) {
+                Wordmark(40)
+                Spacer(Modifier.height(16.dp))
+                Text(if (existing == null) "IPTV hesabını bağla" else "Hesabı düzenle", style = MaterialTheme.typography.headlineLarge)
+                Spacer(Modifier.height(8.dp))
+                Text("Sağlayıcının verdiği Xtream bilgilerini sağdaki forma ya da telefondan gir. Bilgiler yalnız bu cihazda şifreli saklanır.",
+                    style = MaterialTheme.typography.bodyMedium, color = C.muted)
+                Spacer(Modifier.height(22.dp))
+                // Telefondan giriş: QR büyük (koltuktan okunabilsin)
+                val code by App.instance.remote.code.collectAsStateWithLifecycle()
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    QrCode(remember(code) { App.instance.remote.url }, 220.dp)
+                    Spacer(Modifier.width(18.dp))
+                    Column {
+                        Text("Telefondan gir", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(6.dp))
+                        Text("Telefonun kamerasıyla okut, bilgileri telefonun klavyesiyle yaz.", style = MaterialTheme.typography.bodySmall, color = C.muted)
+                        Spacer(Modifier.height(10.dp))
+                        RemoteStatus()
+                    }
+                }
             }
             Column(
-                Modifier.width(520.dp).clip(RoundedCornerShape(22.dp)).background(C.panel).padding(32.dp).verticalScroll(rememberScrollState()),
+                Modifier.width(440.dp).clip(RoundedCornerShape(22.dp)).background(C.panel).padding(28.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 TvTextField(server, { server = it }, "Sunucu adresi", Modifier.focusRequester(first), placeholder = "http://ornek.com:8080", keyboard = KeyboardType.Uri, icon = Icons.Default.Dns)

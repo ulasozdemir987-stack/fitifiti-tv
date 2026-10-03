@@ -37,13 +37,13 @@ import kotlinx.coroutines.delay
 @Composable
 fun QrCode(text: String, size: Dp, modifier: Modifier = Modifier) {
     val bmp = remember(text) {
-        val m = QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, 0, 0, mapOf(EncodeHintType.MARGIN to 1))
+        val m = QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, 0, 0, mapOf(EncodeHintType.MARGIN to 1, EncodeHintType.ERROR_CORRECTION to com.google.zxing.qrcode.decoder.ErrorCorrectionLevel.L))
         val b = Bitmap.createBitmap(m.width, m.height, Bitmap.Config.ARGB_8888)
         for (x in 0 until m.width) for (y in 0 until m.height) b.setPixel(x, y, if (m[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
         b.asImageBitmap()
     }
     Image(bmp, contentDescription = "QR kod", filterQuality = FilterQuality.None,
-        modifier = modifier.size(size).clip(RoundedCornerShape(12.dp)).background(Color.White).padding(8.dp))
+        modifier = modifier.size(size).clip(RoundedCornerShape(12.dp)).background(Color.White).padding(10.dp))
 }
 
 /** Telefonun bağlı olup olmadığı */
@@ -88,7 +88,7 @@ fun RemotePairDialog(onDismiss: () -> Unit) {
             Text("Telefonun kamerasıyla okut. Aynı Wi-Fi'da olmanız gerekmez.", style = MaterialTheme.typography.bodyMedium, color = C.muted, textAlign = TextAlign.Center)
             Spacer(Modifier.height(18.dp))
             val code by App.instance.remote.code.collectAsStateWithLifecycle()
-            QrCode(remember(code) { App.instance.remote.url }, 220.dp)
+            QrCode(remember(code) { App.instance.remote.url }, 260.dp)
             Spacer(Modifier.height(14.dp))
             RemoteStatus()
             Spacer(Modifier.height(18.dp))
