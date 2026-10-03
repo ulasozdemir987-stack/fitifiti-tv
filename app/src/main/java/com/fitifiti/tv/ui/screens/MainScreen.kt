@@ -119,7 +119,8 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
             }
             }
             AnimatedVisibility(!bar.hidden, enter = fadeIn() + slideInVertically { -it }, exit = fadeOut() + slideOutVertically { -it }) {
-                TopBar(tab, { if (it != tab) { tab = it; bar.hidden = false } }, profile, onProfiles, tabFocus, contentFocus, contentMem)
+                TopBar(tab, { if (it != tab) { tab = it; bar.hidden = false } }, profile, onProfiles, tabFocus, contentFocus, contentMem,
+                    solid = tab == Tab.Settings || tab == Tab.Listem || tab == Tab.Search || tab == Tab.Live)
             }
         }
     }
@@ -129,10 +130,10 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
 private fun rememberSaveableTab() = androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(Tab.Home) }
 
 @Composable
-private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data.local.ProfileEntity?, onProfiles: () -> Unit, tabFocus: FocusRequester, contentFocus: FocusRequester, contentMem: com.fitifiti.tv.ui.FocusMemory) {
+private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data.local.ProfileEntity?, onProfiles: () -> Unit, tabFocus: FocusRequester, contentFocus: FocusRequester, contentMem: com.fitifiti.tv.ui.FocusMemory, solid: Boolean = false) {
     // çubuktaki her öğeden ↓ = içerikte en son odaklanan öğe, yoksa içeriğin ilk öğesi
     // (FocusProperties en yakın odak hedefine kadar üstteki düğümlerden, her aramada yeniden okunur)
-    Box(Modifier.focusProperties { down = contentMem.last ?: contentFocus }.fillMaxWidth().background(Brush.verticalGradient(listOf(C.bg.copy(alpha = 0.85f), Color.Transparent))).padding(horizontal = 48.dp, vertical = 20.dp)) {
+    Box(Modifier.focusProperties { down = contentMem.last ?: contentFocus }.fillMaxWidth().background(if (solid) Brush.verticalGradient(0f to C.bg, 0.82f to C.bg, 1f to C.bg.copy(alpha = 0f)) else Brush.verticalGradient(listOf(C.bg.copy(alpha = 0.85f), Color.Transparent))).padding(horizontal = 48.dp, vertical = 20.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             BrandLogo(26)
             Spacer(Modifier.width(40.dp))

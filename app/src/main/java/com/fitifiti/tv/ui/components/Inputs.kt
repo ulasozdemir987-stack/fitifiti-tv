@@ -1,5 +1,8 @@
 package com.fitifiti.tv.ui.components
 
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.input.key.*
 import com.fitifiti.tv.ui.rememberFocus
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -36,6 +39,7 @@ fun TvTextField(
 ) {
     val src = remember { MutableInteractionSource() }
     val focused by src.collectIsFocusedAsState()
+    val focusManager = LocalFocusManager.current
     // Telefon kumandası: odaktaki kutu telefona bildirilir, telefonda yazılan metin buraya gelir
     val latest by rememberUpdatedState(onValueChange)
     val me = remember { Any() }
@@ -55,7 +59,16 @@ fun TvTextField(
             visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
             keyboardOptions = KeyboardOptions(keyboardType = if (password) KeyboardType.Password else keyboard, imeAction = imeAction, autoCorrectEnabled = false, showKeyboardOnFocus = false),
             keyboardActions = KeyboardActions(onDone = { onDone() }, onGo = { onDone() }, onSearch = { onDone() }),
-            modifier = Modifier.fillMaxWidth(),
+            // ↑/↓ metin kutusunda imleç hareketi sayılıp yutuluyordu (Ayarlar'da TMDB kutusunda aşağı inilemiyordu, gerçek kutuda
+            // görüldü): tek satırlık kutuda yukarı/aşağı her zaman odağı taşır
+            modifier = Modifier.fillMaxWidth().onPreviewKeyEvent { e ->
+                if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                when (e.key) {
+                    Key.DirectionDown -> { focusManager.moveFocus(FocusDirection.Down); true }
+                    Key.DirectionUp -> { focusManager.moveFocus(FocusDirection.Up); true }
+                    else -> false
+                }
+            },
             decorationBox = { inner ->
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(if (focused) C.fill3 else C.fill1)
