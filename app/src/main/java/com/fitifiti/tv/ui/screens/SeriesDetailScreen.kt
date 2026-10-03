@@ -77,6 +77,7 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
     val cat by app.catalog.catalog.collectAsStateWithLifecycle()
     val fav = favs.any { it.key == item.key }
     val cast by produceState(emptyList<com.fitifiti.tv.data.tmdb.CastMember>(), art.tmdbId) { art.tmdbId?.let { value = app.art.cast("series", it) } }
+    val critics by produceState<com.fitifiti.tv.data.tmdb.Critics?>(null, art.tmdbId) { art.tmdbId?.let { value = app.art.critics("series", it) } }
 
     // Devam noktası: bu dizinin son kaydı; bittiyse sıradaki bölüm
     val seriesProgress = remember(progress, s.id) { progress.values.filter { it.seriesId == s.id }.maxByOrNull { it.updatedAt } }
@@ -114,7 +115,9 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
                 MetaRow(listOf(s.year ?: info?.releaseDate?.take(4),
                     (info?.genre ?: s.genre)?.split(',', '/', '&')?.take(3)?.joinToString(", ") { it.trim() },
                     if (seasons.isNotEmpty()) (if (seasons.size == 1) "${seasons.values.first().size} bölüm" else "${seasons.size} sezon") else null,
-                    if (art.vote > 0 && art.votes >= 25) "TMDB ${"%.1f".format(art.vote)}" else null))
+                    // IMDb puanı varsa TMDB puanı tekrarlanmaz (aşağıdaki puan satırında)
+                    if (art.vote > 0 && art.votes >= 25 && critics?.imdb == null) "TMDB ${"%.1f".format(art.vote)}" else null))
+                CriticsRow(critics, Modifier.padding(top = 12.dp))
                 Spacer(Modifier.height(12.dp))
                 val overview = art.overview?.takeIf { it.isNotBlank() } ?: info?.plot ?: s.plot
                 if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyLarge, color = C.muted, maxLines = 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.55f))

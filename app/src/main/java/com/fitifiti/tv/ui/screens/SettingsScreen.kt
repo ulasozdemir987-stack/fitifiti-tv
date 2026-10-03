@@ -66,7 +66,7 @@ fun SettingsScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAd
         item { Section("Görseller ve bilgiler (TMDB)") }
         item {
             Column(Modifier.fillMaxWidth(0.7f)) {
-                Text("Ücretsiz bir TMDB API anahtarı girersen yazısız sahne görselleri, logolu başlıklar, oyuncu fotoğrafları, bölüm görselleri ve TMDB puanı gelir. Anahtar: themoviedb.org → Ayarlar → API.",
+                Text("İsteğe bağlı: sahne görselleri, logolar, oyuncular ve bölüm görselleri zaten fıtıfıtı sunucusu üzerinden gelir. Kendi TMDB API anahtarını girersen istekler doğrudan TMDB'ye gider (themoviedb.org → Ayarlar → API).",
                     style = MaterialTheme.typography.bodyMedium, color = C.muted)
                 Spacer(Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {

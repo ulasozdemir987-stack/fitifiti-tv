@@ -1,5 +1,6 @@
 package com.fitifiti.tv.data.tmdb
 
+import com.fitifiti.tv.data.remote.REMOTE_BASE
 import com.fitifiti.tv.data.xtream.AppJson
 import com.fitifiti.tv.data.xtream.int
 import com.fitifiti.tv.data.xtream.str
@@ -13,8 +14,12 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.ConcurrentHashMap
 
-/** Yazısız yatay sahne görseli + logolu başlık (sitedeki /api/art). TMDB anahtarı kullanıcının kendi anahtarıdır; yoksa boş döner. */
+/** Yazısız yatay sahne görseli + logolu başlık (sitedeki /api/art). Kullanıcı kendi TMDB anahtarını girdiyse doğrudan TMDB,
+ *  girmediyse ozul.com.tr/api/tv-tmdb aracısı (sitenin anahtarı sunucuda kalır). */
 data class Art(val backdrop: String? = null, val logo: String? = null, val poster: String? = null, val overview: String? = null, val vote: Double = 0.0, val votes: Int = 0, val tmdbId: Int? = null)
+
+/** IMDb / Rotten Tomatoes / Metacritic + ödül özeti (OMDb; sitenin /api/reviews'i üzerinden) */
+data class Critics(val imdb: Double? = null, val imdbVotes: Int? = null, val rt: Int? = null, val mc: Int? = null, val awards: String? = null)
 
 data class CastMember(val name: String, val role: String?, val photo: String?)
 data class EpisodeArt(val name: String?, val overview: String?, val still: String?, val runtime: Int?)
@@ -29,7 +34,6 @@ class ArtRepository(private val http: OkHttpClient, private val key: () -> Strin
 
     suspend fun art(kind: String, title: String, year: String?, tmdbId: String? = null): Art {
         val k = key().trim()
-        if (k.isEmpty()) return Art()
         val ck = cacheKey(kind, title, year, tmdbId)
         cache[ck]?.let { return it }
         val result = withContext(Dispatchers.IO) {
@@ -53,17 +57,21 @@ class ArtRepository(private val http: OkHttpClient, private val key: () -> Strin
                     poster = d.str("poster_path")?.let { "https://image.tmdb.org/t/p/w342$it" },
                     overview = d.str("overview"), vote = d.dbl("vote_average") ?: 0.0, votes = d.int("vote_count") ?: 0, tmdbId = id,
                 )
-            }.getOrDefault(Art())
-        }
+            }.getOrNull()
+        } ?: return Art()
         cache[ck] = result
         return result
     }
 
     private fun get(key: String, path: String, params: Map<String, String>): JsonObject? {
-        val url = "https://api.themoviedb.org/3$path".toHttpUrl().newBuilder().apply {
+        val url = if (key.isNotEmpty()) "https://api.themoviedb.org/3$path".toHttpUrl().newBuilder().apply {
             addQueryParameter("api_key", key); params.forEach { (a, b) -> addQueryParameter(a, b) }
+        }.build() else "$REMOTE_BASE/api/tv-tmdb".toHttpUrl().newBuilder().apply {
+            addQueryParameter("path", path); params.forEach { (a, b) -> addQueryParameter(a, b) }
         }.build()
         http.newCall(Request.Builder().url(url).build()).execute().use { r ->
+            // Aracı sınırı (429) / sunucu hatası: önbelleğe "yok" yazılmasın, sonra tekrar denensin
+            if (r.code == 429 || r.code >= 500) throw java.io.IOException("HTTP ${r.code}")
             if (!r.isSuccessful) return null
             return AppJson.parseToJsonElement(r.body?.string().orEmpty()) as? JsonObject
         }
@@ -74,7 +82,7 @@ class ArtRepository(private val http: OkHttpClient, private val key: () -> Strin
 
     /** Oyuncu kadrosu (dizide tüm sezonların toplamı: aggregate_credits) */
     suspend fun cast(kind: String, tmdbId: Int): List<CastMember> {
-        val k = key().trim(); if (k.isEmpty()) return emptyList()
+        val k = key().trim()
         val ck = "$kind-$tmdbId"
         castCache[ck]?.let { return it }
         val list = withContext(Dispatchers.IO) {
@@ -84,15 +92,15 @@ class ArtRepository(private val http: OkHttpClient, private val key: () -> Strin
                     val role = o.str("character") ?: ((o["roles"] as? JsonArray)?.firstOrNull() as? JsonObject)?.str("character")
                     CastMember(o.str("name") ?: "", role, o.str("profile_path")?.let { "https://image.tmdb.org/t/p/w185$it" })
                 }.filter { it.name.isNotBlank() }
-            }.getOrDefault(emptyList())
-        }
+            }.getOrNull()
+        } ?: return emptyList()
         castCache[ck] = list
         return list
     }
 
     /** Sezonun bölüm görselleri/özetleri (tr → en) */
     suspend fun season(tmdbId: Int, season: Int): Map<Int, EpisodeArt> {
-        val k = key().trim(); if (k.isEmpty()) return emptyMap()
+        val k = key().trim()
         val ck = "$tmdbId-$season"
         epCache[ck]?.let { return it }
         val map = withContext(Dispatchers.IO) {
@@ -109,10 +117,31 @@ class ArtRepository(private val http: OkHttpClient, private val key: () -> Strin
                         runtime = o.int("runtime"),
                     )
                 }.toMap()
-            }.getOrDefault(emptyMap())
-        }
+            }.getOrNull()
+        } ?: return emptyMap()
         epCache[ck] = map
         return map
+    }
+
+    private val criticsCache = ConcurrentHashMap<String, Critics>()
+
+    /** Eleştirmen puanları: kullanıcının anahtarından bağımsız, hep sitenin sunucusundan (OMDb anahtarı orada) */
+    suspend fun critics(kind: String, tmdbId: Int): Critics? {
+        val ck = "$kind-$tmdbId"
+        criticsCache[ck]?.let { return it }
+        val c = withContext(Dispatchers.IO) {
+            runCatching {
+                val url = "$REMOTE_BASE/api/reviews".toHttpUrl().newBuilder()
+                    .addQueryParameter("kind", if (kind == "series") "series" else "movie").addQueryParameter("tmdbId", "$tmdbId").build()
+                http.newCall(Request.Builder().url(url).build()).execute().use { r ->
+                    if (!r.isSuccessful) return@runCatching null
+                    val o = (AppJson.parseToJsonElement(r.body?.string().orEmpty()) as? JsonObject)?.get("critics") as? JsonObject ?: return@runCatching Critics()
+                    Critics(o.dbl("imdb"), o.dbl("imdbVotes")?.toInt(), o.dbl("rt")?.toInt(), o.dbl("mc")?.toInt(), o.str("awards"))
+                }
+            }.getOrNull()
+        } ?: return null
+        criticsCache[ck] = c
+        return c
     }
 
     /** Anahtar doğru mu? (Ayarlar'da) */

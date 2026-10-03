@@ -35,6 +35,7 @@ fun MovieDetailScreen(m: Movie) {
     val art = rememberArt(item)
     val info by produceState(VodInfo(), m.id) { value = runCatching { app.client().vodInfo(m.id) }.getOrDefault(VodInfo()) }
     val cast by produceState(emptyList<com.fitifiti.tv.data.tmdb.CastMember>(), art.tmdbId) { art.tmdbId?.let { value = app.art.cast("movie", it) } }
+    val critics by produceState<com.fitifiti.tv.data.tmdb.Critics?>(null, art.tmdbId) { art.tmdbId?.let { value = app.art.critics("movie", it) } }
     val progress by app.user.progressMap.collectAsStateWithLifecycle()
     val favs by app.user.favorites.collectAsStateWithLifecycle()
     val cat by app.catalog.catalog.collectAsStateWithLifecycle()
@@ -63,7 +64,9 @@ fun MovieDetailScreen(m: Movie) {
                     formatDuration(info.durationSecs ?: m.runtimeMin?.times(60)).ifBlank { null },
                     (info.genre ?: m.genre)?.split(',', '/', '&')?.take(3)?.joinToString(", ") { it.trim() },
                     info.age?.takeIf { it.isNotBlank() && it != "0" }?.let { "$it+" }?.replace("++", "+"),
-                    if (art.vote > 0 && art.votes >= 25) "TMDB ${"%.1f".format(art.vote)}" else null))
+                    // IMDb puanı varsa TMDB puanı tekrarlanmaz (aşağıdaki puan satırında)
+                    if (art.vote > 0 && art.votes >= 25 && critics?.imdb == null) "TMDB ${"%.1f".format(art.vote)}" else null))
+                CriticsRow(critics, Modifier.padding(top = 12.dp))
                 Spacer(Modifier.height(12.dp))
                 val overview = art.overview?.takeIf { it.isNotBlank() } ?: info.plot ?: m.plot
                 if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyLarge, color = C.muted, maxLines = 5, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.55f))
