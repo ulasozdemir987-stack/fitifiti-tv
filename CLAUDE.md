@@ -41,3 +41,8 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta debug APK'yı artif
 * `data/remote/RemoteLink.kt`: uygulama ön plandayken (MainActivity onStart/onStop) `wss://ozul.com.tr/ws/together?room=tv-<kod>` odasına bağlanır. Kod (10 karakter) ve AES-256 anahtarı cihazda bir kez üretilir (`remote` prefs; "Yeni kod" ile yenilenir). QR adresi `https://ozul.com.tr/tv?k=<kod>#<anahtar>` — sitedeki `components/tv-remote.tsx` sayfası.
 * `RemoteBus`: ekranlar durumu yayınlar (`screen` login|app|player, odaktaki `TvTextField` → `input`, oynatıcı → `player`), telefondan gelen `keys` MainActivity'de gerçek KeyEvent olarak gönderilir (kumandayla aynı yol), `text` odaktaki kutuyu doldurur, `seek` oynatıcıyı sarar, `login` (AES-GCM ile çözülmüş Xtream bilgisi) giriş ekranını doldurup bağlanır, `home` ana sayfaya döner.
 * QR: zxing `core` (`components/RemotePair.kt`: `QrCode`, `RemoteQrCard`, `RemotePairDialog`). Giriş: Giriş ekranı, Profiller ("Telefon kumandası"), Ayarlar.
+
+## Tanılama (çökme / donma / oynatıcı)
+* `data/diag/Diag.kt`: son 80 olay halkada (oynatıcı çözücüsü, biçim, düşen kare, hata, bellek). Rapor `POST https://ozul.com.tr/api/tv-report` (sitede; son 80 rapor `DATA_DIR/tv-reports.json`, okuma `x-monitor-key` ya da VPS'te dosya). Adreslerdeki hesap bilgisi hem uygulamada hem sunucuda temizlenir.
+* `FreezeWatchdog`: ana iş parçacığı 4 sn+ takılırsa o anki yığın + son olaylar hemen gönderilir (Android uygulamayı kapatsa bile rapor gitmiş olur). Çökmeler `last-crash.txt` → sonraki açılışta gönderilir + ekranda gösterilir.
+* Oynatıcı tamponu 48 MB ile sınırlı (varsayılan ~140 MB Java belleği düşük bellekli TV'lerde 4K'da sorun çıkarıyordu).

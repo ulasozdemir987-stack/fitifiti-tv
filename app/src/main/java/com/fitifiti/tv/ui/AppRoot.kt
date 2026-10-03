@@ -70,7 +70,7 @@ fun AppRoot() {
                     }
                 }
             }
-            crash?.let { text -> CrashReport(text) { runCatching { app.crashFile().delete() }; crash = null } }
+            crash?.let { text -> CrashReport(text) { runCatching { app.crashFile().delete(); java.io.File(app.filesDir, "last-crash.sent").delete() }; crash = null } }
         }
     }
 }
@@ -85,7 +85,7 @@ private fun CrashReport(text: String, onClose: () -> Unit) {
             Modifier.fillMaxSize().padding(40.dp).background(C.panel, androidx.compose.foundation.shape.RoundedCornerShape(18.dp)).padding(28.dp),
         ) {
             androidx.tv.material3.Text("Uygulama son açılışta kapandı", style = androidx.tv.material3.MaterialTheme.typography.headlineSmall)
-            androidx.tv.material3.Text("Bu ekranın fotoğrafını çekip gönderirsen sorunu bulup düzeltebiliriz.", color = C.muted)
+            androidx.tv.material3.Text("Hata raporu geliştiriciye otomatik gönderildi. İnternet yoksa bu ekranın fotoğrafını çekip gönderebilirsin.", color = C.muted)
             androidx.compose.foundation.layout.Spacer(Modifier.height(14.dp))
             androidx.tv.material3.Text(text.lines().filter { it.isNotBlank() }.take(28).joinToString("\n"), color = androidx.compose.ui.graphics.Color(0xCCFFFFFF),
                 fontSize = 11.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, modifier = Modifier.weight(1f))

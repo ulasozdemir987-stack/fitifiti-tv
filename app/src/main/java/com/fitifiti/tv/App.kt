@@ -38,7 +38,7 @@ class App : Application(), ImageLoaderFactory {
         // Çökme raporu: bir sonraki açılışta ekranda gösterilir (TV'de logcat'e erişim zor)
         val prev = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
-            runCatching { crashFile().writeText("sürüm ${BuildConfig.VERSION_NAME} · Android ${android.os.Build.VERSION.RELEASE} · ${android.os.Build.MODEL}\n" + e.stackTraceToString().take(8000)) }
+            runCatching { crashFile().writeText("sürüm ${BuildConfig.VERSION_NAME} · Android ${android.os.Build.VERSION.RELEASE} · ${android.os.Build.MODEL}\n" + e.stackTraceToString().take(8000) + "\n\nSon olaylar:\n" + com.fitifiti.tv.data.diag.Diag.snapshot()) }
             prev?.uncaughtException(t, e)
         }
         http = OkHttpClient.Builder()
@@ -46,6 +46,12 @@ class App : Application(), ImageLoaderFactory {
             .followRedirects(true).followSslRedirects(true)
             .addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("User-Agent", BROWSER_UA).build()) }
             .build()
+        com.fitifiti.tv.data.diag.FreezeWatchdog().start()
+        com.fitifiti.tv.data.diag.Diag.log("açılış · ${com.fitifiti.tv.data.diag.Diag.device(this)}")
+        // Önceki açılışın çökme raporu gönderilmediyse gönder (ekranda da gösterilir)
+        crashFile().takeIf { it.exists() && !java.io.File(filesDir, "last-crash.sent").exists() }?.let { f ->
+            kotlin.concurrent.thread(isDaemon = true) { if (com.fitifiti.tv.data.diag.Diag.sendNow(this, "crash", f.readText())) java.io.File(filesDir, "last-crash.sent").writeText("1") }
+        }
         accounts = AccountStore(this)
         settings = SettingsStore(this)
         db = AppDb.create(this)

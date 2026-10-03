@@ -45,8 +45,11 @@ fun buildPlayer(ctx: Context, live: Boolean): ExoPlayer {
     val renderers = DefaultRenderersFactory(ctx)
         .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
         .setEnableDecoderFallback(true)
+    // Tampon bayt sınırı: varsayılan (~140 MB, Java belleğinde) düşük bellekli TV'lerde 4K'da uygulamayı düşürebiliyor
     val load = DefaultLoadControl.Builder()
-        .setBufferDurationsMs(if (live) 8_000 else 15_000, if (live) 30_000 else 60_000, 2_000, 4_000)
+        .setBufferDurationsMs(if (live) 8_000 else 15_000, if (live) 30_000 else 50_000, 2_000, 4_000)
+        .setTargetBufferBytes(48 * 1024 * 1024)
+        .setPrioritizeTimeOverSizeThresholds(false)
         .build()
     val prefs = app.settings.value
     return ExoPlayer.Builder(ctx, renderers)
@@ -54,6 +57,7 @@ fun buildPlayer(ctx: Context, live: Boolean): ExoPlayer {
         .setLoadControl(load)
         .setSeekBackIncrementMs(10_000).setSeekForwardIncrementMs(10_000)
         .build().apply {
+            addAnalyticsListener(DiagListener)
             trackSelectionParameters = trackSelectionParameters.buildUpon().apply {
                 if (prefs.subtitleLang == "off") setTrackTypeDisabled(MC.TRACK_TYPE_TEXT, true)
                 else setPreferredTextLanguages(prefs.subtitleLang, if (prefs.subtitleLang == "tr") "tur" else "eng")
@@ -62,7 +66,26 @@ fun buildPlayer(ctx: Context, live: Boolean): ExoPlayer {
         }
 }
 
+/** Oynatıcı olayları tanılama halkasına: hangi çözücü, hangi biçim, düşen kareler, hatalar */
+@OptIn(UnstableApi::class)
+private object DiagListener : androidx.media3.exoplayer.analytics.AnalyticsListener {
+    private val D = com.fitifiti.tv.data.diag.Diag
+    override fun onVideoDecoderInitialized(e: androidx.media3.exoplayer.analytics.AnalyticsListener.EventTime, decoderName: String, initializedTimestampMs: Long, initializationDurationMs: Long) = D.log("görüntü çözücü: $decoderName (${initializationDurationMs} ms)")
+    override fun onAudioDecoderInitialized(e: androidx.media3.exoplayer.analytics.AnalyticsListener.EventTime, decoderName: String, initializedTimestampMs: Long, initializationDurationMs: Long) = D.log("ses çözücü: $decoderName")
+    override fun onVideoInputFormatChanged(e: androidx.media3.exoplayer.analytics.AnalyticsListener.EventTime, f: Format, d: androidx.media3.exoplayer.DecoderReuseEvaluation?) = D.log("görüntü: ${f.sampleMimeType} ${f.codecs ?: ""} ${f.width}x${f.height} ${f.frameRate}fps ${f.bitrate / 1000}kbps")
+    override fun onAudioInputFormatChanged(e: androidx.media3.exoplayer.analytics.AnalyticsListener.EventTime, f: Format, d: androidx.media3.exoplayer.DecoderReuseEvaluation?) = D.log("ses: ${f.sampleMimeType} ${f.channelCount}ch ${f.language ?: ""}")
+    override fun onDroppedVideoFrames(e: androidx.media3.exoplayer.analytics.AnalyticsListener.EventTime, droppedFrames: Int, elapsedMs: Long) = D.log("düşen kare: $droppedFrames / ${elapsedMs} ms · ${D.memory()}")
+    override fun onPlayerError(e: androidx.media3.exoplayer.analytics.AnalyticsListener.EventTime, error: androidx.media3.common.PlaybackException) {
+        D.log("HATA ${error.errorCodeName}: ${error.cause?.javaClass?.simpleName}: ${error.cause?.message ?: error.message}")
+        D.send("player", "${error.errorCodeName}\n${error.stackTraceToString().take(4000)}\n\nSon olaylar:\n${D.snapshot()}")
+    }
+    override fun onPlaybackStateChanged(e: androidx.media3.exoplayer.analytics.AnalyticsListener.EventTime, state: Int) {
+        if (state == Player.STATE_BUFFERING || state == Player.STATE_READY) D.log("durum: ${if (state == Player.STATE_READY) "hazır" else "yükleniyor"} · ${D.memory()}")
+    }
+}
+
 fun mediaItem(url: String, live: Boolean = false): MediaItem {
+    com.fitifiti.tv.data.diag.Diag.log("aç: ${url.substringAfterLast('/')} ${if (live) "(canlı)" else ""}")
     val b = MediaItem.Builder().setUri(url)
     if (url.substringBefore('?').endsWith(".m3u8", true)) b.setMimeType(MimeTypes.APPLICATION_M3U8)
     if (live) b.setLiveConfiguration(MediaItem.LiveConfiguration.Builder().setTargetOffsetMs(6_000).build())
