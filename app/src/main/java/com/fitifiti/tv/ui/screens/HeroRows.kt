@@ -135,7 +135,7 @@ fun HeroButtons(item: Item, progress: Map<String, ProgressEntity>, fav: Boolean,
 /** Vitrinli sayfalardaki afiş şeridi (ad vitrinde göründüğü için kartın altında yazı yok) */
 @OptIn(ExperimentalFoundationApi::class)
 fun LazyListScope.posterRow(
-    key: String, title: String, all: List<Item>, onFocusItem: (Item) -> Unit, ranked: Boolean = false, width: Dp = 130.dp,
+    key: String, title: String, all: List<Item>, onFocusItem: (Item) -> Unit, ranked: Boolean = false, width: Dp = 268.dp,
     badge: (Item) -> String? = { null },
 ) {
     // Aynı anahtar iki kez geçerse LazyRow uygulamayı düşürür (bazı sağlayıcılar aynı içeriği tekrar verir)
@@ -151,8 +151,8 @@ fun LazyListScope.posterRow(
                 LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     itemsIndexed(items, key = { _, it -> it.key }) { i, it ->
                         val p = progress[it.key]
-                        PosterCard(it, onClick = { open(actions, it) }, width = width, rank = if (ranked) i + 1 else null,
-                            progress = p?.fraction, watched = it is Item.M && p?.finished == true, badge = badge(it), onFocus = { onFocusItem(it) }, showText = false)
+                        WideCard(it, onClick = { open(actions, it) }, width = if (ranked) 236.dp else width, rank = if (ranked) i + 1 else null,
+                            progress = p?.fraction, watched = it is Item.M && p?.finished == true, badge = badge(it), onFocus = { onFocusItem(it) })
                     }
                 }
             }

@@ -65,7 +65,7 @@ fun CategoryScreen(kind: String, categoryId: String?, genre: String?) {
 
     Box(Modifier.fillMaxSize().background(C.bg)) {
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(150.dp), modifier = Modifier.fillMaxSize(),
+            columns = GridCells.Adaptive(250.dp), modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 48.dp, end = 48.dp, top = 48.dp, bottom = 80.dp),
             horizontalArrangement = Arrangement.spacedBy(20.dp), verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
@@ -93,7 +93,7 @@ fun CategoryScreen(kind: String, categoryId: String?, genre: String?) {
             if (shown.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) { EmptyState("Burada içerik yok") }
             items(shown.distinctBy { it.key }, key = { it.key }) { i ->
                 val p = progress[i.key]
-                PosterCard(i, onClick = { open(actions, i) }, width = 150.dp, progress = p?.fraction, watched = i is Item.M && p?.finished == true)
+                WideCard(i, onClick = { open(actions, i) }, width = 250.dp, showText = true, progress = p?.fraction, watched = i is Item.M && p?.finished == true)
             }
         }
     }

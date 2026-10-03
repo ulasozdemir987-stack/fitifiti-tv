@@ -132,7 +132,7 @@ fun PosterRow(title: String, items: List<Item>, onOpen: (Item) -> Unit, modifier
         SectionTitle(title)
         LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
             itemsIndexed(items, key = { _, it -> it.key }) { i, it ->
-                PosterCard(it, onClick = { onOpen(it) }, rank = if (ranked) i + 1 else null, progress = progress(it), watched = watched(it), badge = badge(it),
+                WideCard(it, onClick = { onOpen(it) }, rank = if (ranked) i + 1 else null, progress = progress(it), watched = watched(it), badge = badge(it),
                     onFocus = onFocusItem?.let { f -> { f(it) } })
             }
         }

@@ -45,7 +45,7 @@ fun ListemScreen() {
     val pmap by app.user.progressMap.collectAsStateWithLifecycle()
 
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(150.dp), modifier = Modifier.fillMaxSize(),
+        columns = GridCells.Adaptive(250.dp), modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 48.dp, end = 48.dp, top = 100.dp, bottom = 80.dp),
         horizontalArrangement = Arrangement.spacedBy(20.dp), verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
@@ -69,7 +69,7 @@ fun ListemScreen() {
         }
         items(shown.distinctBy { it.key }, key = { it.key }) { i ->
             val p = pmap[i.key]
-            PosterCard(i, onClick = { open(actions, i) }, width = 150.dp, progress = p?.fraction, watched = i is Item.M && p?.finished == true)
+            WideCard(i, onClick = { open(actions, i) }, width = 250.dp, showText = true, progress = p?.fraction, watched = i is Item.M && p?.finished == true)
         }
     }
 }

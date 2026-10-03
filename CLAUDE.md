@@ -29,6 +29,7 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 * `ui/player/` — `PlayerScreen` (VOD: sarma, ses/altyazı, bölümler, uyku zamanlayıcısı, girişi atla (+85 sn, ilk 4 dk), sonraki bölüm kartı, kaldığın yerden), `LivePlayerScreen` (↑/↓ kanal, rakamla kanal, OK = kanal listesi, bilgi şeridi; önce .m3u8, olmazsa .ts).
 
 ## Tasarım (sitedekiyle aynı dil)
+* **Kartlar Netflix / Prime Video TV gibi yatay (16:9):** `components/WideCard.kt` — TMDB sahne görseli + logo/ad (görsel kart ekrana gelince, 180 ms gecikmeyle istenir), yoksa bulanık afiş zemini + afiş. Sıralı şeritte (`ranked`) solda büyük sıra numarası. Vitrinli şeritler (`posterRow`), detaydaki benzerler (`plainPosterRow`), kategori ve Listem ızgaraları (`GridCells.Adaptive(250.dp)`) bunu kullanır. `PosterCard` (2:3) artık kullanılmıyor.
 * Renkler `ui/theme/Theme.kt` → `C`: zemin #050508, panel #12121c, fill1/2/3 = beyaz %4/7/10, çizgi %9, mor #8b5cf6, ilerleme mor → turkuaz #2dd4bf. Başlıklar Manrope ExtraBold (`Display`).
 * Seçili = beyaz yazı + ince mor çizgi. TV odağı = hafif büyüme + beyaz çerçeve (her tıklanabilir öğede görünür olmak zorunda).
 * Düğme metinleri: "Oynat", "Devam et", "Detaylar", "Listem", "Bölümler".
