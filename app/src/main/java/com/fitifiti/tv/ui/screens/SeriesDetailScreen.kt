@@ -134,6 +134,7 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
                     }
                     Btn(label, { t?.let { actions.playEpisode(s, it.first, seasons, variant?.id) } }, Modifier.focusRequester(playFocus), icon = Icons.Default.PlayArrow)
                     Btn("Listem", { app.user.toggleFavorite(s) }, kind = BtnKind.Secondary, icon = if (fav) Icons.Default.Check else Icons.Default.Add)
+                    TrailerMuteButton()
                 }
             }
         }

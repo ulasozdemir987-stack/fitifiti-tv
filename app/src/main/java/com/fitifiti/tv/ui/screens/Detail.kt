@@ -35,6 +35,7 @@ import com.fitifiti.tv.ui.theme.C
 import com.fitifiti.tv.ui.theme.Display
 
 /** Detay sayfası iskeleti: kenardan kenara sahne görseli + kaydırılabilir içerik */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DetailScaffold(art: HeroArt, trailer: TrailerSpec? = null, content: LazyListScope.() -> Unit) {
     val list = rememberLazyListState()
@@ -42,10 +43,15 @@ fun DetailScaffold(art: HeroArt, trailer: TrailerSpec? = null, content: LazyList
     val half = with(density) { (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * 0.45f).dp.roundToPx() }
     // fragman yalnız başlık bloğu ekrandayken oynar (bölümlere / oyunculara inince durur)
     val atTop by remember { derivedStateOf { list.firstVisibleItemIndex == 0 && list.firstVisibleItemScrollOffset < half } }
+    val trailerState = remember { TrailerState() }
     Box(Modifier.fillMaxSize().background(C.bg)) {
+        CompositionLocalProvider(LocalTrailerState provides trailerState) {
         HeroBackdrop(art, video = trailer?.let { t -> { TrailerVideo(t, atTop) } })
-        CompositionLocalProvider(LocalDetailList provides list) {
+        // TV'de varsayılan kaydırma odaktaki öğeyi ekranın üst %30'una çeker: "Oynat"a odaklanınca sayfa ~300 px
+        // aşağı kayıyor, başlığın üstü kesiliyordu. Yalnız gerektiği kadar kaydır (öğe zaten görünüyorsa hiç kaydırma).
+        CompositionLocalProvider(LocalDetailList provides list, LocalBringIntoViewSpec provides rememberRowSpec(24.dp)) {
             LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 80.dp), content = content)
+        }
         }
     }
 }

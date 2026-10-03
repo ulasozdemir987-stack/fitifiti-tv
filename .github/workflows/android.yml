@@ -46,4 +46,12 @@ jobs:
         run: |
           cp app/build/outputs/apk/release/app-release.apk fitifiti-tv.apk
           gh release view latest >/dev/null 2>&1 || gh release create latest --title "fıtıfıtı TV · son sürüm" --notes "main dalından otomatik derlenen APK. TV'de: Downloader → ozul.com.tr/tv.apk" --latest
+          # uygulama içi güncelleme için sürüm bilgisi (ozul.com.tr/tv-version bunu okur)
+          code=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
+          name=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          notes=$(git log -1 --format=%s | head -c 300)
+          jq -n --argjson c "$code" --arg n "$name" --arg notes "$notes" '{versionCode:$c, versionName:$n, notes:$notes}' > version.json
+          cat version.json
+          # önce APK, sonra sürüm bilgisi: bilgi hiçbir zaman henüz yüklenmemiş bir APK'yı göstermesin
           gh release upload latest fitifiti-tv.apk --clobber
+          gh release upload latest version.json --clobber

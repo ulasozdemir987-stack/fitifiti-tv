@@ -21,7 +21,7 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 * `data/catalog/CatalogRepository` — açılışta diskteki önbellek (`catalog-<hesap>.json`) hemen, ağ arka planda; film/dizi tekilleştirme + sürümler (`domain/CatalogDedupe.kt`: "Orijinal dil / Türkçe dublaj / 4K"). `UserData` — etkin profilin akışları (devam et: dizi başına tek kart; süre 0 kayıt = "sıradaki bölüm" yer tutucusu).
 * `data/tmdb/ArtRepository` — yazısız sahne görseli, logo, özet, puan, oyuncular, bölüm görselleri. Kullanıcı kendi TMDB anahtarını girdiyse (Ayarlar) doğrudan TMDB, girmediyse sitenin `ozul.com.tr/api/tv-tmdb` aracısı (izinli yollar; IP başına 120/dk — 429/5xx önbelleğe yazılmaz). `critics()` IMDb / Rotten Tomatoes / Metacritic / ödülleri her zaman sitenin `/api/reviews?kind=&tmdbId=` ucundan alır (OMDb anahtarı sunucuda); detay sayfalarında `CriticsRow`.
 * Maskot: `assets/mascot.svg` (sitedeki `components/mascot-logo.tsx`'ten; AndroidSVG filtre desteklemediği için ışıma yok). `components/Mascot.kt`: `Mascot`, `MascotLoader` (zıplayan + gölge), `MascotOops` (boş/hata), `BrandLogo` (maskot + yazı: menü, giriş, profiller), `IndeterminateLine`, `KenBurns` (oynatıcı açılışı).
-* `data/trailer/TrailerRepository` + `ui/components/Trailer.kt` (`TrailerVideo`) — detay hero'sunda fragman: sitenin `/api/trailer` (YouTube kimliği) + `/api/trailer-file` (VPS'teki 1080p MP4; hazır değilse sunucu indirir, 5 sn'de bir 90 sn sorulur). TextureView (saydamlık animasyonu için), sayfa aşağı kayınca durur, ekran pasifken (oynatıcı açık) serbest bırakılır, bitince görsele döner. Ayarlar: `trailerAutoplay`, `trailerSound`.
+* `data/trailer/TrailerRepository` + `ui/components/Trailer.kt` (`TrailerVideo`; oynatıcı AYRI iş parçacığında — `release()` ana iş parçacığını kilitleyip geri tuşunu geciktiriyordu; görüntü bölgeyi kırparak kaplar; `TrailerMuteButton` başlık düğmelerinde) — detay hero'sunda fragman: sitenin `/api/trailer` (YouTube kimliği) + `/api/trailer-file` (VPS'teki 1080p MP4; hazır değilse sunucu indirir, 5 sn'de bir 90 sn sorulur). TextureView (saydamlık animasyonu için), sayfa aşağı kayınca durur, ekran pasifken (oynatıcı açık) serbest bırakılır, bitince görsele döner. Ayarlar: `trailerAutoplay`, `trailerSound`.
 * `domain/` — siteden taşınan mantık: `Format.kt` (başlık temizleme, `splitTitle`, süre), `CategoryStyle.kt` (platform adları/logolar, sıralama), `LiveFormat.kt` (maç başlıkları), `Search.kt` (Türkçe/aksan duyarsız, yazım hatası toleranslı), `Ranking.kt` (öne çıkan/yeni/en beğenilen; sağlayıcı puanında oy sayısı yok → 9.3+ şüpheli, puan ortalamaya çekilir).
 * `ui/Nav.kt` + `ui/AppRoot.kt` — basit ekran yığını. Alttaki ekranlar bileşimde KALIR ama yerleştirilmez (çizilmez, odak almaz); geri dönünce kaydırma ve odak (`focusRestorer`) korunur.
 * `ui/Actions.kt` — ortak eylemler (detay aç, oynat, devam et, kanal aç, seçili sürüm).
@@ -34,6 +34,8 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 * Düğme metinleri: "Oynat", "Devam et", "Detaylar", "Listem", "Bölümler".
 
 ## Tuzaklar
+* **Android TV'de LazyColumn/LazyRow varsayılan kaydırması (`PivotBringIntoViewSpec`) odaktaki öğeyi ekranın üst %30'una çeker** — öğe zaten görünse bile. Detay sayfası bu yüzden "Oynat"a odaklanınca ~300 px kayıyordu. Dikey listelerde `LocalBringIntoViewSpec provides rememberRowSpec(…)` (yalnız gerektiği kadar kaydırır) kullan; `DetailScaffold` bunu yapar.
+* Yön araması yalnız hizalı öğeye gider: üst çubuğun sağındaki simgelerin altında öğe yoksa ↓ hiçbir şey yapmıyordu. Üst çubukta `focusProperties { down = contentFocus }`, içerik `focusRestorer().focusGroup()`.
 * tv-material'da `Surface` dışındaki `Text`'in varsayılan rengi SİYAH (`LocalContentColor` = Black). `FitifitiTheme` kökte beyaz verir; yine de koyu zemindeki metne renk vermeyi unutma.
 * Detay sayfalarında başlık bloğu (ilk LazyColumn öğesi) ekrana SIĞMALI ve `Modifier.detailHead()` taşımalı (içinde odak olunca liste en üste kayar). Taşarsa sayfa kesik açılır, üstü kaydırılamaz ve fragman "aşağı kaydırıldı" sanılıp durur. Ek bilgileri ayrı öğeye koy.
 * Henüz çizilmemiş bir öğeye `requestFocus()` sessizce başarısız olur → oynatıcıda `pendingFocus` + kısa gecikme kullanılıyor.
@@ -43,12 +45,20 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 * `BasicTextField` TV'de odaklanınca klavye açmasın diye `showKeyboardOnFocus = false`; OK tuşu açar.
 * Platform logoları `app/src/main/assets/brands/` (kaynaklar README'de); Marvel/TOD/Exxen/Gain dışındakiler beyaza boyanır.
 
+## Uygulama içi güncelleme
+* CI her derlemede `latest` sürümüne APK + `version.json` (`versionCode`, `versionName`, `notes` = son commit başlığı) yükler. Site (`lib/tv-apk.ts`) ikisini önbelleğe alır: `ozul.com.tr/tv.apk` dosyayı, `ozul.com.tr/tv-version` bilgiyi verir.
+* `data/update/Updater.kt`: açılışta (en fazla 30 dk'da bir) `tv-version`'a bakar, `versionCode` büyükse `UpdateDialog` ("Güncelleme var · Kur / Sonra"). Kur → APK önbelleğe iner (boyut doğrulanır) → `PackageInstaller` oturumu → `UpdateReceiver` Android'in onay ekranını açar. Android 8+'da izin yoksa önce "Bilinmeyen uygulamaları yükle" ayarı açılır; dönünce (onStart) kendiliğinden devam eder. Ayarlar → Hakkında → "Güncellemeler" elle kontrol/kur. **Sürüm çıkarırken `versionCode`'u artırmayı unutma** (yoksa güncelleme görünmez).
+
+## Testler (Robolectric)
+* `app/src/test`: `DomainTest` (saf mantık) + kumanda gezinmesi testleri (`FocusProbeTest` detay sayfası kaymıyor / aşağıdan dönünce en üste, `SettingsProbeTest` üst çubuktan ↓, `BackFocusTest` tek geri basışında odak girilen karta ~100 ms'de döner). `@Config(qualifiers = "…-television")` + `FEATURE_LEANBACK` ile TV davranışı (pivot kaydırma) birebir çıkar; tuşlar `performKeyInput { pressKey(Key.DirectionDown) }`. TV'de görülen odak/kaydırma hatalarını önce burada tekrar üret.
+
 ## Telefon kumandası
 * `data/remote/RemoteLink.kt`: uygulama ön plandayken (MainActivity onStart/onStop) `wss://ozul.com.tr/ws/together?room=tv-<kod>` odasına bağlanır. Kod (10 karakter) ve AES-256 anahtarı cihazda bir kez üretilir (`remote` prefs; "Yeni kod" ile yenilenir). QR adresi `https://ozul.com.tr/tv?k=<kod>#<anahtar>` — sitedeki `components/tv-remote.tsx` sayfası.
 * `RemoteBus`: ekranlar durumu yayınlar (`screen` login|app|player, odaktaki `TvTextField` → `input`, oynatıcı → `player`), telefondan gelen `keys` MainActivity'de gerçek KeyEvent olarak gönderilir (kumandayla aynı yol), `text` odaktaki kutuyu doldurur, `seek` oynatıcıyı sarar, `login` (AES-GCM ile çözülmüş Xtream bilgisi) giriş ekranını doldurup bağlanır, `home` ana sayfaya döner.
 * QR: zxing `core` (`components/RemotePair.kt`: `QrCode`, `RemoteQrCard`, `RemotePairDialog`). Giriş: Giriş ekranı, Profiller ("Telefon kumandası"), Ayarlar.
 
 ## Tanılama (çökme / donma / oynatıcı)
+* `BackProbe`: geri tuşu basış → işlenme → ilk kare süresi; işlenmeyen basış ya da >700 ms gecikme `freeze` raporu olarak gelir (oturumda ≤3). Ekran geçişleri halkada (`ekran +MovieDetail` / `ekran −…`).
 * `data/diag/Diag.kt`: son 80 olay halkada (oynatıcı çözücüsü, biçim, düşen kare, hata, bellek). Rapor `POST https://ozul.com.tr/api/tv-report` (sitede; son 80 rapor `DATA_DIR/tv-reports.json`, okuma `x-monitor-key` ya da VPS'te dosya). Adreslerdeki hesap bilgisi hem uygulamada hem sunucuda temizlenir.
 * `FreezeWatchdog`: ana iş parçacığı 4 sn+ takılırsa o anki yığın + son olaylar hemen gönderilir (Android uygulamayı kapatsa bile rapor gitmiş olur). Çökmeler `last-crash.txt` → sonraki açılışta gönderilir + ekranda gösterilir.
 * Oynatıcı tamponu 48 MB ile sınırlı (varsayılan ~140 MB Java belleği düşük bellekli TV'lerde 4K'da sorun çıkarıyordu).

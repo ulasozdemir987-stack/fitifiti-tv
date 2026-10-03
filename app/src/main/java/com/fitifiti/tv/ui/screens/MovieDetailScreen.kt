@@ -87,6 +87,7 @@ fun MovieDetailScreen(m: Movie) {
                     if (resume || watched) Btn("Baştan oynat", { actions.playMovie(m, fromStart = true) }, kind = BtnKind.Secondary, icon = Icons.Default.Replay)
                     Btn("Listem", { app.user.toggleFavorite(m) }, kind = BtnKind.Secondary, icon = if (fav) Icons.Default.Check else Icons.Default.Add)
                     Btn(if (watched) "İzlenmedi yap" else "İzlendi", { app.user.markMovieWatched(m, !watched) }, kind = BtnKind.Ghost, icon = Icons.Default.DoneAll)
+                    TrailerMuteButton()
                 }
             }
         }

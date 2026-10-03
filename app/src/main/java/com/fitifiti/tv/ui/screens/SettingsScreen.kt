@@ -105,6 +105,28 @@ fun SettingsScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAd
         }
 
         item { Section("Hakkında") }
+        item {
+            val up by com.fitifiti.tv.data.update.Updater.state.collectAsStateWithLifecycle()
+            val ctx = androidx.compose.ui.platform.LocalContext.current
+            val (value, hint) = when (val u = up) {
+                is com.fitifiti.tv.data.update.UpdateState.Checking -> "Bakılıyor…" to null
+                is com.fitifiti.tv.data.update.UpdateState.UpToDate -> "Güncel" to "Şu an ${BuildConfig.VERSION_NAME}"
+                is com.fitifiti.tv.data.update.UpdateState.Available -> "Sürüm ${u.info.name} hazır" to "Kurmak için bas"
+                is com.fitifiti.tv.data.update.UpdateState.Downloading -> "İndiriliyor %${(u.progress * 100).toInt()}" to null
+                is com.fitifiti.tv.data.update.UpdateState.Installing -> "Kuruluyor…" to "Açılan ekranda “Yükle”ye bas"
+                is com.fitifiti.tv.data.update.UpdateState.NeedsPermission -> "İzin gerekli" to "fıtıfıtı için “Bilinmeyen uygulamaları yükle” iznini aç, sonra tekrar bas"
+                is com.fitifiti.tv.data.update.UpdateState.Failed -> "Olmadı" to u.message
+                else -> BuildConfig.VERSION_NAME to "Yeni sürüm var mı bak"
+            }
+            SettingRow("Güncellemeler", value, hint = hint, onClick = {
+                when (val u = up) {
+                    is com.fitifiti.tv.data.update.UpdateState.Available -> com.fitifiti.tv.data.update.Updater.install(ctx, u.info)
+                    is com.fitifiti.tv.data.update.UpdateState.NeedsPermission -> com.fitifiti.tv.data.update.Updater.install(ctx, u.info)
+                    is com.fitifiti.tv.data.update.UpdateState.Failed -> if (u.info != null) com.fitifiti.tv.data.update.Updater.install(ctx, u.info) else com.fitifiti.tv.data.update.Updater.check(manual = true)
+                    else -> com.fitifiti.tv.data.update.Updater.check(manual = true)
+                }
+            }, icon = Icons.Default.SystemUpdate, modifier = Modifier.fillMaxWidth(0.7f))
+        }
         item { Text("fıtıfıtı · sürüm ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodyMedium, color = C.muted) }
         item { Text("İçerikler kendi IPTV sağlayıcından gelir; uygulama hiçbir içerik barındırmaz.", style = MaterialTheme.typography.bodySmall, color = C.faint) }
     }

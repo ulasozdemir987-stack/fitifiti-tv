@@ -70,6 +70,8 @@ fun AppRoot() {
                     }
                 }
             }
+            val update by com.fitifiti.tv.data.update.Updater.prompt.collectAsState()
+            update?.let { info -> if (crash == null) com.fitifiti.tv.ui.components.UpdateDialog(info) { com.fitifiti.tv.data.update.Updater.dismiss() } }
             crash?.let { text -> CrashReport(text) { runCatching { app.crashFile().delete(); java.io.File(app.filesDir, "last-crash.sent").delete() }; crash = null } }
         }
     }
@@ -96,19 +98,21 @@ private fun CrashReport(text: String, onClose: () -> Unit) {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun ScreenLayer(active: Boolean, content: @Composable () -> Unit) {
+internal fun ScreenLayer(active: Boolean, content: @Composable () -> Unit) {
     val fr = remember { FocusRequester() }
     val mem = remember { FocusMemory() }
     var wasInactive by remember { mutableStateOf(false) }
     LaunchedEffect(active) {
         if (!active) wasInactive = true
         else if (wasInactive) {
-            // Önce tam olarak en son odaklanan kart; çizilmemişse (ilk karede) kısa aralıklarla tekrar dener
-            delay(30)
+            // Önce tam olarak en son odaklanan kart; yerleşir yerleşmez (her karede bir deneme, en fazla ~10 kare).
+            // Odaksız geçen her an tehlikeli: o sırada basılan yön tuşu odağı sol üstteki sekmeye atıyordu.
             var ok = false
             val target = mem.last
-            if (target != null) repeat(5) {
-                if (!ok) { runCatching { target.requestFocus() }; ok = mem.current === target; if (!ok) delay(40) }
+            if (target != null) for (i in 0 until 10) {
+                androidx.compose.runtime.withFrameNanos { }
+                runCatching { target.requestFocus() }; ok = mem.current === target
+                if (ok) break
             }
             if (!ok) runCatching { fr.restoreFocusedChild() || run { fr.requestFocus(); true } }
         }

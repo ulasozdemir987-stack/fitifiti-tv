@@ -19,6 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRestorer
+import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -41,6 +44,7 @@ enum class Tab(val label: String) { Home("Ana Sayfa"), Movies("Filmler"), Series
 class TopBarState { var hidden by mutableStateOf(false) }
 val LocalTopBar = compositionLocalOf { TopBarState() }
 
+@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAccount: () -> Unit) {
     val app = App.instance
@@ -50,6 +54,7 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
     val status by app.catalog.status.collectAsStateWithLifecycle()
     val catalog by app.catalog.catalog.collectAsStateWithLifecycle()
     val tabFocus = remember { FocusRequester() }
+    val contentFocus = remember { FocusRequester() }
     val profileId by app.user.profileId.collectAsStateWithLifecycle()
     val profile by produceState<com.fitifiti.tv.data.local.ProfileEntity?>(null, profileId) { value = app.db.profiles().get(profileId) }
 
@@ -83,6 +88,9 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
 
     CompositionLocalProvider(LocalTopBar provides bar) {
         Box(Modifier.fillMaxSize()) {
+            // Üst çubuktan ↓: odak doğrudan içeriğe (son odaklanan öğeye) iner. Yön araması yalnız alt alta hizalı öğe
+            // arar; sağdaki Ara/Ayarlar simgelerinin altında öğe olmayınca (Ayarlar satırları solda) hiç inmiyordu.
+            Box(Modifier.fillMaxSize().focusRequester(contentFocus).focusRestorer().focusGroup()) {
             holder.SaveableStateProvider(tab.name) {
                 when (tab) {
                     Tab.Home -> HomeScreen()
@@ -94,8 +102,9 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
                     Tab.Settings -> SettingsScreen(onProfiles, onEditAccount, onAddAccount)
                 }
             }
+            }
             AnimatedVisibility(!bar.hidden, enter = fadeIn() + slideInVertically { -it }, exit = fadeOut() + slideOutVertically { -it }) {
-                TopBar(tab, { if (it != tab) { tab = it; bar.hidden = false } }, profile, onProfiles, tabFocus)
+                TopBar(tab, { if (it != tab) { tab = it; bar.hidden = false } }, profile, onProfiles, tabFocus, contentFocus)
             }
         }
     }
@@ -105,8 +114,9 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
 private fun rememberSaveableTab() = androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(Tab.Home) }
 
 @Composable
-private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data.local.ProfileEntity?, onProfiles: () -> Unit, tabFocus: FocusRequester) {
-    Box(Modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(C.bg.copy(alpha = 0.85f), Color.Transparent))).padding(horizontal = 48.dp, vertical = 20.dp)) {
+private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data.local.ProfileEntity?, onProfiles: () -> Unit, tabFocus: FocusRequester, contentFocus: FocusRequester) {
+    // çubuktaki her öğeden ↓ = içerik (FocusProperties en yakın odak hedefine kadar üstteki düğümlerden okunur)
+    Box(Modifier.focusProperties { down = contentFocus }.fillMaxWidth().background(Brush.verticalGradient(listOf(C.bg.copy(alpha = 0.85f), Color.Transparent))).padding(horizontal = 48.dp, vertical = 20.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             BrandLogo(26)
             Spacer(Modifier.width(40.dp))
