@@ -44,6 +44,8 @@ fun AppRoot() {
     }
 
     BackHandler(enabled = nav.stack.size > 1) { nav.back() }
+    // Telefondaki "ana sayfa" tuşu
+    LaunchedEffect(Unit) { com.fitifiti.tv.data.remote.RemoteBus.home.collect { while (nav.stack.size > 1 && nav.top != Route.Main) nav.back() } }
     var crash by remember { mutableStateOf(runCatching { app.crashFile().takeIf { it.exists() }?.readText() }.getOrNull()) }
 
     CompositionLocalProvider(LocalActions provides actions) {

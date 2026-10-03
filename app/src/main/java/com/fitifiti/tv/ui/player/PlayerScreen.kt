@@ -220,6 +220,15 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
         player.seekTo(target); pos = target; scrub = null; touch()
     }
     LaunchedEffect(Unit) { runCatching { rootFocus.requestFocus() } }
+    // Telefon kumandası: oynatılan içerik telefonda görünür, telefondaki çubukla sarılır
+    DisposableEffect(Unit) {
+        com.fitifiti.tv.data.remote.RemoteBus.screen.value = "player"
+        onDispose { com.fitifiti.tv.data.remote.RemoteBus.player.value = null; com.fitifiti.tv.data.remote.RemoteBus.screen.value = "app" }
+    }
+    LaunchedEffect(playing, dur / 1000, scrub) {
+        com.fitifiti.tv.data.remote.RemoteBus.player.value = com.fitifiti.tv.data.remote.RemotePlayer(cardTitle(req.title), req.subtitle, req.image, player.currentPosition / 1000, dur / 1000, playing)
+    }
+    LaunchedEffect(Unit) { com.fitifiti.tv.data.remote.RemoteBus.seek.collect { s -> player.seekTo(s * 1000); touch(); showControls() } }
     // Çekmece kapanınca odak oynat düğmesine döner
     LaunchedEffect(panel) { if (panel == Panel.None && controls) { touch(); pendingFocus = playFocus } }
 
@@ -257,8 +266,8 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
                     AKey.KEYCODE_MEDIA_PLAY_PAUSE, AKey.KEYCODE_SPACE -> { if (player.isPlaying) player.pause() else player.play(); showControls(if (controls) null else playFocus); return@onPreviewKeyEvent true }
                     AKey.KEYCODE_MEDIA_PLAY -> { player.play(); return@onPreviewKeyEvent true }
                     AKey.KEYCODE_MEDIA_PAUSE -> { player.pause(); showControls(playFocus); return@onPreviewKeyEvent true }
-                    AKey.KEYCODE_MEDIA_FAST_FORWARD -> { stepSeek(true, e.nativeKeyEvent.repeatCount + 4); return@onPreviewKeyEvent true }
-                    AKey.KEYCODE_MEDIA_REWIND -> { stepSeek(false, e.nativeKeyEvent.repeatCount + 4); return@onPreviewKeyEvent true }
+                    AKey.KEYCODE_MEDIA_FAST_FORWARD -> { stepSeek(true, e.nativeKeyEvent.repeatCount); return@onPreviewKeyEvent true }
+                    AKey.KEYCODE_MEDIA_REWIND -> { stepSeek(false, e.nativeKeyEvent.repeatCount); return@onPreviewKeyEvent true }
                     AKey.KEYCODE_MEDIA_NEXT -> { if (next != null) playNext(); return@onPreviewKeyEvent true }
                     AKey.KEYCODE_CAPTIONS -> { controls = true; panel = Panel.Tracks; return@onPreviewKeyEvent true }
                 }

@@ -120,6 +120,13 @@ fun LivePlayerScreen(channelId: Int, list: List<Int>, onClose: () -> Unit) {
 
     val epg = rememberEpg(channel.id, 6)
     val now = epg.now(); val next = epg.next()
+    DisposableEffect(Unit) {
+        com.fitifiti.tv.data.remote.RemoteBus.screen.value = "player"
+        onDispose { com.fitifiti.tv.data.remote.RemoteBus.player.value = null; com.fitifiti.tv.data.remote.RemoteBus.screen.value = "app" }
+    }
+    LaunchedEffect(channel.id, now?.title) {
+        com.fitifiti.tv.data.remote.RemoteBus.player.value = com.fitifiti.tv.data.remote.RemotePlayer(cleanChannelName(channel.name), now?.let { programmeHeadline(it.title) }, channel.icon, 0, 0, true)
+    }
 
     Box(
         Modifier.fillMaxSize().background(Color.Black).focusRequester(rootFocus).focusable()

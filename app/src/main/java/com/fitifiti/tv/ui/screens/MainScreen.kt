@@ -52,6 +52,7 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
     val profileId by app.user.profileId.collectAsStateWithLifecycle()
     val profile by produceState<com.fitifiti.tv.data.local.ProfileEntity?>(null, profileId) { value = app.db.profiles().get(profileId) }
 
+    LaunchedEffect(Unit) { com.fitifiti.tv.data.remote.RemoteBus.home.collect { tab = Tab.Home; bar.hidden = false; runCatching { tabFocus.requestFocus() } } }
     BackHandler(enabled = tab != Tab.Home && LocalScreenActive.current) { tab = Tab.Home; bar.hidden = false; runCatching { tabFocus.requestFocus() } }
 
     if (catalog.isEmpty) {

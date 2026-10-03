@@ -14,8 +14,8 @@ android {
         applicationId = "com.fitifiti.tv"
         minSdk = 23
         targetSdk = 35
-        versionCode = 4
-        versionName = "2.0.2"
+        versionCode = 5
+        versionName = "2.1.0"
     }
 
     signingConfigs {
@@ -92,6 +92,8 @@ dependencies {
     implementation("androidx.media3:media3-ui:$media3")
     // AC3/E-AC3/DTS gibi cihazın çözemediği sesler için (Jellyfin'in yayımladığı derleme)
     implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.5.0+1")
+
+    implementation("com.google.zxing:core:3.5.3")
 
     testImplementation("junit:junit:4.13.2")
 }

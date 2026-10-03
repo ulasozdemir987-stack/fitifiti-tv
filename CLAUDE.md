@@ -36,3 +36,8 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta debug APK'yı artif
 * Hesaplar genelde tek bağlantılı: canlı yayında kanal değişince aynı oynatıcıda kaynak değiştirilir; aynı anda iki oynatıcı açma.
 * `BasicTextField` TV'de odaklanınca klavye açmasın diye `showKeyboardOnFocus = false`; OK tuşu açar.
 * Platform logoları `app/src/main/assets/brands/` (kaynaklar README'de); Marvel/TOD/Exxen/Gain dışındakiler beyaza boyanır.
+
+## Telefon kumandası
+* `data/remote/RemoteLink.kt`: uygulama ön plandayken (MainActivity onStart/onStop) `wss://ozul.com.tr/ws/together?room=tv-<kod>` odasına bağlanır. Kod (10 karakter) ve AES-256 anahtarı cihazda bir kez üretilir (`remote` prefs; "Yeni kod" ile yenilenir). QR adresi `https://ozul.com.tr/tv?k=<kod>#<anahtar>` — sitedeki `components/tv-remote.tsx` sayfası.
+* `RemoteBus`: ekranlar durumu yayınlar (`screen` login|app|player, odaktaki `TvTextField` → `input`, oynatıcı → `player`), telefondan gelen `keys` MainActivity'de gerçek KeyEvent olarak gönderilir (kumandayla aynı yol), `text` odaktaki kutuyu doldurur, `seek` oynatıcıyı sarar, `login` (AES-GCM ile çözülmüş Xtream bilgisi) giriş ekranını doldurup bağlanır, `home` ana sayfaya döner.
+* QR: zxing `core` (`components/RemotePair.kt`: `QrCode`, `RemoteQrCard`, `RemotePairDialog`). Giriş: Giriş ekranı, Profiller ("Telefon kumandası"), Ayarlar.

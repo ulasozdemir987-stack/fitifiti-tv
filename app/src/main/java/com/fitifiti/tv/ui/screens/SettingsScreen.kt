@@ -32,6 +32,7 @@ fun SettingsScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAd
     var tmdb by remember { mutableStateOf(s.tmdbKey) }
     var tmdbState by remember { mutableStateOf<String?>(null) }
     var confirmRemove by remember { mutableStateOf(false) }
+    var pair by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 48.dp, end = 48.dp, top = 100.dp, bottom = 80.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -40,6 +41,9 @@ fun SettingsScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAd
         item { Section("Profil") }
         item { SettingRow("Profil değiştir", profile?.name, onClick = onProfiles, icon = Icons.Default.People, modifier = Modifier.fillMaxWidth(0.7f)) }
         if (profile != null) item { SettingRow("Profili düzenle", hint = "Ad, renk ve PIN", onClick = { editProfile = true }, icon = Icons.Default.Edit, modifier = Modifier.fillMaxWidth(0.7f)) }
+
+        item { Section("Telefon kumandası") }
+        item { SettingRow("Telefonu kumanda yap", hint = "QR'ı okut; yön tuşları, oynatma ve klavye telefondan. Aynı Wi-Fi gerekmez.", onClick = { pair = true }, icon = Icons.Default.PhoneAndroid, modifier = Modifier.fillMaxWidth(0.7f)) }
 
         item { Section("Oynatma") }
         item { SettingRow("Sonraki bölümü otomatik oynat", if (s.autoNext) "Açık" else "Kapalı", onClick = { app.settings.update { it.copy(autoNext = !it.autoNext) } }, icon = Icons.Default.SkipNext, modifier = Modifier.fillMaxWidth(0.7f)) }
@@ -103,6 +107,7 @@ fun SettingsScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAd
         item { Text("İçerikler kendi IPTV sağlayıcından gelir; uygulama hiçbir içerik barındırmaz.", style = MaterialTheme.typography.bodySmall, color = C.faint) }
     }
 
+    if (pair) RemotePairDialog { pair = false }
     if (editProfile && profile != null) ProfileEditDialog(profile, profile!!.accountId, canCancel = true) { editProfile = false }
 }
 

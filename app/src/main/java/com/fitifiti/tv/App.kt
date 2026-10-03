@@ -27,6 +27,7 @@ class App : Application(), ImageLoaderFactory {
     lateinit var catalog: CatalogRepository
     lateinit var user: UserData
     lateinit var art: ArtRepository
+    lateinit var remote: com.fitifiti.tv.data.remote.RemoteLink
 
     fun client(a: Account = accounts.active!!) = XtreamClient(http, a)
     fun crashFile() = java.io.File(filesDir, "last-crash.txt")
@@ -51,6 +52,7 @@ class App : Application(), ImageLoaderFactory {
         catalog = CatalogRepository(this) { XtreamClient(http, it) }
         user = UserData(db)
         art = ArtRepository(http) { settings.value.tmdbKey }
+        remote = com.fitifiti.tv.data.remote.RemoteLink(this, http)
     }
 
     override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)

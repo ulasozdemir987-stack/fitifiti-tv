@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +49,7 @@ fun ProfilesScreen(onSelect: (ProfileEntity) -> Unit, onAddAccount: () -> Unit, 
     var creating by remember { mutableStateOf(false) }
     var manage by remember { mutableStateOf(false) }
     var pinFor by remember { mutableStateOf<ProfileEntity?>(null) }
+    var pair by remember { mutableStateOf(false) }
     val firstFocus = remember { FocusRequester() }
 
     // Hiç profil yoksa doğrudan oluşturma penceresi
@@ -83,6 +85,7 @@ fun ProfilesScreen(onSelect: (ProfileEntity) -> Unit, onAddAccount: () -> Unit, 
                     app.accounts.setActive(accounts[(i + 1) % accounts.size].id)
                 }, kind = BtnKind.Ghost)
                 Btn("Hesap ekle", onAddAccount, kind = BtnKind.Ghost, icon = Icons.Default.Add)
+                Btn("Telefon kumandası", { pair = true }, kind = BtnKind.Ghost, icon = Icons.Default.PhoneAndroid)
             }
         }
     }
@@ -91,6 +94,7 @@ fun ProfilesScreen(onSelect: (ProfileEntity) -> Unit, onAddAccount: () -> Unit, 
         profile = editing, accountId = acc.id, canCancel = !profiles.isNullOrEmpty(),
         onDismiss = { creating = false; editing = null },
     )
+    if (pair) RemotePairDialog { pair = false }
     pinFor?.let { p ->
         PinDialog(title = "${p.name} için PIN", onDismiss = { pinFor = null }) { pin ->
             if (pin == p.pin) { pinFor = null; onSelect(p); true } else false

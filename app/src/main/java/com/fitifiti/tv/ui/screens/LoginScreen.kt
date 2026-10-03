@@ -45,9 +45,10 @@ fun LoginScreen(editId: String?, onDone: () -> Unit, onCancel: (() -> Unit)?) {
     val first = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { first.requestFocus() } }
 
-    fun submit() {
+    val remote = App.instance.remote
+    fun submit(fromPhone: Boolean = false) {
         if (busy) return
-        if (server.isBlank() || user.isBlank() || pass.isBlank()) { error = "Sunucu, kullanıcı adı ve şifre gerekli"; return }
+        if (server.isBlank() || user.isBlank() || pass.isBlank()) { error = "Sunucu, kullanıcı adı ve şifre gerekli"; if (fromPhone) remote.loginResult(false, error); return }
         busy = true; error = null
         val acc = Account(existing?.id ?: UUID.randomUUID().toString(), XtreamClient.normalizeServer(server), user.trim(), pass, label.trim())
         scope.launch {
@@ -55,10 +56,26 @@ fun LoginScreen(editId: String?, onDone: () -> Unit, onCancel: (() -> Unit)?) {
                 XtreamClient(app.http, acc).userInfo()
                 app.accounts.upsert(acc)
                 app.accounts.setActive(acc.id)
+                if (fromPhone) remote.loginResult(true)
                 onDone()
             } catch (e: Exception) {
                 error = e.message?.takeIf { it.isNotBlank() && e is com.fitifiti.tv.data.xtream.XtreamException } ?: "Sunucuya bağlanılamadı. Adresi kontrol et."
+                if (fromPhone) remote.loginResult(false, error)
             } finally { busy = false }
+        }
+    }
+
+    // Telefondan giriş: QR okutulunca telefon bu ekranı görür, bilgiler şifreli gelir
+    val active = com.fitifiti.tv.ui.LocalScreenActive.current
+    DisposableEffect(active) {
+        if (active) com.fitifiti.tv.data.remote.RemoteBus.screen.value = "login"
+        onDispose { if (com.fitifiti.tv.data.remote.RemoteBus.screen.value == "login") com.fitifiti.tv.data.remote.RemoteBus.screen.value = "app" }
+    }
+    LaunchedEffect(active) {
+        if (!active) return@LaunchedEffect
+        com.fitifiti.tv.data.remote.RemoteBus.login.collect { l ->
+            server = l.server; user = l.username; pass = l.password; label = l.label
+            submit(fromPhone = true)
         }
     }
 
@@ -74,6 +91,8 @@ fun LoginScreen(editId: String?, onDone: () -> Unit, onCancel: (() -> Unit)?) {
                     style = MaterialTheme.typography.bodyLarge, color = C.muted)
                 Spacer(Modifier.height(18.dp))
                 Text("Bilgiler yalnız bu cihazda şifreli saklanır.", style = MaterialTheme.typography.bodyMedium, color = C.faint)
+                Spacer(Modifier.height(28.dp))
+                RemoteQrCard("Telefondan gir", "QR'ı telefonun kamerasıyla okut; bilgileri telefonun klavyesiyle yaz. Sonra telefon kumanda olarak da kullanılır.", qrSize = 140.dp)
             }
             Column(
                 Modifier.width(520.dp).clip(RoundedCornerShape(22.dp)).background(C.panel).padding(32.dp).verticalScroll(rememberScrollState()),

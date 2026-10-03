@@ -35,6 +35,16 @@ fun TvTextField(
 ) {
     val src = remember { MutableInteractionSource() }
     val focused by src.collectIsFocusedAsState()
+    // Telefon kumandası: odaktaki kutu telefona bildirilir, telefonda yazılan metin buraya gelir
+    val latest by rememberUpdatedState(onValueChange)
+    val me = remember { Any() }
+    val info = com.fitifiti.tv.data.remote.RemoteInput(label.ifEmpty { placeholder }, value, password)
+    LaunchedEffect(focused, info) { if (focused) { com.fitifiti.tv.data.remote.RemoteBus.input.value = info; RemoteOwner.owner = me } }
+    LaunchedEffect(focused) {
+        if (!focused) { if (RemoteOwner.owner === me) { com.fitifiti.tv.data.remote.RemoteBus.input.value = null; RemoteOwner.owner = null }; return@LaunchedEffect }
+        com.fitifiti.tv.data.remote.RemoteBus.text.collect { latest(it) }
+    }
+    DisposableEffect(Unit) { onDispose { if (RemoteOwner.owner === me) { com.fitifiti.tv.data.remote.RemoteBus.input.value = null; RemoteOwner.owner = null } } }
     Column(modifier) {
         if (label.isNotEmpty()) { Text(label, style = MaterialTheme.typography.labelMedium, color = C.muted); Spacer(Modifier.height(6.dp)) }
         BasicTextField(
@@ -61,6 +71,8 @@ fun TvTextField(
         )
     }
 }
+
+private object RemoteOwner { var owner: Any? = null }
 
 /** Ayarlar/menü satırı: solda başlık + açıklama, sağda değer */
 @Composable
