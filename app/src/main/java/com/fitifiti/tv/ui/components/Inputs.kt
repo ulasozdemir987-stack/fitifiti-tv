@@ -1,5 +1,8 @@
 package com.fitifiti.tv.ui.components
 
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.input.key.*
@@ -30,16 +33,25 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.*
 import com.fitifiti.tv.ui.theme.C
 
-/** TV metin kutusu: kumandayla odaklanır, OK tuşu klavyeyi açar (odaklanınca kendiliğinden açılmaz). Odakta beyaz çerçeve. */
+/**
+ * TV metin kutusu. Normalde DÜĞME gibi davranır (yön tuşlarıyla üzerinden geçilir, klavye açılmaz); OK'e basınca
+ * yazma moduna geçer ve klavye açılır, klavyede Tamam/İleri ya da geri → düğmeye döner.
+ * Neden: bazı cihazlarda (Nova, Android 14) `showKeyboardOnFocus = false`'a rağmen odak gelince klavye açılıyor ve
+ * yön tuşlarını kapıyordu — Ayarlar'da TMDB kutusunda aşağı inilemiyordu (gerçek kutuda görüldü).
+ */
 @Composable
 fun TvTextField(
     value: String, onValueChange: (String) -> Unit, label: String, modifier: Modifier = Modifier,
     placeholder: String = "", password: Boolean = false, keyboard: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Next, onDone: () -> Unit = {}, icon: ImageVector? = null,
 ) {
-    val src = remember { MutableInteractionSource() }
-    val focused by src.collectIsFocusedAsState()
+    var editing by remember { mutableStateOf(false) }
+    var fieldFocused by remember { mutableStateOf(false) }
+    val boxFr = remember { FocusRequester() }
+    val editFr = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val keyboardCtl = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    val focused = fieldFocused || editing
     // Telefon kumandası: odaktaki kutu telefona bildirilir, telefonda yazılan metin buraya gelir
     val latest by rememberUpdatedState(onValueChange)
     val me = remember { Any() }
@@ -50,39 +62,74 @@ fun TvTextField(
         com.fitifiti.tv.data.remote.RemoteBus.text.collect { latest(it) }
     }
     DisposableEffect(Unit) { onDispose { if (RemoteOwner.owner === me) { com.fitifiti.tv.data.remote.RemoteBus.input.value = null; RemoteOwner.owner = null } } }
+
+    fun finish(next: Boolean) {
+        editing = false
+        keyboardCtl?.hide()
+        if (next) focusManager.moveFocus(FocusDirection.Down) else runCatching { boxFr.requestFocus() }
+    }
+    LaunchedEffect(editing) {
+        if (editing) { kotlinx.coroutines.delay(30); runCatching { editFr.requestFocus() }; keyboardCtl?.show() }
+    }
+
+    val shape = RoundedCornerShape(12.dp)
+    @Composable fun Frame(content: @Composable RowScope.() -> Unit) = Row(
+        Modifier.fillMaxWidth().clip(shape).background(if (focused) C.fill3 else C.fill1)
+            .border(2.dp, if (focused) Color.White else C.line, shape).padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) { Icon(icon, null, Modifier.size(20.dp), tint = C.muted); Spacer(Modifier.width(10.dp)) }
+        content()
+    }
+
     Column(modifier) {
         if (label.isNotEmpty()) { Text(label, style = MaterialTheme.typography.labelMedium, color = C.muted); Spacer(Modifier.height(6.dp)) }
-        BasicTextField(
-            value = value, onValueChange = onValueChange, singleLine = true, interactionSource = src,
-            textStyle = TextStyle(color = Color.White, fontSize = 18.sp),
-            cursorBrush = SolidColor(C.primary),
-            visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
-            keyboardOptions = KeyboardOptions(keyboardType = if (password) KeyboardType.Password else keyboard, imeAction = imeAction, autoCorrectEnabled = false, showKeyboardOnFocus = false),
-            keyboardActions = KeyboardActions(onDone = { onDone() }, onGo = { onDone() }, onSearch = { onDone() }),
-            // ↑/↓ metin kutusunda imleç hareketi sayılıp yutuluyordu (Ayarlar'da TMDB kutusunda aşağı inilemiyordu, gerçek kutuda
-            // görüldü): tek satırlık kutuda yukarı/aşağı her zaman odağı taşır
-            modifier = Modifier.fillMaxWidth().onPreviewKeyEvent { e ->
-                if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                when (e.key) {
-                    Key.DirectionDown -> { focusManager.moveFocus(FocusDirection.Down); true }
-                    Key.DirectionUp -> { focusManager.moveFocus(FocusDirection.Up); true }
-                    else -> false
+        if (!editing) {
+            Surface(
+                onClick = { editing = true },
+                modifier = Modifier.fillMaxWidth().focusRequester(boxFr).rememberFocus().onFocusChanged { fieldFocused = it.isFocused },
+                shape = ClickableSurfaceDefaults.shape(shape),
+                colors = ClickableSurfaceDefaults.colors(containerColor = Color.Transparent, focusedContainerColor = Color.Transparent),
+                scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+            ) {
+                Frame {
+                    val shown = if (password) "•".repeat(value.length) else value
+                    Text(shown.ifEmpty { placeholder }, color = if (shown.isEmpty()) C.faint else Color.White, fontSize = 18.sp, maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 }
-            },
-            decorationBox = { inner ->
-                Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(if (focused) C.fill3 else C.fill1)
-                        .border(2.dp, if (focused) Color.White else C.line, RoundedCornerShape(12.dp)).padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (icon != null) { Icon(icon, null, Modifier.size(20.dp), tint = C.muted); Spacer(Modifier.width(10.dp)) }
-                    Box(Modifier.weight(1f)) {
-                        if (value.isEmpty() && placeholder.isNotEmpty()) Text(placeholder, color = C.faint, fontSize = 18.sp)
-                        inner()
+            }
+        } else {
+            BasicTextField(
+                value = value, onValueChange = onValueChange, singleLine = true,
+                textStyle = TextStyle(color = Color.White, fontSize = 18.sp),
+                cursorBrush = SolidColor(C.primary),
+                visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
+                keyboardOptions = KeyboardOptions(keyboardType = if (password) KeyboardType.Password else keyboard, imeAction = imeAction, autoCorrectEnabled = false),
+                keyboardActions = KeyboardActions(
+                    onDone = { finish(false); onDone() }, onGo = { finish(false); onDone() }, onSearch = { finish(false); onDone() },
+                    onNext = { finish(true) },
+                ),
+                modifier = Modifier.fillMaxWidth().focusRequester(editFr)
+                    .onFocusChanged { if (!it.isFocused && editing) editing = false }
+                    // yazarken ↑/↓ yazmayı bitirip odağı taşır
+                    .onPreviewKeyEvent { e ->
+                        if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        when (e.key) {
+                            Key.DirectionDown -> { finish(true); true }
+                            Key.DirectionUp -> { editing = false; keyboardCtl?.hide(); focusManager.moveFocus(FocusDirection.Up); true }
+                            else -> false
+                        }
+                    },
+                decorationBox = { inner ->
+                    Frame {
+                        Box(Modifier.weight(1f)) {
+                            if (value.isEmpty() && placeholder.isNotEmpty()) Text(placeholder, color = C.faint, fontSize = 18.sp)
+                            inner()
+                        }
                     }
-                }
-            },
-        )
+                },
+            )
+        }
     }
 }
 
