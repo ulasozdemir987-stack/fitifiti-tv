@@ -58,7 +58,7 @@ fun HeroRowsLayout(
     Box(Modifier.fillMaxSize()) {
         HeroBackdrop(art)
         Column(Modifier.fillMaxSize()) {
-            HeroInfo(shown, art, heroLabel, Modifier.fillMaxWidth().fillMaxHeight(0.44f), primary)
+            HeroInfo(shown, art, heroLabel, Modifier.fillMaxWidth().fillMaxHeight(0.52f), primary)
             CompositionLocalProvider(LocalBringIntoViewSpec provides topAlign) {
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 200.dp)) {
                     rows { shown = it }
@@ -92,10 +92,10 @@ fun HeroInfo(item: Item?, art: HeroArt, label: String?, modifier: Modifier, prim
     val actions = LocalActions.current
     val progress by app.user.progressMap.collectAsStateWithLifecycle()
     val favorites by app.user.favorites.collectAsStateWithLifecycle()
-    Column(modifier.padding(start = 48.dp, top = 72.dp, end = 48.dp), verticalArrangement = Arrangement.Top) {
+    Column(modifier.padding(start = 48.dp, top = 64.dp, end = 48.dp), verticalArrangement = Arrangement.Top) {
         if (item == null) return@Column
         if (label != null) { Text(label, style = MaterialTheme.typography.labelLarge, color = C.muted); Spacer(Modifier.height(8.dp)) }
-        HeroTitle(cardTitle(item.title), art.logo, maxWidthFraction = 0.28f, maxLogoHeight = 84.dp)
+        HeroTitle(cardTitle(item.title), art.logo, maxWidthFraction = 0.28f, maxLogoHeight = 72.dp)
         Spacer(Modifier.height(8.dp))
         val runtime = (item as? Item.M)?.m?.runtimeMin?.takeIf { it > 0 }?.let { com.fitifiti.tv.domain.formatDuration(it, "minutes") }
         MetaRow(listOf(item.year, runtime, item.genre?.split(',', '/', '&')?.take(2)?.joinToString(", ") { it.trim() },
