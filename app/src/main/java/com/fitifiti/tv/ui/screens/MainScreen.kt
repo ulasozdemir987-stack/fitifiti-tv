@@ -133,9 +133,9 @@ private fun rememberSaveableTab() = androidx.compose.runtime.saveable.rememberSa
 private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data.local.ProfileEntity?, onProfiles: () -> Unit, tabFocus: FocusRequester, contentFocus: FocusRequester, contentMem: com.fitifiti.tv.ui.FocusMemory, solid: Boolean = false) {
     // çubuktaki her öğeden ↓ = içerikte en son odaklanan öğe, yoksa içeriğin ilk öğesi
     // (FocusProperties en yakın odak hedefine kadar üstteki düğümlerden, her aramada yeniden okunur)
-    Box(Modifier.focusProperties { down = contentMem.last ?: contentFocus }.fillMaxWidth().background(if (solid) Brush.verticalGradient(0f to C.bg, 0.82f to C.bg, 1f to C.bg.copy(alpha = 0f)) else Brush.verticalGradient(listOf(C.bg.copy(alpha = 0.85f), Color.Transparent))).padding(horizontal = 48.dp, vertical = 20.dp)) {
+    Box(Modifier.focusProperties { down = contentMem.last ?: contentFocus }.fillMaxWidth().background(if (solid) Brush.verticalGradient(0f to C.bg, 0.82f to C.bg, 1f to C.bg.copy(alpha = 0f)) else Brush.verticalGradient(listOf(C.bg.copy(alpha = 0.85f), Color.Transparent))).padding(horizontal = 48.dp, vertical = 12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            BrandLogo(26)
+            BrandLogo(22)
             Spacer(Modifier.width(40.dp))
             listOf(Tab.Home, Tab.Movies, Tab.Series, Tab.Live, Tab.Listem).forEach { t ->
                 NavText(t.label, t == tab, { onTab(t) }, if (t == tab) Modifier.focusRequester(tabFocus) else Modifier)
@@ -145,12 +145,12 @@ private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data
             NavIcon(Icons.Default.Settings, "Ayarlar", tab == Tab.Settings) { onTab(Tab.Settings) }
             Spacer(Modifier.width(10.dp))
             if (profile != null) Surface(
-                onClick = onProfiles, modifier = Modifier.size(38.dp),
+                onClick = onProfiles, modifier = Modifier.size(34.dp),
                 shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
                 colors = ClickableSurfaceDefaults.colors(containerColor = Color.Transparent, focusedContainerColor = Color.Transparent),
                 border = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.dp, Color.White), shape = RoundedCornerShape(8.dp))),
                 scale = ClickableSurfaceDefaults.scale(focusedScale = 1.12f),
-            ) { Avatar(profile.name, profile.avatar, 38.dp) }
+            ) { Avatar(profile.name, profile.avatar, 34.dp) }
         }
     }
 }
@@ -168,7 +168,7 @@ private fun NavText(label: String, selected: Boolean, onClick: () -> Unit, modif
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.04f),
     ) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(label, fontSize = 17.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium)
+            Text(label, fontSize = 15.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium)
             Spacer(Modifier.height(5.dp))
             Box(Modifier.width(22.dp).height(2.dp).clip(RoundedCornerShape(2.dp)).background(if (selected) C.primary else Color.Transparent))
         }
@@ -178,11 +178,11 @@ private fun NavText(label: String, selected: Boolean, onClick: () -> Unit, modif
 @Composable
 private fun NavIcon(icon: ImageVector, label: String, selected: Boolean, onClick: () -> Unit) {
     Surface(
-        onClick = onClick, modifier = Modifier.padding(horizontal = 4.dp).size(44.dp),
+        onClick = onClick, modifier = Modifier.padding(horizontal = 4.dp).size(38.dp),
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(50)),
         colors = ClickableSurfaceDefaults.colors(containerColor = if (selected) C.fill3 else Color.Transparent, focusedContainerColor = Color.White, contentColor = Color.White, focusedContentColor = Color.Black),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),
-    ) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(icon, label, Modifier.size(22.dp)) } }
+    ) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(icon, label, Modifier.size(19.dp)) } }
 }
 
 /** İlk açılış: gerçek adım + ilerleme çizgisi (sonraki açılışlarda önbellek anında gelir) */

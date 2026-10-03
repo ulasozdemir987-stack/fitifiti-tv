@@ -43,12 +43,12 @@ val Manrope = FontFamily(
 val Display = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.03).em, color = Color.White)
 
 private val typography = Typography(
-    displayLarge = Display.copy(fontSize = 52.sp, lineHeight = 56.sp),
+    displayLarge = Display.copy(fontSize = 42.sp, lineHeight = 46.sp),
     displayMedium = Display.copy(fontSize = 40.sp, lineHeight = 44.sp),
-    headlineSmall = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.SemiBold),
+    headlineSmall = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
     titleLarge = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
     titleMedium = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
-    bodyLarge = TextStyle(fontSize = 17.sp, lineHeight = 26.sp),
+    bodyLarge = TextStyle(fontSize = 15.sp, lineHeight = 22.sp),
     bodyMedium = TextStyle(fontSize = 15.sp, lineHeight = 22.sp),
     bodySmall = TextStyle(fontSize = 13.sp, lineHeight = 18.sp),
     labelLarge = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),

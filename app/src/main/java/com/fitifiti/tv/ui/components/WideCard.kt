@@ -34,7 +34,7 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun WideCard(
-    item: Item, onClick: () -> Unit, modifier: Modifier = Modifier, width: Dp = 268.dp,
+    item: Item, onClick: () -> Unit, modifier: Modifier = Modifier, width: Dp = 196.dp,
     progress: Float? = null, watched: Boolean = false, badge: String? = null, rank: Int? = null,
     onFocus: (() -> Unit)? = null, showText: Boolean = false,
 ) {
@@ -53,15 +53,15 @@ fun WideCard(
     }
     Row(modifier, verticalAlignment = Alignment.Bottom) {
         // Prime'daki "Top 10" gibi: kartın solunda büyük, içi boş görünen sıra numarası
-        if (rank != null) Text("$rank", style = Display.copy(fontSize = 96.sp, color = Color(0x33FFFFFF), letterSpacing = (-6).sp),
-            modifier = Modifier.padding(end = 4.dp).offset(y = 14.dp))
+        if (rank != null) Text("$rank", style = Display.copy(fontSize = 72.sp, color = Color(0x33FFFFFF), letterSpacing = (-4).sp),
+            modifier = Modifier.padding(end = 2.dp).offset(y = 10.dp))
         Column(Modifier.width(width)) {
             Surface(
                 onClick = onClick,
                 modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).rememberFocus().then(if (onFocus != null) Modifier.focusReport(onFocus = onFocus) else Modifier),
                 shape = ClickableSurfaceDefaults.shape(WideShape),
                 colors = ClickableSurfaceDefaults.colors(containerColor = C.panel, focusedContainerColor = C.panel),
-                scale = ClickableSurfaceDefaults.scale(focusedScale = 1.08f),
+                scale = ClickableSurfaceDefaults.scale(focusedScale = 1.07f),
                 border = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, Color.White), shape = WideShape)),
             ) {
                 Box(Modifier.fillMaxSize()) {
@@ -73,11 +73,11 @@ fun WideCard(
                     }
                     // alttan karartma: logo/ad okunur kalsın
                     Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xCC000000))))
-                    Box(Modifier.align(Alignment.BottomStart).fillMaxWidth(if (bd == null && !item.image.isNullOrBlank()) 0.6f else 0.85f).padding(12.dp)) {
+                    Box(Modifier.align(Alignment.BottomStart).fillMaxWidth(if (bd == null && !item.image.isNullOrBlank()) 0.6f else 0.85f).padding(9.dp)) {
                         val lg = logo
                         if (lg != null && bd != null) AsyncImage(model = lg, contentDescription = item.title, contentScale = ContentScale.Fit, alignment = Alignment.BottomStart,
-                            modifier = Modifier.fillMaxWidth(0.7f).heightIn(max = 48.dp))
-                        else Text(cardTitle(item.title), style = Display.copy(fontSize = 17.sp), color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            modifier = Modifier.fillMaxWidth(0.7f).heightIn(max = 32.dp))
+                        else Text(cardTitle(item.title), style = Display.copy(fontSize = 14.sp), color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                     if (watched) Row(Modifier.align(Alignment.TopStart).padding(8.dp).clip(RoundedCornerShape(50)).background(Color(0xBF000000)).padding(horizontal = 8.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Check, null, Modifier.size(12.dp), tint = Color(0xFF6EE7B7)); Spacer(Modifier.width(3.dp))

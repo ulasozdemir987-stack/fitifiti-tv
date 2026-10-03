@@ -105,7 +105,7 @@ fun Chip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifie
 
 @Composable
 fun SectionTitle(text: String, modifier: Modifier = Modifier) =
-    Text(text, style = MaterialTheme.typography.headlineSmall, color = Color.White, modifier = modifier.padding(start = 48.dp, bottom = 12.dp))
+    Text(text, style = MaterialTheme.typography.headlineSmall, color = Color.White, modifier = modifier.padding(start = 48.dp, bottom = 8.dp))
 
 /** Yükleniyor görünümü: yavaşça parıldayan kutu (sitedeki .skeleton) */
 @Composable

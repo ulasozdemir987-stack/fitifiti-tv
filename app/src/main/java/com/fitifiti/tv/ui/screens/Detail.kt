@@ -151,7 +151,7 @@ fun LazyListScope.plainPosterRow(key: String, title: String, all: List<Item>) {
             SectionTitle(title)
             CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
                 LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                    items(items, key = { it.key }) { WideCard(it, onClick = { open(actions, it) }, width = 268.dp, showText = true) }
+                    items(items, key = { it.key }) { WideCard(it, onClick = { open(actions, it) }, width = 196.dp, showText = true) }
                 }
             }
         }
