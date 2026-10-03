@@ -20,7 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
@@ -55,6 +54,9 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
     val catalog by app.catalog.catalog.collectAsStateWithLifecycle()
     val tabFocus = remember { FocusRequester() }
     val contentFocus = remember { FocusRequester() }
+    val screenMem = com.fitifiti.tv.ui.LocalFocusMemory.current
+    // sekme içeriğinin son odaklanan öğesi (ekran katmanının hafızasına da yazar)
+    val contentMem = remember(screenMem) { com.fitifiti.tv.ui.FocusMemory(screenMem) }
     val profileId by app.user.profileId.collectAsStateWithLifecycle()
     val profile by produceState<com.fitifiti.tv.data.local.ProfileEntity?>(null, profileId) { value = app.db.profiles().get(profileId) }
 
@@ -90,7 +92,8 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
         Box(Modifier.fillMaxSize()) {
             // Üst çubuktan ↓: odak doğrudan içeriğe (son odaklanan öğeye) iner. Yön araması yalnız alt alta hizalı öğe
             // arar; sağdaki Ara/Ayarlar simgelerinin altında öğe olmayınca (Ayarlar satırları solda) hiç inmiyordu.
-            Box(Modifier.fillMaxSize().focusRequester(contentFocus).focusRestorer().focusGroup()) {
+            Box(Modifier.fillMaxSize().mainContentFocus(contentFocus)) {
+            CompositionLocalProvider(com.fitifiti.tv.ui.LocalFocusMemory provides contentMem) {
             holder.SaveableStateProvider(tab.name) {
                 when (tab) {
                     Tab.Home -> HomeScreen()
@@ -103,8 +106,9 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
                 }
             }
             }
+            }
             AnimatedVisibility(!bar.hidden, enter = fadeIn() + slideInVertically { -it }, exit = fadeOut() + slideOutVertically { -it }) {
-                TopBar(tab, { if (it != tab) { tab = it; bar.hidden = false } }, profile, onProfiles, tabFocus, contentFocus)
+                TopBar(tab, { if (it != tab) { tab = it; bar.hidden = false } }, profile, onProfiles, tabFocus, contentFocus, contentMem)
             }
         }
     }
@@ -114,9 +118,10 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
 private fun rememberSaveableTab() = androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(Tab.Home) }
 
 @Composable
-private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data.local.ProfileEntity?, onProfiles: () -> Unit, tabFocus: FocusRequester, contentFocus: FocusRequester) {
-    // çubuktaki her öğeden ↓ = içerik (FocusProperties en yakın odak hedefine kadar üstteki düğümlerden okunur)
-    Box(Modifier.focusProperties { down = contentFocus }.fillMaxWidth().background(Brush.verticalGradient(listOf(C.bg.copy(alpha = 0.85f), Color.Transparent))).padding(horizontal = 48.dp, vertical = 20.dp)) {
+private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data.local.ProfileEntity?, onProfiles: () -> Unit, tabFocus: FocusRequester, contentFocus: FocusRequester, contentMem: com.fitifiti.tv.ui.FocusMemory) {
+    // çubuktaki her öğeden ↓ = içerikte en son odaklanan öğe, yoksa içeriğin ilk öğesi
+    // (FocusProperties en yakın odak hedefine kadar üstteki düğümlerden, her aramada yeniden okunur)
+    Box(Modifier.focusProperties { down = contentMem.last ?: contentFocus }.fillMaxWidth().background(Brush.verticalGradient(listOf(C.bg.copy(alpha = 0.85f), Color.Transparent))).padding(horizontal = 48.dp, vertical = 20.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             BrandLogo(26)
             Spacer(Modifier.width(40.dp))
@@ -185,3 +190,6 @@ private fun LoadingCatalog(step: String, progress: Float) {
         }
     }
 }
+
+/** Sekme içeriğinin odak grubu (focusRestorer YOK — bkz. FocusMemory): üst çubuktan ↓ buraya iner */
+fun Modifier.mainContentFocus(fr: FocusRequester): Modifier = this.focusRequester(fr).focusGroup()

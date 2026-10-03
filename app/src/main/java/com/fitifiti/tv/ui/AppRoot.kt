@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.layout.layout
 import com.fitifiti.tv.App
@@ -108,13 +107,12 @@ internal fun ScreenLayer(active: Boolean, content: @Composable () -> Unit) {
             // Önce tam olarak en son odaklanan kart; yerleşir yerleşmez (her karede bir deneme, en fazla ~10 kare).
             // Odaksız geçen her an tehlikeli: o sırada basılan yön tuşu odağı sol üstteki sekmeye atıyordu.
             var ok = false
-            val target = mem.last
-            if (target != null) for (i in 0 until 10) {
+            if (mem.last != null) for (i in 0 until 10) {
                 androidx.compose.runtime.withFrameNanos { }
-                runCatching { target.requestFocus() }; ok = mem.current === target
-                if (ok) break
+                ok = mem.restore()
+                if (ok || mem.last == null) break
             }
-            if (!ok) runCatching { fr.restoreFocusedChild() || run { fr.requestFocus(); true } }
+            if (!ok) runCatching { fr.requestFocus() }
         }
     }
     Box(
@@ -122,7 +120,6 @@ internal fun ScreenLayer(active: Boolean, content: @Composable () -> Unit) {
             .layout { m, c -> val p = m.measure(c); layout(p.width, p.height) { if (active) p.place(0, 0) } }
             .focusProperties { canFocus = active }
             .focusRequester(fr)
-            .focusRestorer()
             .focusGroup(),
     ) {
         CompositionLocalProvider(LocalScreenActive provides active, LocalFocusMemory provides mem) { content() }

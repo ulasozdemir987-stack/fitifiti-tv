@@ -34,8 +34,9 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 * Düğme metinleri: "Oynat", "Devam et", "Detaylar", "Listem", "Bölümler".
 
 ## Tuzaklar
+* **`Modifier.focusRestorer()` KULLANMA.** İç içe iki tane (ekran katmanı + sekme içeriği) 2.5.0'da yön tuşlarında `IllegalStateException: Release should only be called once` (LazyLayoutPinnableItem) ile çöktürdü. Yerine `ui/FocusMemory.kt` (`rememberFocus()`, alt hafıza `FocusMemory(parent)`; bileşimden çıkan öğe unutulur). Regresyon testi: `NestedRestorerTest`.
 * **Android TV'de LazyColumn/LazyRow varsayılan kaydırması (`PivotBringIntoViewSpec`) odaktaki öğeyi ekranın üst %30'una çeker** — öğe zaten görünse bile. Detay sayfası bu yüzden "Oynat"a odaklanınca ~300 px kayıyordu. Dikey listelerde `LocalBringIntoViewSpec provides rememberRowSpec(…)` (yalnız gerektiği kadar kaydırır) kullan; `DetailScaffold` bunu yapar.
-* Yön araması yalnız hizalı öğeye gider: üst çubuğun sağındaki simgelerin altında öğe yoksa ↓ hiçbir şey yapmıyordu. Üst çubukta `focusProperties { down = contentFocus }`, içerik `focusRestorer().focusGroup()`.
+* Yön araması yalnız hizalı öğeye gider: üst çubuğun sağındaki simgelerin altında öğe yoksa ↓ hiçbir şey yapmıyordu. Üst çubukta `focusProperties { down = contentMem.last ?: contentFocus }` (içeriğin son odaklanan öğesi, yoksa grubun ilk öğesi), içerik `focusRequester().focusGroup()`.
 * tv-material'da `Surface` dışındaki `Text`'in varsayılan rengi SİYAH (`LocalContentColor` = Black). `FitifitiTheme` kökte beyaz verir; yine de koyu zemindeki metne renk vermeyi unutma.
 * Detay sayfalarında başlık bloğu (ilk LazyColumn öğesi) ekrana SIĞMALI ve `Modifier.detailHead()` taşımalı (içinde odak olunca liste en üste kayar). Taşarsa sayfa kesik açılır, üstü kaydırılamaz ve fragman "aşağı kaydırıldı" sanılıp durur. Ek bilgileri ayrı öğeye koy.
 * Henüz çizilmemiş bir öğeye `requestFocus()` sessizce başarısız olur → oynatıcıda `pendingFocus` + kısa gecikme kullanılıyor.

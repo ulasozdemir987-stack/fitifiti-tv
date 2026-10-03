@@ -38,7 +38,7 @@ class SettingsProbeTest {
         val content = androidx.compose.ui.focus.FocusRequester()
         rule.setContent {
             Box(Modifier.fillMaxSize()) {
-                Box(Modifier.fillMaxSize().focusRequester(content).focusRestorer().focusGroup()) {
+                Box(Modifier.fillMaxSize().focusRequester(content).focusGroup()) {
                 LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 48.dp, end = 48.dp, top = 100.dp, bottom = 80.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     item { Text("Ayarlar") }
                     items(14) { i -> SettingRow("Satır $i", onClick = {}, modifier = Modifier.fillMaxWidth(0.7f).testTag("row$i")) }
