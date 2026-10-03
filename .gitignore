@@ -18,3 +18,4 @@ local.properties
 app/build/
 fitifiti-tv/build/
 /.idea
+!app/debug.keystore

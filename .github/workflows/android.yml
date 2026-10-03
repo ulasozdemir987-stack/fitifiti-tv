@@ -7,6 +7,9 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,3 +36,14 @@ jobs:
           name: fitifiti-tv-debug
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 30
+
+      # main'e her push'ta sabit adrese yayınla: https://github.com/<sahip>/fitifiti-tv/releases/download/latest/fitifiti-tv.apk
+      # (ozul.com.tr/tv.apk buraya yönlendirir)
+      - name: Son sürümü yayınla
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk fitifiti-tv.apk
+          gh release view latest >/dev/null 2>&1 || gh release create latest --title "fıtıfıtı TV · son sürüm" --notes "main dalından otomatik derlenen APK. TV'de: Downloader → ozul.com.tr/tv.apk" --latest
+          gh release upload latest fitifiti-tv.apk --clobber

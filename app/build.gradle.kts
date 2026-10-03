@@ -19,6 +19,14 @@ android {
     }
 
     signingConfigs {
+        // Ortak debug anahtarı (Android'in standart, gizli olmayan debug anahtarı): CI'daki, Android Studio'daki ve
+        // ozul.com.tr/tv.apk'daki derlemeler aynı imzayı taşır → güncelleme eskisinin üstüne kurulur.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         // CI'da gizli anahtarlar varsa imzalı release; yoksa debug anahtarıyla
         create("release") {
             val ks = System.getenv("FITIFITI_KEYSTORE")
