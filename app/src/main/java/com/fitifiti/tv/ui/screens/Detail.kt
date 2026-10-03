@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.onFocusEvent
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,7 +68,12 @@ private val LocalDetailList = staticCompositionLocalOf<androidx.compose.foundati
 fun Modifier.detailHead(): Modifier {
     val list = LocalDetailList.current ?: return this
     val scope = rememberCoroutineScope()
-    return this.onFocusChanged { if (it.hasFocus && (list.firstVisibleItemIndex != 0 || list.firstVisibleItemScrollOffset != 0)) scope.launch { list.animateScrollToItem(0) } }
+    // onFocusEvent: başlık içindeki HER odak değişiminde (yalnız ilk girişte değil) yeniden dener. Bir kare beklenir:
+    // odak hareketinin kendi kaydırması (bringIntoView) önce bitsin, yoksa animasyonu yarıda kesiyordu (gerçek kutuda görüldü).
+    return this.onFocusEvent {
+        if (it.hasFocus && (list.firstVisibleItemIndex != 0 || list.firstVisibleItemScrollOffset != 0))
+            scope.launch { androidx.compose.runtime.withFrameNanos { }; list.animateScrollToItem(0) }
+    }
 }
 
 /** "Sürüm" çipleri (Orijinal dil / Türkçe dublaj / 4K) */
