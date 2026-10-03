@@ -37,7 +37,14 @@ class MainActivity : ComponentActivity() {
     // ve "kayarak" ilerliyordu. Tekrarlar en fazla ~11/sn'ye indirilir (ilk basış hiç beklemez).
     private var lastRepeatAt = 0L
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.keyCode == KeyEvent.KEYCODE_BACK) BackProbe.key(event)
+        // Geri tuşu Compose'a HİÇ verilmez: Compose TV'de geri tuşunu önce "odağı üst gruba taşı" (FocusDirection.Exit)
+        // olarak kullanıp tüketiyordu → iç içe her odak grubu için bir basış gerekiyordu ("3-4 kez basmam gerekiyor").
+        // Doğrudan geri dağıtıcısına (BackHandler'lar) gider. Açılır pencereler kendi penceresinde, etkilenmez.
+        if (event.keyCode == KeyEvent.KEYCODE_BACK) {
+            BackProbe.key(event)
+            if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) { BackProbe.handled(); onBackPressedDispatcher.onBackPressed() }
+            return true
+        }
         if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount > 0 && event.keyCode in DPAD) {
             val now = SystemClock.uptimeMillis()
             if (now - lastRepeatAt < 90) return true
@@ -46,9 +53,6 @@ class MainActivity : ComponentActivity() {
         return super.dispatchKeyEvent(event)
     }
     private val DPAD = setOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT)
-
-    @Deprecated("ComponentActivity hâlâ çağırıyor; yalnız ölçüm için")
-    override fun onBackPressed() { BackProbe.handled(); @Suppress("DEPRECATION") super.onBackPressed() }
 
     override fun onStart() {
         super.onStart()

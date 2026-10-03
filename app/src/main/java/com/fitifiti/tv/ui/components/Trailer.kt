@@ -115,28 +115,67 @@ fun BoxScope.TrailerVideo(spec: TrailerSpec, visible: Boolean) {
         LaunchedEffect(engine, shown, muted) {
             if (shown && !muted) { for (i in 1..15) { val v = 0.6f * i / 15; engine.post { volume = v }; delay(100) } } else engine.post { volume = 0f }
         }
+        // Fragman dosyasına gömülü sinemaskop bantları (2.39:1 film, 16:9 dosya): görüntü oturunca küçük bir kare alıp
+        // üst/alt siyah satırları sayar, kırpmayı ona göre büyütür (yoksa üstte siyah şerit kalıyordu)
+        var bars by remember(u) { mutableFloatStateOf(0f) }
+        val tvRef = remember(u) { arrayOfNulls<TextureView>(1) }
+        LaunchedEffect(shown) {
+            if (!shown) return@LaunchedEffect
+            for (t in listOf(1500L, 4000L, 9000L)) {
+                delay(if (t == 1500L) t else t - 2500L)
+                val bmp = runCatching { tvRef[0]?.getBitmap(48, 27) }.getOrNull() ?: continue
+                bars = maxOf(bars, letterbox(bmp, videoW, videoH, tvRef[0]!!))
+                bmp.recycle()
+            }
+        }
         Box(Modifier.fillMaxWidth(0.78f).fillMaxHeight().align(Alignment.TopEnd).graphicsLayer { this.alpha = alpha }.background(C.bg)) {
             AndroidView(
                 factory = { c -> TextureView(c).apply {
                     isFocusable = false
                     engine.attach(this)
-                    addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> (v.tag as? Pair<*, *>)?.let { (w, h) -> coverCrop(v as TextureView, w as Int, h as Int) } }
+                    tvRef[0] = this
+                    addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> (v.tag as? Triple<*, *, *>)?.let { (w, h, b) -> coverCrop(v as TextureView, w as Int, h as Int, b as Float) } }
                 } },
-                update = { it.tag = videoW to videoH; coverCrop(it, videoW, videoH) },
+                update = { it.tag = Triple(videoW, videoH, bars); coverCrop(it, videoW, videoH, bars) },
                 modifier = Modifier.fillMaxSize(),
             )
         }
     }
 }
 
-/** Görüntüyü kutuyu kaplayacak biçimde büyütür (taşan kenarlar kırpılır); TextureView varsayılanda gerer */
-private fun coverCrop(v: TextureView, vw: Int, vh: Int) {
+/**
+ * Görüntüyü kutuyu kaplayacak biçimde büyütür (taşan kenarlar kırpılır); TextureView varsayılanda gerer.
+ * `bars` = üst ve alttaki siyah bandın her biri, kare yüksekliğinin oranı (0..0.2) — bantlar da kutunun dışına itilir.
+ */
+private fun coverCrop(v: TextureView, vw: Int, vh: Int, bars: Float = 0f) {
     val w = v.width.toFloat(); val h = v.height.toFloat()
     if (w <= 0f || h <= 0f || vw <= 0 || vh <= 0) return
-    val scale = maxOf(w / vw, h / vh)
+    val content = vh * (1f - 2f * bars.coerceIn(0f, 0.2f))
+    val scale = maxOf(w / vw, h / content)
     val m = android.graphics.Matrix()
     m.setScale(vw * scale / w, vh * scale / h, w / 2f, h / 2f)
     v.setTransform(m)
+}
+
+/**
+ * TextureView'dan alınan küçük karede (görünüm koordinatı, mevcut kırpma uygulanmış) üst/alt siyah satırları sayıp
+ * KAYNAK karedeki bant oranını tahmin eder. Görüntü kırpılmış göründüğü için ölçüm kaba; en fazla %20.
+ */
+private fun letterbox(bmp: android.graphics.Bitmap, vw: Int, vh: Int, v: TextureView): Float {
+    fun dark(y: Int): Boolean {
+        var sum = 0
+        for (x in 0 until bmp.width) { val c = bmp.getPixel(x, y); sum += ((c shr 16 and 255) + (c shr 8 and 255) + (c and 255)) / 3 }
+        return sum / bmp.width < 14
+    }
+    var top = 0; while (top < bmp.height / 3 && dark(top)) top++
+    var bot = 0; while (bot < bmp.height / 3 && dark(bmp.height - 1 - bot)) bot++
+    val darkRows = minOf(top, bot) // iki tarafta da olmalı (karanlık sahne değil, bant)
+    if (darkRows == 0 || vw <= 0 || vh <= 0 || v.width <= 0) return 0f
+    // görünümde görünen kaynak yüksekliği oranı: kaplama ölçeğiyle görünüm yüksekliği kaynağın ne kadarını gösteriyor
+    val scale = maxOf(v.width.toFloat() / vw, v.height.toFloat() / vh)
+    val visibleSrc = v.height / scale / vh // görünen kaynak yüksekliği / kaynak yüksekliği
+    val hidden = (1f - visibleSrc) / 2f
+    return (hidden + darkRows.toFloat() / bmp.height * visibleSrc + 0.01f).coerceIn(0f, 0.2f)
 }
 
 /** ExoPlayer'ı kendi iş parçacığında (Looper) çalıştırır; tüm çağrılar o iş parçacığına gönderilir */
