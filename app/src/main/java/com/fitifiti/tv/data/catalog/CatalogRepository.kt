@@ -92,20 +92,22 @@ class CatalogRepository(private val ctx: Context, private val clientFor: (Accoun
         val liveCats = async { runCatching { api.liveCategories() }.getOrDefault(emptyList()) }
         val vc = vodCats.await(); val sc = serCats.await(); val lc = liveCats.await()
         step("Filmler geliyor…", 0.25f)
-        val movies = parseMovies(api.vodStreams(), vc.associate { it.id to it.name })
+        val movies = parseMovies(api, vc.associate { it.id to it.name })
         step("Diziler geliyor…", 0.6f)
-        val series = parseSeries(runCatching { api.series() }.getOrDefault(emptyList()), sc.associate { it.id to it.name })
-        step("Kanallar geliyor…", 0.85f)
+        val series = runCatching { parseSeries(api, sc.associate { it.id to it.name }) }.getOrDefault(emptyList())
+        // Film ve diziler hazır: kanallar inerken uygulama açılsın (kanal listesi büyük hesaplarda en uzun adım)
+        if (!quiet) { set(Catalog(movies, series, emptyList(), vc, sc, lc, System.currentTimeMillis())); _status.value = CatalogStatus.Ready }
         val channels = runCatching { api.liveStreams() }.getOrDefault(emptyList())
         Catalog(movies, series, channels, vc, sc, lc, System.currentTimeMillis())
     }
 
-    private fun yearOf(vararg s: String?) = s.firstNotNullOfOrNull { v -> v?.let { Regex("(?:19|20)\\d{2}").find(it)?.value } }
+    private val yearRe = Regex("(?:19|20)\\d{2}")
+    private fun yearOf(vararg s: String?) = s.firstNotNullOfOrNull { v -> v?.let { yearRe.find(it)?.value } }
 
-    private fun parseMovies(raw: List<JsonObject>, cats: Map<String, String>): List<Movie> {
-        val items = raw.mapNotNull { o ->
-            val id = o.int("stream_id") ?: return@mapNotNull null
-            val name = o.str("name") ?: return@mapNotNull null
+    private suspend fun parseMovies(api: XtreamClient, cats: Map<String, String>): List<Movie> {
+        val items = api.vodStreams { o ->
+            val id = o.int("stream_id") ?: return@vodStreams null
+            val name = o.str("name") ?: return@vodStreams null
             val ext = o.str("container_extension")
             val rating = o.dbl("rating") ?: o.dbl("rating_5based")?.times(2) ?: 0.0
             val m = Movie(
@@ -119,10 +121,10 @@ class CatalogRepository(private val ctx: Context, private val clientFor: (Accoun
         return dedupe(items) { m, v -> m.copy(variants = v) }
     }
 
-    private fun parseSeries(raw: List<JsonObject>, cats: Map<String, String>): List<Series> {
-        val items = raw.mapNotNull { o ->
-            val id = o.int("series_id") ?: return@mapNotNull null
-            val name = o.str("name") ?: return@mapNotNull null
+    private suspend fun parseSeries(api: XtreamClient, cats: Map<String, String>): List<Series> {
+        val items = api.series { o ->
+            val id = o.int("series_id") ?: return@series null
+            val name = o.str("name") ?: return@series null
             val rating = o.dbl("rating") ?: o.dbl("rating_5based")?.times(2) ?: 0.0
             val s = Series(
                 id = id, name = name, cover = o.str("cover"), categoryId = o.str("category_id"), rating = rating,

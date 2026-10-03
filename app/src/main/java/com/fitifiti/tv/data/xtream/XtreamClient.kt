@@ -53,11 +53,26 @@ class XtreamClient(private val http: OkHttpClient, val account: Account) {
         Category(id, o.str("category_name") ?: id)
     }
 
-    suspend fun vodStreams(): List<JsonObject> = call("get_vod_streams").objects()
-    suspend fun series(): List<JsonObject> = call("get_series").objects()
+    /** Büyük listeler akışla okunur (bkz. StreamJson.kt) */
+    private suspend fun <T> stream(action: String, map: (Row) -> T?): List<T> = withContext(Dispatchers.IO) {
+        val url = "$base/player_api.php".toHttpUrlOrNull()?.newBuilder()?.apply {
+            addQueryParameter("username", account.username)
+            addQueryParameter("password", account.password)
+            addQueryParameter("action", action)
+        }?.build() ?: throw XtreamException("Sunucu adresi geçersiz")
+        val req = Request.Builder().url(url).header("User-Agent", BROWSER_UA).header("Accept", "application/json").build()
+        http.newCall(req).execute().use { res ->
+            if (!res.isSuccessful) throw XtreamException("Sunucu hata verdi (HTTP ${res.code})")
+            val body = res.body ?: throw XtreamException("Sunucu boş yanıt verdi")
+            try { readRows(body.byteStream(), map) } catch (e: java.io.IOException) { throw e } catch (e: Exception) { throw XtreamException("Sunucu geçerli bir yanıt vermedi") }
+        }
+    }
 
-    suspend fun liveStreams(): List<Channel> = call("get_live_streams").objects().mapNotNull { o ->
-        val id = o.int("stream_id") ?: return@mapNotNull null
+    suspend fun <T> vodStreams(map: (Row) -> T?): List<T> = stream("get_vod_streams", map)
+    suspend fun <T> series(map: (Row) -> T?): List<T> = stream("get_series", map)
+
+    suspend fun liveStreams(): List<Channel> = stream("get_live_streams") { o ->
+        val id = o.int("stream_id") ?: return@stream null
         Channel(id, o.str("name") ?: "Kanal $id", o.str("stream_icon"), o.str("category_id"), o.int("num") ?: 0, o.str("epg_channel_id"))
     }
 
