@@ -119,7 +119,7 @@ fun BoxScope.TrailerVideo(spec: TrailerSpec, visible: Boolean) {
             AndroidView(
                 factory = { c -> TextureView(c).apply {
                     isFocusable = false
-                    engine.post { setVideoTextureView(this@apply) }
+                    engine.attach(this)
                     addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ -> (v.tag as? Pair<*, *>)?.let { (w, h) -> coverCrop(v as TextureView, w as Int, h as Int) } }
                 } },
                 update = { it.tag = videoW to videoH; coverCrop(it, videoW, videoH) },
@@ -169,6 +169,35 @@ private class TrailerEngine(ctx: Context, http: okhttp3.OkHttpClient, url: Strin
     }
 
     fun post(f: ExoPlayer.() -> Unit) { handler.post { player?.let { runCatching { it.f() } } } }
+
+    /**
+     * Yüzeyi kendimiz yönetiriz: `setVideoTextureView` kullanılsaydı ExoPlayer TextureView'a dinleyici takar ve görünüm
+     * ana iş parçacığında kaldırılırken (sayfadan çıkış) oynatıcının iş parçacığı dışından çağrılıp çökerdi
+     * ("ListenerSet.verifyCurrentThread", 2.5.1). SurfaceTexture'ı oynatıcı yüzeyi bıraktıktan SONRA serbest bırakırız.
+     */
+    fun attach(tv: TextureView) {
+        fun use(st: android.graphics.SurfaceTexture) {
+            val surface = android.view.Surface(st)
+            surfaces[st] = surface
+            post { setVideoSurface(surface) }
+        }
+        tv.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+            override fun onSurfaceTextureAvailable(st: android.graphics.SurfaceTexture, w: Int, h: Int) = use(st)
+            override fun onSurfaceTextureSizeChanged(st: android.graphics.SurfaceTexture, w: Int, h: Int) {}
+            override fun onSurfaceTextureUpdated(st: android.graphics.SurfaceTexture) {}
+            override fun onSurfaceTextureDestroyed(st: android.graphics.SurfaceTexture): Boolean {
+                val surface = surfaces.remove(st)
+                handler.post {
+                    if (surface != null) runCatching { player?.clearVideoSurface(surface) }
+                    surface?.release()
+                    Handler(Looper.getMainLooper()).post { st.release() }
+                }
+                return false // SurfaceTexture'ı yukarıda, oynatıcı bıraktıktan sonra biz serbest bırakıyoruz
+            }
+        }
+        tv.surfaceTexture?.let { if (tv.isAvailable) use(it) }
+    }
+    private val surfaces = java.util.concurrent.ConcurrentHashMap<android.graphics.SurfaceTexture, android.view.Surface>()
 
     fun release() {
         listener = null
