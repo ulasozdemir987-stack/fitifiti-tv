@@ -91,6 +91,7 @@ class XtreamClient(private val http: OkHttpClient, val account: Account) {
             tmdbId = i.str("tmdb_id") ?: i.str("tmdb"),
             country = i.str("country"),
             age = i.str("age") ?: i.str("mpaa_rating"),
+            trailer = i.str("youtube_trailer") ?: i.str("trailer"),
         )
     }
 
@@ -127,6 +128,7 @@ class XtreamClient(private val http: OkHttpClient, val account: Account) {
             seasons = seasons, plot = info?.str("plot"), cast = info?.str("cast"), director = info?.str("director"),
             genre = info?.str("genre"), backdrop = info?.firstStr("backdrop_path") ?: info?.str("cover"),
             releaseDate = info?.str("releaseDate") ?: info?.str("release_date"), rating = info?.dbl("rating") ?: 0.0,
+            trailer = info?.str("youtube_trailer"),
         )
     }
 

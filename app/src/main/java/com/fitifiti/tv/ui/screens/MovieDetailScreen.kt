@@ -54,7 +54,7 @@ fun MovieDetailScreen(m: Movie) {
     LaunchedEffect(Unit) { delay(120); runCatching { playFocus.requestFocus() } }
     val h = LocalConfiguration.current.screenHeightDp
 
-    DetailScaffold(art.copy(backdrop = art.backdrop ?: info.backdrop)) {
+    DetailScaffold(art.copy(backdrop = art.backdrop ?: info.backdrop), TrailerSpec("movie", m.name, m.year, info.trailer)) {
         item(key = "head") {
             Column(Modifier.heightIn(min = (h * 0.9f).dp).padding(start = 48.dp, end = 48.dp, top = 64.dp, bottom = 24.dp), verticalArrangement = Arrangement.Bottom) {
                 HeroTitle(title, art.logo, maxWidthFraction = 0.4f)

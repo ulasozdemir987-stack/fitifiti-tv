@@ -46,6 +46,8 @@ fun SettingsScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAd
         item { SettingRow("Telefonu kumanda yap", hint = "QR'ı okut; yön tuşları, oynatma ve klavye telefondan. Aynı Wi-Fi gerekmez.", onClick = { pair = true }, icon = Icons.Default.PhoneAndroid, modifier = Modifier.fillMaxWidth(0.7f)) }
 
         item { Section("Oynatma") }
+        item { SettingRow("Fragmanı otomatik oynat", if (s.trailerAutoplay) "Açık" else "Kapalı", hint = "Film ve dizi sayfasında", onClick = { app.settings.update { it.copy(trailerAutoplay = !it.trailerAutoplay) } }, icon = Icons.Default.Movie, modifier = Modifier.fillMaxWidth(0.7f)) }
+        item { SettingRow("Fragman sesi", if (s.trailerSound) "Açık" else "Kapalı", onClick = { app.settings.update { it.copy(trailerSound = !it.trailerSound) } }, icon = Icons.Default.VolumeUp, modifier = Modifier.fillMaxWidth(0.7f)) }
         item { SettingRow("Sonraki bölümü otomatik oynat", if (s.autoNext) "Açık" else "Kapalı", onClick = { app.settings.update { it.copy(autoNext = !it.autoNext) } }, icon = Icons.Default.SkipNext, modifier = Modifier.fillMaxWidth(0.7f)) }
         item { SettingRow("“Girişi atla” düğmesi", if (s.skipIntro) "Açık" else "Kapalı", hint = "Bölümün ilk dakikalarında görünür, 85 sn ileri sarar", onClick = { app.settings.update { it.copy(skipIntro = !it.skipIntro) } }, icon = Icons.Default.FastForward, modifier = Modifier.fillMaxWidth(0.7f)) }
         item {

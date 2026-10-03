@@ -27,6 +27,7 @@ class App : Application(), ImageLoaderFactory {
     lateinit var catalog: CatalogRepository
     lateinit var user: UserData
     lateinit var art: ArtRepository
+    lateinit var trailers: com.fitifiti.tv.data.trailer.TrailerRepository
     lateinit var remote: com.fitifiti.tv.data.remote.RemoteLink
 
     fun client(a: Account = accounts.active!!) = XtreamClient(http, a)
@@ -58,6 +59,7 @@ class App : Application(), ImageLoaderFactory {
         catalog = CatalogRepository(this) { XtreamClient(http, it) }
         user = UserData(db)
         art = ArtRepository(http) { settings.value.tmdbKey }
+        trailers = com.fitifiti.tv.data.trailer.TrailerRepository(http)
         remote = com.fitifiti.tv.data.remote.RemoteLink(this, http)
     }
 

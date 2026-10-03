@@ -1,5 +1,6 @@
 package com.fitifiti.tv.ui.screens
 
+import androidx.compose.foundation.lazy.rememberLazyListState
 import com.fitifiti.tv.ui.rememberFocus
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -33,10 +34,13 @@ import com.fitifiti.tv.ui.theme.Display
 
 /** Detay sayfası iskeleti: kenardan kenara sahne görseli + kaydırılabilir içerik */
 @Composable
-fun DetailScaffold(art: HeroArt, content: LazyListScope.() -> Unit) {
+fun DetailScaffold(art: HeroArt, trailer: TrailerSpec? = null, content: LazyListScope.() -> Unit) {
+    val list = rememberLazyListState()
+    // fragman yalnız sayfanın tepesindeyken oynar (bölümlere / oyunculara inince durur)
+    val atTop by remember { derivedStateOf { list.firstVisibleItemIndex == 0 && list.firstVisibleItemScrollOffset < 260 } }
     Box(Modifier.fillMaxSize().background(C.bg)) {
-        HeroBackdrop(art)
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 80.dp), content = content)
+        HeroBackdrop(art, video = trailer?.let { t -> { TrailerVideo(t, atTop) } })
+        LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 80.dp), content = content)
     }
 }
 

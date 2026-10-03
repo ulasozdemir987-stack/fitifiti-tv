@@ -106,7 +106,7 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
     LaunchedEffect(Unit) { delay(150); runCatching { playFocus.requestFocus() } }
     val h = LocalConfiguration.current.screenHeightDp
 
-    DetailScaffold(art.copy(backdrop = art.backdrop ?: info?.backdrop ?: s.backdrop)) {
+    DetailScaffold(art.copy(backdrop = art.backdrop ?: info?.backdrop ?: s.backdrop), TrailerSpec("series", s.name, s.year, info?.trailer)) {
         item(key = "head") {
             Column(Modifier.heightIn(min = (h * 0.62f).dp).padding(start = 48.dp, end = 48.dp, top = 64.dp, bottom = 18.dp), verticalArrangement = Arrangement.Bottom) {
                 HeroTitle(title, art.logo, maxWidthFraction = 0.4f)

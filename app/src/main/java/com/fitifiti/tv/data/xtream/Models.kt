@@ -80,6 +80,7 @@ data class SeriesInfo(
     val backdrop: String? = null,
     val releaseDate: String? = null,
     val rating: Double = 0.0,
+    val trailer: String? = null,
 )
 
 data class VodInfo(
@@ -94,6 +95,7 @@ data class VodInfo(
     val tmdbId: String? = null,
     val country: String? = null,
     val age: String? = null,
+    val trailer: String? = null,
 )
 
 data class EpgItem(val title: String, val description: String, val start: Long, val end: Long)

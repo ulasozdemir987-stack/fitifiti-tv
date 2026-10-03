@@ -11,6 +11,8 @@ data class AppSettings(
     val subtitleLang: String = "tr",
     val subtitleScale: Float = 1f,
     val lastProfileId: Long = -1,
+    val trailerAutoplay: Boolean = true,
+    val trailerSound: Boolean = true,
 )
 
 /** Cihaza özel ayarlar (sitedeki lib/settings.ts karşılığı) */
@@ -27,12 +29,15 @@ class SettingsStore(ctx: Context) {
         subtitleLang = p.getString("subtitleLang", "tr") ?: "tr",
         subtitleScale = p.getFloat("subtitleScale", 1f),
         lastProfileId = p.getLong("lastProfileId", -1),
+        trailerAutoplay = p.getBoolean("trailerAutoplay", true),
+        trailerSound = p.getBoolean("trailerSound", true),
     )
 
     fun update(f: (AppSettings) -> AppSettings) {
         val n = f(_s.value)
         p.edit().putString("tmdbKey", n.tmdbKey).putBoolean("autoNext", n.autoNext).putBoolean("skipIntro", n.skipIntro)
-            .putString("subtitleLang", n.subtitleLang).putFloat("subtitleScale", n.subtitleScale).putLong("lastProfileId", n.lastProfileId).apply()
+            .putString("subtitleLang", n.subtitleLang).putFloat("subtitleScale", n.subtitleScale).putLong("lastProfileId", n.lastProfileId)
+            .putBoolean("trailerAutoplay", n.trailerAutoplay).putBoolean("trailerSound", n.trailerSound).apply()
         _s.value = n
     }
 
