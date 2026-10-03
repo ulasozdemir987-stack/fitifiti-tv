@@ -135,9 +135,11 @@ fun HeroButtons(item: Item, progress: Map<String, ProgressEntity>, fav: Boolean,
 /** Vitrinli sayfalardaki afiş şeridi (ad vitrinde göründüğü için kartın altında yazı yok) */
 @OptIn(ExperimentalFoundationApi::class)
 fun LazyListScope.posterRow(
-    key: String, title: String, items: List<Item>, onFocusItem: (Item) -> Unit, ranked: Boolean = false, width: Dp = 130.dp,
+    key: String, title: String, all: List<Item>, onFocusItem: (Item) -> Unit, ranked: Boolean = false, width: Dp = 130.dp,
     badge: (Item) -> String? = { null },
 ) {
+    // Aynı anahtar iki kez geçerse LazyRow uygulamayı düşürür (bazı sağlayıcılar aynı içeriği tekrar verir)
+    val items = all.distinctBy { it.key }
     if (items.isEmpty()) return
     item(key = key) {
         val app = App.instance
@@ -172,7 +174,7 @@ fun LazyListScope.continueRow(list: List<ProgressEntity>, onFocusItem: (Item) ->
             SectionTitle("İzlemeye devam et")
             CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
             LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                items(list, key = { it.key }) { p ->
+                items(list.distinctBy { it.key }, key = { it.key }) { p ->
                     val item: Item? = if (p.kind == "movie") cat.movieById[p.itemId.toIntOrNull() ?: -1]?.item() else p.seriesId?.let { cat.seriesById[it] }?.item()
                     val art = rememberArt(item)
                     val remaining = if (p.durationMs > 0) com.fitifiti.tv.domain.formatDuration((p.durationMs - p.positionMs) / 1000) + " kaldı" else null

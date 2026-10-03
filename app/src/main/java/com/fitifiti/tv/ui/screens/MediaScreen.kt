@@ -26,17 +26,25 @@ fun MediaScreen(kind: String) {
     val rank = remember(cat) { Ranking.of(cat) }
     val movie = kind == "movie"
     val myCont = remember(cont) { cont.filter { (it.kind == "movie") == movie } }
-    val featured = if (movie) rank.featuredMovies.map { it.item() } else rank.featuredSeries.map { it.item() }
     val cats = remember(cat, kind) { categoryItems(cat, kind) }
+    val rows = remember(rank, kind) {
+        object {
+            val featured = if (movie) rank.featuredMovies.map { it.item() } else rank.featuredSeries.map { it.item() }
+            val new = if (movie) rank.newMovies.map { it.item() } else rank.newSeries.map { it.item() }
+            val top = if (movie) rank.topMovies.map { it.item() } else rank.topSeries.map { it.item() }
+            val genres = rank.genreRows(kind, 4).map { (g, l) -> g to l.map { if (it is com.fitifiti.tv.data.xtream.Movie) it.item() else (it as com.fitifiti.tv.data.xtream.Series).item() } }
+        }
+    }
+    val featured = rows.featured
 
     HeroRowsLayout(featured.firstOrNull()) { onFocus ->
         continueRow(myCont, onFocus)
         posterRow("feat", if (movie) "Öne çıkan filmler" else "Öne çıkan diziler", featured, onFocus)
-        posterRow("new", "Yeni eklenenler", if (movie) rank.newMovies.map { it.item() } else rank.newSeries.map { it.item() }, onFocus)
+        posterRow("new", "Yeni eklenenler", rows.new, onFocus)
         categoryRow(kind, cats)
-        posterRow("top", "En beğenilenler", if (movie) rank.topMovies.map { it.item() } else rank.topSeries.map { it.item() }, onFocus, ranked = true)
+        posterRow("top", "En beğenilenler", rows.top, onFocus, ranked = true)
         cats.take(10).forEach { (c, items) -> posterRow("c-${c.id}", categoryLabel(c.name), items.take(24), onFocus) }
-        rank.genreRows(kind, 4).forEach { (g, list) -> posterRow("g-$g", g, list.map { if (it is com.fitifiti.tv.data.xtream.Movie) it.item() else (it as com.fitifiti.tv.data.xtream.Series).item() }, onFocus) }
+        rows.genres.forEach { (g, list) -> posterRow("g-$g", g, list, onFocus) }
     }
 }
 
@@ -45,7 +53,7 @@ fun categoryItems(cat: Catalog, kind: String): List<Pair<com.fitifiti.tv.data.xt
     val movie = kind == "movie"
     val byCat: Map<String?, List<Item>> = if (movie) cat.movies.sortedByDescending { it.added }.groupBy({ it.categoryId }, { it.item() })
     else cat.series.sortedByDescending { it.added }.groupBy({ it.categoryId }, { it.item() })
-    return cat.sortedCats(if (movie) cat.vodCats else cat.seriesCats).mapNotNull { c -> byCat[c.id]?.takeIf { it.isNotEmpty() }?.let { c to it } }
+    return cat.sortedCats(if (movie) cat.vodCats else cat.seriesCats).distinctBy { it.id }.mapNotNull { c -> byCat[c.id]?.takeIf { it.isNotEmpty() }?.let { c to it } }
 }
 
 @OptIn(ExperimentalFoundationApi::class)

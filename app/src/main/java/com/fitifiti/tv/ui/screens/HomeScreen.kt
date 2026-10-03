@@ -39,18 +39,27 @@ fun HomeScreen() {
         (r + cat.channels.take(40)).distinctBy { it.id }.take(20)
     }
     val doFocus = remember { !initialFocusDone.also { initialFocusDone = true } }
+    // Şerit listeleri bir kez kurulur (vitrin her odak değişiminde yeniden çizilir)
+    val rows = remember(rank) {
+        object {
+            val fm = rank.featuredMovies.map { it.item() }; val fs = rank.featuredSeries.map { it.item() }
+            val nm = rank.newMovies.map { it.item() }; val ns = rank.newSeries.map { it.item() }; val tm = rank.topMovies.map { it.item() }
+            val gm = rank.genreRows("movie", 3).map { (g, l) -> g to l.map { (it as Movie).item() } }
+            val gs = rank.genreRows("series", 2).map { (g, l) -> g to l.map { (it as Series).item() } }
+        }
+    }
 
     HeroRowsLayout(first, requestInitialFocus = doFocus) { onFocus ->
         continueRow(cont, onFocus)
         posterRow("listem", "Listem", listem, onFocus)
-        posterRow("fm", "Öne çıkan filmler", rank.featuredMovies.map { it.item() }, onFocus)
-        posterRow("fs", "Öne çıkan diziler", rank.featuredSeries.map { it.item() }, onFocus)
+        posterRow("fm", "Öne çıkan filmler", rows.fm, onFocus)
+        posterRow("fs", "Öne çıkan diziler", rows.fs, onFocus)
         channelRow("live", "Canlı TV", channels, recentCh.map { it.channelId }.toSet())
-        posterRow("nm", "Yeni eklenen filmler", rank.newMovies.map { it.item() }, onFocus)
-        posterRow("ns", "Yeni eklenen diziler", rank.newSeries.map { it.item() }, onFocus)
-        posterRow("tm", "En beğenilen filmler", rank.topMovies.map { it.item() }, onFocus, ranked = true)
-        rank.genreRows("movie", 3).forEach { (g, list) -> posterRow("g-$g", g, list.map { (it as Movie).item() }, onFocus) }
-        rank.genreRows("series", 2).forEach { (g, list) -> posterRow("gs-$g", "$g dizileri", list.map { (it as Series).item() }, onFocus) }
+        posterRow("nm", "Yeni eklenen filmler", rows.nm, onFocus)
+        posterRow("ns", "Yeni eklenen diziler", rows.ns, onFocus)
+        posterRow("tm", "En beğenilen filmler", rows.tm, onFocus, ranked = true)
+        rows.gm.forEach { (g, list) -> posterRow("g-$g", g, list, onFocus) }
+        rows.gs.forEach { (g, list) -> posterRow("gs-$g", "$g dizileri", list, onFocus) }
     }
 }
 
@@ -64,7 +73,7 @@ fun LazyListScope.channelRow(key: String, title: String, channels: List<Channel>
             SectionTitle(title)
             CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
                 LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    items(channels, key = { it.id }) { ch ->
+                    items(channels.distinctBy { it.id }, key = { it.id }) { ch ->
                         ChannelCard(ch, { actions.playChannel(ch.id, ids) }, width = 220.dp, label = if (ch.id in recent) "son izlenen" else null)
                     }
                 }

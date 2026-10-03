@@ -59,7 +59,7 @@ fun LiveScreen() {
         LazyColumn(Modifier.width(280.dp).fillMaxHeight(), contentPadding = PaddingValues(start = 36.dp, end = 12.dp, bottom = 60.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             if (recent.isNotEmpty()) item { CatItem("Son izlenenler", selected == RECENT) { selected = RECENT } }
             item { CatItem("Tüm kanallar", selected == ALL) { selected = ALL } }
-            items(cats, key = { it.id }) { c -> CatItem(categoryLabel(c.name), selected == c.id) { selected = c.id } }
+            items(cats.distinctBy { it.id }, key = { it.id }) { c -> CatItem(categoryLabel(c.name), selected == c.id) { selected = c.id } }
         }
         LazyVerticalGrid(
             state = grid, columns = GridCells.Adaptive(220.dp), modifier = Modifier.weight(1f).fillMaxHeight(),
@@ -67,7 +67,7 @@ fun LiveScreen() {
             horizontalArrangement = Arrangement.spacedBy(18.dp), verticalArrangement = Arrangement.spacedBy(22.dp),
         ) {
             if (channels.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) { EmptyState("Bu kategoride kanal yok") }
-            items(channels, key = { it.id }) { ch -> ChannelCard(ch, { actions.playChannel(ch.id, ids) }, width = 220.dp) }
+            items(channels.distinctBy { it.id }, key = { it.id }) { ch -> ChannelCard(ch, { actions.playChannel(ch.id, ids) }, width = 220.dp) }
         }
     }
 }

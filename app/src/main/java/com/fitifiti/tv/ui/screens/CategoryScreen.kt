@@ -91,7 +91,7 @@ fun CategoryScreen(kind: String, categoryId: String?, genre: String?) {
                 }
             }
             if (shown.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) { EmptyState("Burada içerik yok") }
-            items(shown, key = { it.key }) { i ->
+            items(shown.distinctBy { it.key }, key = { it.key }) { i ->
                 val p = progress[i.key]
                 PosterCard(i, onClick = { open(actions, i) }, width = 150.dp, progress = p?.fraction, watched = i is Item.M && p?.finished == true)
             }

@@ -52,7 +52,7 @@ fun SearchScreen() {
                     Text("Son aramalar", style = MaterialTheme.typography.labelLarge, color = C.muted)
                     Spacer(Modifier.height(8.dp))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        items(recent, key = { it.query }) { r -> Chip(r.query, false, { q = r.query }) }
+                        items(recent.distinctBy { it.query }, key = { it.query }) { r -> Chip(r.query, false, { q = r.query }) }
                         item { Chip("Temizle", false, { app.user.clearSearches() }) }
                     }
                 }

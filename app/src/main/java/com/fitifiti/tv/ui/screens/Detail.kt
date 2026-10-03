@@ -73,7 +73,7 @@ fun LazyListScope.castRow(cast: List<CastMember>) {
             SectionTitle("Oyuncular")
             CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
                 LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                    items(cast, key = { it.name + it.role }) { c -> CastCard(c) }
+                    items(cast.distinctBy { it.name + it.role }, key = { it.name + it.role }) { c -> CastCard(c) }
                 }
             }
         }
@@ -105,7 +105,8 @@ private fun CastCard(c: CastMember) {
 
 /** Afişli şerit (detay sayfalarında, kartın altında ad yazılı) */
 @OptIn(ExperimentalFoundationApi::class)
-fun LazyListScope.plainPosterRow(key: String, title: String, items: List<Item>) {
+fun LazyListScope.plainPosterRow(key: String, title: String, all: List<Item>) {
+    val items = all.distinctBy { it.key }
     if (items.isEmpty()) return
     item(key = key) {
         val actions = LocalActions.current

@@ -3,6 +3,12 @@ package com.fitifiti.tv.domain
 import com.fitifiti.tv.data.xtream.Movie
 import com.fitifiti.tv.data.xtream.Series
 
+// Sık çağrılan işlevlerin kalıpları bir kez derlenir (TV işlemcisinde binlerce kez derlemek donmaya yol açıyordu)
+private val RX0 = Regex("\\[[^\\]]*\\]")
+private val RX1 = Regex("\\((?:19|20)\\d{2}\\)")
+private val RX2 = Regex("(?:19|20)\\d{2}")
+private val RX3 = Regex("^\\d{4}$")
+
 // Türkçe/aksan duyarsız, 1-2 harf yazım hatasına toleranslı, kelime sırasından bağımsız arama (sitedeki lib/search-index.ts).
 class SearchIndex(movies: List<Movie>, series: List<Series>) {
     private class Item<T>(val raw: T, val f: String, val tokens: List<String>, val year: String, val rating: Double)
@@ -10,8 +16,8 @@ class SearchIndex(movies: List<Movie>, series: List<Series>) {
     private val s = series.map { item(it, it.name, it.year, it.rating) }
 
     private fun <T> item(raw: T, name: String, year: String?, rating: Double): Item<T> {
-        val f = foldTr(name.replace(Regex("\\[[^\\]]*\\]"), " ").replace(Regex("\\((?:19|20)\\d{2}\\)"), " "))
-        val y = Regex("(?:19|20)\\d{2}").find(year.orEmpty())?.value ?: ""
+        val f = foldTr(name.replace(RX0, " ").replace(RX1, " "))
+        val y = RX2.find(year.orEmpty())?.value ?: ""
         return Item(raw, f, f.split(' ').filter { it.isNotEmpty() }, y, rating.coerceAtMost(10.0))
     }
 
@@ -32,7 +38,7 @@ class SearchIndex(movies: List<Movie>, series: List<Series>) {
         for (it in items) {
             var score = 0.0; var miss = 0; var direct = true; var dead = false
             for (q in qTokens) {
-                var best = if (Regex("^\\d{4}$").matches(q) && it.year == q) 3.0 else 0.0
+                var best = if (RX3.matches(q) && it.year == q) 3.0 else 0.0
                 for (nt in it.tokens) { val sc = tokenScore(q, nt); if (sc > best) best = sc; if (best >= 4) break }
                 if (best == 0.0) { miss++; if (miss > allowMiss) { dead = true; break }; continue }
                 if (best == 2.0 || best == 2.2) direct = false

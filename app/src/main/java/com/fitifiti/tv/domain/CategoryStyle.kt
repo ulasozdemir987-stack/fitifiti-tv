@@ -2,6 +2,22 @@ package com.fitifiti.tv.domain
 
 import java.util.Locale
 
+// Sık çağrılan işlevlerin kalıpları bir kez derlenir (TV işlemcisinde binlerce kez derlemek donmaya yol açıyordu)
+private val RX0 = Regex("\\p{L}")
+private val RX1 = Regex("^4K$", RegexOption.IGNORE_CASE)
+private val RX2 = Regex("^IMDb$", RegexOption.IGNORE_CASE)
+private val RX3 = Regex("^[\\p{Lu}i]+$")
+private val RX4 = Regex("\\s+")
+private val RX5 = Regex("\\s*\\[(DE|FR|EN)]\\s*$", RegexOption.IGNORE_CASE)
+private val RX6 = Regex("^(DE|FR|EN):\\s*", RegexOption.IGNORE_CASE)
+private val RX7 = Regex("\\s+(D[İIi]Z[İIi](LER[İIi])?|F[İIi]LM(LER[İIi]?)?)$", RegexOption.IGNORE_CASE)
+private val RX8 = Regex("(\\s+|&|\\(|\\))")
+private val RX9 = Regex("\\s*&\\s*")
+private val RX10 = r("^apple")
+private val RX11 = r("^g[uü]ncel\\s*tv")
+private val RX12 = r("\\[(DE|FR|EN)]|^(DE|FR|EN):")
+private val RX13 = r("^4k\\b|dublaj|altyaz[iİı]l[iİı]")
+
 // Sağlayıcının film/dizi kategori adlarını okunur yapar ("DiSNEY PLUS DiZiLERi" → "Disney+", "KORKU & PSiKOLOJiK" →
 // "Korku & Psikolojik"). Sitedeki lib/category-style.ts ile aynı mantık.
 data class CategoryStyle(val label: String, val color: Long, val platform: Boolean, val loc: String? = null, val logo: String? = null)
@@ -46,11 +62,11 @@ private val TR = Locale("tr", "TR")
 private fun asciiKey(w: String) = w.uppercase(TR).replace('İ', 'I').replace('Ş', 'S').replace('Ç', 'C').replace('Ğ', 'G').replace('Ü', 'U').replace('Ö', 'O')
 
 private fun word(w: String, foreign: Boolean): String {
-    if (!Regex("\\p{L}").containsMatchIn(w)) return w
+    if (!RX0.containsMatchIn(w)) return w
     if (foreign) return if (w == w.uppercase()) w.take(1) + w.drop(1).lowercase() else w
-    if (Regex("^4K$", RegexOption.IGNORE_CASE).matches(w)) return "4K"
-    if (Regex("^IMDb$", RegexOption.IGNORE_CASE).matches(w)) return "IMDb"
-    val up = if (Regex("^[\\p{Lu}i]+$").matches(w)) w.replace('i', 'İ') else w
+    if (RX1.matches(w)) return "4K"
+    if (RX2.matches(w)) return "IMDb"
+    val up = if (RX3.matches(w)) w.replace('i', 'İ') else w
     WORDS[asciiKey(up)]?.let { return it }
     if (up != up.uppercase(TR)) return up
     val lower = up.lowercase(TR)
@@ -58,17 +74,17 @@ private fun word(w: String, foreign: Boolean): String {
 }
 
 private fun tidy(raw: String): String {
-    var s = raw.replace(Regex("\\s+"), " ").trim()
+    var s = raw.replace(RX4, " ").trim()
     var lang = ""
-    Regex("\\s*\\[(DE|FR|EN)]\\s*$", RegexOption.IGNORE_CASE).find(s)?.let { lang = LANG[it.groupValues[1].uppercase()] ?: ""; s = s.removeRange(it.range) }
-    Regex("^(DE|FR|EN):\\s*", RegexOption.IGNORE_CASE).find(s)?.let { lang = LANG[it.groupValues[1].uppercase()] ?: ""; s = s.removeRange(it.range) }
-    val stripped = s.replace(Regex("\\s+(D[İIi]Z[İIi](LER[İIi])?|F[İIi]LM(LER[İIi]?)?)$", RegexOption.IGNORE_CASE), "").trim()
+    RX5.find(s)?.let { lang = LANG[it.groupValues[1].uppercase()] ?: ""; s = s.removeRange(it.range) }
+    RX6.find(s)?.let { lang = LANG[it.groupValues[1].uppercase()] ?: ""; s = s.removeRange(it.range) }
+    val stripped = s.replace(RX7, "").trim()
     if (stripped.isNotEmpty()) s = stripped
     // ayraçları koruyarak böl
     val tokens = mutableListOf<String>(); var last = 0
-    for (m in Regex("(\\s+|&|\\(|\\))").findAll(s)) { tokens += s.substring(last, m.range.first); tokens += m.value; last = m.range.last + 1 }
+    for (m in RX8.findAll(s)) { tokens += s.substring(last, m.range.first); tokens += m.value; last = m.range.last + 1 }
     tokens += s.substring(last)
-    var label = tokens.joinToString("") { word(it, lang.isNotEmpty()) }.replace(Regex("\\s*&\\s*"), " & ").replace(Regex("\\s+"), " ").trim()
+    var label = tokens.joinToString("") { word(it, lang.isNotEmpty()) }.replace(RX9, " & ").replace(RX4, " ").trim()
     if (lang.isNotEmpty()) label = "$label · $lang"
     return label
 }
@@ -89,9 +105,9 @@ fun categoryRank(rawName: String?): Double {
     val n = rawName.orEmpty()
     val f = FEATURED.indexOfFirst { it.containsMatchIn(n) }
     if (f >= 0) return f.toDouble()
-    if (r("^apple").containsMatchIn(n)) return 99.0
-    if (r("^g[uü]ncel\\s*tv").containsMatchIn(n)) return 100.5
-    if (r("\\[(DE|FR|EN)]|^(DE|FR|EN):").containsMatchIn(n)) return 300.0
-    if (r("^4k\\b|dublaj|altyaz[iİı]l[iİı]").containsMatchIn(n)) return 200.0
+    if (RX10.containsMatchIn(n)) return 99.0
+    if (RX11.containsMatchIn(n)) return 100.5
+    if (RX12.containsMatchIn(n)) return 300.0
+    if (RX13.containsMatchIn(n)) return 200.0
     return 100.0
 }

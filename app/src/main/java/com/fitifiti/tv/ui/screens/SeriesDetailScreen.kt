@@ -96,7 +96,9 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
         if (season !in seasons.keys) season = wanted ?: target?.first?.season ?: seasons.keys.first()
     }
     val tmdbEps by produceState(emptyMap<Int, EpisodeArt>(), art.tmdbId, season) { art.tmdbId?.let { id -> if (season > 0) value = app.art.season(id, season) } }
-    val similar = remember(s, cat) { similarOf(cat.series, s, { it.categoryId }, { it.genre }, { it.rating }, { it.id }).map { it.item() } }
+    val similar by produceState(emptyList<Item>(), s, cat) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { similarOf(cat.series, s, { it.categoryId }, { it.genre }, { it.rating }, { it.id }).map { it.item() } }
+    }
     val (title, alt) = splitTitle(s.name)
     val playFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { delay(150); runCatching { playFocus.requestFocus() } }
@@ -158,7 +160,7 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
                         }
                         CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
                             LazyRow(state = rowState, contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                                items(eps, key = { it.id }) { ep ->
+                                items(eps.distinctBy { it.id }, key = { it.id }) { ep ->
                                     EpisodeCard(s, ep, tmdbEps[ep.num], progress["episode-${ep.id}"], art.backdrop ?: s.backdrop ?: s.cover) {
                                         actions.playEpisode(s, ep, seasons, variant?.id)
                                     }

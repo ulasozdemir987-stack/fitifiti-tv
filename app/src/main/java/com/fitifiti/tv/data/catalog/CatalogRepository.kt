@@ -22,8 +22,10 @@ import java.io.File
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 
+// Bilerek data class DEĞİL: eşitlik kimlikle. data class'ta Compose'un her yeniden çiziminde (remember(cat) anahtarı)
+// on binlerce film tek tek karşılaştırılıyordu.
 @Serializable
-data class Catalog(
+class Catalog(
     val movies: List<Movie> = emptyList(),
     val series: List<Series> = emptyList(),
     val channels: List<Channel> = emptyList(),
@@ -88,7 +90,8 @@ class CatalogRepository(private val ctx: Context, private val clientFor: (Accoun
 
     fun clear() { job?.cancel(); accountId = null; set(Catalog()); _status.value = CatalogStatus.Idle }
 
-    private fun set(c: Catalog) { _catalog.value = c; index = null }
+    // Şerit hesapları (sıralama, türler) yayımlamadan ÖNCE arka planda yapılır; ekranlar hazır sonucu alır
+    private fun set(c: Catalog) { if (!c.isEmpty) com.fitifiti.tv.domain.Ranking.of(c); _catalog.value = c; index = null }
 
     private suspend fun fetch(api: XtreamClient, quiet: Boolean): Catalog = coroutineScope {
         fun step(s: String, p: Float) { if (!quiet) _status.value = CatalogStatus.Loading(s, p) }

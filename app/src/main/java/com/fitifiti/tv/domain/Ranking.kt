@@ -41,7 +41,12 @@ class Ranking(c: Catalog) {
     private val newestSeries = c.series.sortedByDescending { it.added }.take(600)
 
     companion object {
-        fun splitGenres(g: String?): List<String> = g?.split(',', '/', '&', '|')?.map { titleCaseTr(it.trim()) }?.filter { it.length > 1 } ?: emptyList()
+        private val genreMemo = java.util.concurrent.ConcurrentHashMap<String, List<String>>()
+        /** "Aksiyon, Dram / Gerilim" → türler. Aynı tür metni binlerce içerikte tekrarlandığı için önbellekli. */
+        fun splitGenres(g: String?): List<String> {
+            if (g.isNullOrBlank()) return emptyList()
+            return genreMemo.getOrPut(g) { g.split(',', '/', '&', '|').map { titleCaseTr(it.trim()) }.filter { it.length > 1 } }
+        }
 
         @Volatile private var memo: Pair<Long, Ranking>? = null
         fun of(c: Catalog): Ranking {

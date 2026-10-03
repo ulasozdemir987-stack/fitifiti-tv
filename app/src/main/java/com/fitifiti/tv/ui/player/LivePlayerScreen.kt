@@ -182,7 +182,7 @@ fun LivePlayerScreen(channelId: Int, list: List<Int>, onClose: () -> Unit) {
                 val cur = remember { FocusRequester() }
                 LaunchedEffect(Unit) { state.scrollToItem((index - 3).coerceAtLeast(0)); delay(80); runCatching { cur.requestFocus() } }
                 LazyColumn(state = state, modifier = Modifier.fillMaxHeight().width(500.dp).background(C.panel.copy(alpha = 0.95f)), contentPadding = PaddingValues(vertical = 28.dp, horizontal = 18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    itemsIndexed(channels, key = { _, c -> c.id }) { i, c ->
+                    itemsIndexed(channels, key = { i, c -> "$i-${c.id}" }) { i, c ->
                         ChannelListRow(c, i, i == index, if (i == index) Modifier.focusRequester(cur) else Modifier) { switchTo(i); panel = false }
                     }
                 }

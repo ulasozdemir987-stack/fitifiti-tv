@@ -67,7 +67,7 @@ fun ListemScreen() {
         if (items.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
             EmptyState("Listen boş", "Bir film ya da dizinin sayfasında “Listem”e basınca burada görünür.")
         }
-        items(shown, key = { it.key }) { i ->
+        items(shown.distinctBy { it.key }, key = { it.key }) { i ->
             val p = pmap[i.key]
             PosterCard(i, onClick = { open(actions, i) }, width = 150.dp, progress = p?.fraction, watched = i is Item.M && p?.finished == true)
         }

@@ -232,7 +232,8 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
     // Çekmece kapanınca odak oynat düğmesine döner
     LaunchedEffect(panel) { if (panel == Panel.None && controls) { touch(); pendingFocus = playFocus } }
 
-    val introVisible = settings.skipIntro && req.kind == "episode" && started && !askResume && pos in 5_000..240_000 && (dur == 0L || dur > 10 * 60_000)
+    // Konum her yarım saniyede değişir; tüm ekran yalnız "Girişi atla" görünürlüğü değişince yeniden çizilsin
+    val introVisible by remember { derivedStateOf { settings.skipIntro && req.kind == "episode" && started && !askResume && pos in 5_000..240_000 && (dur == 0L || dur > 10 * 60_000) } }
     LaunchedEffect(introVisible) { if (introVisible && !controls) { delay(100); runCatching { skipFocus.requestFocus() } } }
 
     fun stepSeek(forward: Boolean, repeat: Int) {
@@ -254,7 +255,6 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
         }
     }
 
-    val displayPos = scrub ?: pos
     Box(
         Modifier.fillMaxSize().background(Color.Black)
             .focusRequester(rootFocus).focusable()
@@ -305,7 +305,8 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
                 if (sleep == Sleep.EpisodeEnd) Text("Uyku · bölüm bitince", Modifier.align(Alignment.TopEnd).padding(40.dp), color = C.primary, style = MaterialTheme.typography.labelLarge)
 
                 Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(horizontal = 56.dp, vertical = 32.dp)) {
-                    // İlerleme
+                    // İlerleme (konum yalnız bu bölümde okunur → saniyede iki kez yalnız burası çizilir)
+                    val displayPos = scrub ?: pos
                     val src = remember { MutableInteractionSource() }
                     val seekFocused by src.collectIsFocusedAsState()
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -386,7 +387,7 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
                 ss.keys.take(8).forEach { n -> com.fitifiti.tv.ui.components.Chip("$n. Sezon", n == season, { season = n }) }
             }
             LazyColumn(state = state, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                itemsIndexed(list, key = { _, e -> e.id }) { i, e ->
+                itemsIndexed(list, key = { i, e -> "$i-${e.id}" }) { i, e ->
                     val p = progress["episode-${e.id}"]
                     val isCur = e.id == episode?.id
                     OptionRow(

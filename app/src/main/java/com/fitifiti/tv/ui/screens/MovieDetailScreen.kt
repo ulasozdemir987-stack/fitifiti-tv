@@ -44,7 +44,10 @@ fun MovieDetailScreen(m: Movie) {
     val resume = p != null && !p.finished && p.positionMs > 15_000
     val watched = p?.finished == true
     val fav = favs.any { it.key == item.key }
-    val similar = remember(m, cat) { similarOf(cat.movies, m, { it.categoryId }, { it.genre }, { it.rating }, { it.id }).map { it.item() } }
+    // Tüm katalog taranır: ana iş parçacığında yapılırsa TV donuyor
+    val similar by produceState(emptyList<Item>(), m, cat) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { similarOf(cat.movies, m, { it.categoryId }, { it.genre }, { it.rating }, { it.id }).map { it.item() } }
+    }
     val (title, alt) = splitTitle(m.name)
     val playFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { delay(120); runCatching { playFocus.requestFocus() } }
