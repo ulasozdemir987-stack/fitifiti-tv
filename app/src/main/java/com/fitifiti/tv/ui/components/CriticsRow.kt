@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Icon
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.tv.material3.Text
 import com.fitifiti.tv.data.tmdb.Critics
@@ -50,11 +51,9 @@ fun CriticsRow(c: Critics?, modifier: Modifier = Modifier) {
                     Text("  Metacritic", fontSize = 13.sp, color = C.faint)
                 }
             }
-        }
-        if (!c.awards.isNullOrBlank()) {
-            Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(androidx.compose.material.icons.Icons.Filled.EmojiEvents, null, Modifier.size(16.dp), tint = Color(0xFFE8C66A))
+            // ödül özeti aynı satırda (ayrı satır başlık bloğunu ekrandan taşırıyordu)
+            if (!c.awards.isNullOrBlank()) Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.EmojiEvents, null, Modifier.size(16.dp), tint = Color(0xFFE8C66A))
                 Spacer(Modifier.width(6.dp))
                 Text(c.awards, fontSize = 14.sp, color = C.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }

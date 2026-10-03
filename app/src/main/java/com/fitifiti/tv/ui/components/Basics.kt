@@ -134,8 +134,8 @@ fun Avatar(name: String, avatar: Int, size: Dp, modifier: Modifier = Modifier) {
 @Composable
 fun EmptyState(title: String, hint: String? = null, modifier: Modifier = Modifier, action: (@Composable () -> Unit)? = null) {
     Column(modifier.fillMaxWidth().padding(48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Wordmark(34)
-        Spacer(Modifier.height(20.dp))
+        MascotOops()
+        Spacer(Modifier.height(18.dp))
         Text(title, style = MaterialTheme.typography.titleLarge, color = Color.White)
         if (hint != null) { Spacer(Modifier.height(6.dp)); Text(hint, style = MaterialTheme.typography.bodyMedium, color = C.muted) }
         if (action != null) { Spacer(Modifier.height(20.dp)); action() }

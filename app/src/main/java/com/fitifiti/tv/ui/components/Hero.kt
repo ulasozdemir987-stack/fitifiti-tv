@@ -70,7 +70,7 @@ fun HeroBackdrop(art: HeroArt, modifier: Modifier = Modifier, video: (@Composabl
 
 /** Logo varsa logo, yoksa Manrope başlık */
 @Composable
-fun HeroTitle(title: String, logo: String?, modifier: Modifier = Modifier, maxWidthFraction: Float = 0.45f) {
-    if (logo != null) AsyncImage(model = logo, contentDescription = title, contentScale = ContentScale.Fit, alignment = Alignment.BottomStart, modifier = modifier.fillMaxWidth(maxWidthFraction).heightIn(max = 130.dp))
+fun HeroTitle(title: String, logo: String?, modifier: Modifier = Modifier, maxWidthFraction: Float = 0.45f, maxLogoHeight: androidx.compose.ui.unit.Dp = 130.dp) {
+    if (logo != null) AsyncImage(model = logo, contentDescription = title, contentScale = ContentScale.Fit, alignment = Alignment.BottomStart, modifier = modifier.fillMaxWidth(maxWidthFraction).heightIn(max = maxLogoHeight))
     else Text(title, style = MaterialTheme.typography.displayLarge, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = modifier.fillMaxWidth(0.6f))
 }

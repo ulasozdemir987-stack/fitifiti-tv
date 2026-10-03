@@ -63,6 +63,8 @@ fun FitifitiTheme(content: @Composable () -> Unit) {
             border = C.line,
         ),
         typography = typography,
-        content = content,
-    )
+    ) {
+        // tv-material'da Surface dışındaki Text'in varsayılan rengi SİYAH (LocalContentColor = Black) → bölüm adları vb. siyah görünüyordu
+        androidx.compose.runtime.CompositionLocalProvider(androidx.tv.material3.LocalContentColor provides Color.White) { content() }
+    }
 }

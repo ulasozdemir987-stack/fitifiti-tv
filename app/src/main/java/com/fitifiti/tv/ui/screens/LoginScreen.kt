@@ -84,7 +84,7 @@ fun LoginScreen(editId: String?, onDone: () -> Unit, onCancel: (() -> Unit)?) {
         Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(C.primary.copy(alpha = 0.16f), Color.Transparent), radius = 1100f)))
         Row(Modifier.fillMaxSize().padding(horizontal = 56.dp, vertical = 40.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f).padding(end = 40.dp)) {
-                Wordmark(40)
+                BrandLogo(40)
                 Spacer(Modifier.height(16.dp))
                 Text(if (existing == null) "IPTV hesabını bağla" else "Hesabı düzenle", style = MaterialTheme.typography.headlineLarge)
                 Spacer(Modifier.height(8.dp))

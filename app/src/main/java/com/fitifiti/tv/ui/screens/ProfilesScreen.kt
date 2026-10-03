@@ -59,7 +59,7 @@ fun ProfilesScreen(onSelect: (ProfileEntity) -> Unit, onAddAccount: () -> Unit, 
     Box(Modifier.fillMaxSize().background(C.bg)) {
         Box(Modifier.fillMaxSize().background(Brush.radialGradient(listOf(C.primary.copy(alpha = 0.12f), Color.Transparent), radius = 1300f)))
         Column(Modifier.fillMaxSize().padding(vertical = 56.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Wordmark(44)
+            BrandLogo(44)
             Spacer(Modifier.weight(1f))
             Text(if (manage) "Profilleri düzenle" else greeting(), style = MaterialTheme.typography.displaySmall, textAlign = TextAlign.Center)
             Spacer(Modifier.height(40.dp))

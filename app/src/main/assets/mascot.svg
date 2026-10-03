@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" width="140" height="140" fill="none">
+<defs>
+        <linearGradient id="catBody" x1="20" y1="20" x2="120" y2="130" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#00f2fe" />
+          <stop offset="35%" stop-color="#38bdf8" />
+          <stop offset="70%" stop-color="#6366f1" />
+          <stop offset="100%" stop-color="#a855f7" />
+        </linearGradient>
+
+        <linearGradient id="catFace" x1="40" y1="40" x2="100" y2="90" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#ffffff" />
+          <stop offset="100%" stop-color="#f0f9ff" />
+        </linearGradient>
+
+        <linearGradient id="catHeadphone" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#00f2fe" />
+          <stop offset="100%" stop-color="#3b82f6" />
+        </linearGradient>
+
+        <linearGradient id="catEarInner" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#f472b6" />
+          <stop offset="100%" stop-color="#ec4899" />
+        </linearGradient>
+
+        <linearGradient id="catPlayChest" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#ffffff" />
+          <stop offset="40%" stop-color="#00f2fe" />
+          <stop offset="100%" stop-color="#3b82f6" />
+        </linearGradient>
+
+        
+      </defs>
+
+      
+      <g>
+        <path d="M 42 104 C 28 108 14 96 18 82 C 22 68 8 60 12 48 C 14 42 22 46 22 52 C 22 66 32 78 38 88" 
+              stroke="url(#catBody)" stroke-width="8" stroke-linecap="round" fill="none" />
+        <circle cx="12" cy="48" r="4.5" fill="#00f2fe" />
+      </g>
+
+      
+      <g>
+        <path d="M 46 110 L 40 120 L 58 120 L 56 110 Z" fill="#090a12" stroke="#00f2fe" stroke-width="1.5" />
+        <circle cx="43" cy="123" r="3.5" fill="#00f2fe" />
+        <circle cx="55" cy="123" r="3.5" fill="#00f2fe" />
+
+        <path d="M 84 110 L 80 120 L 102 120 L 98 110 Z" fill="#090a12" stroke="#a855f7" stroke-width="1.5" />
+        <circle cx="84" cy="123" r="3.5" fill="#a855f7" />
+        <circle cx="98" cy="123" r="3.5" fill="#a855f7" />
+      </g>
+
+      
+      <path d="M 48 82 C 42 90 44 108 52 112 C 60 114 80 114 88 112 C 96 108 98 90 92 82 Z" fill="url(#catBody)" />
+
+      
+      <path d="M 54 84 L 86 84 L 80 106 L 60 106 Z" fill="#050508" stroke="#00f2fe" stroke-width="1.5" />
+      <polygon points="66,88 78,95 66,102" fill="url(#catPlayChest)" />
+
+      
+      <g>
+      <path d="M 38 46 L 24 16 C 23 14 26 13 28 15 L 54 36 Z" fill="url(#catBody)" />
+      <path d="M 37 42 L 28 20 L 48 35 Z" fill="url(#catEarInner)" />
+      <circle cx="25" cy="20" r="2" fill="#00f2fe" />
+      </g>
+
+      <g>
+      <path d="M 86 36 L 112 15 C 114 13 117 14 116 16 L 102 46 Z" fill="url(#catBody)" />
+      <path d="M 92 35 L 112 20 L 103 42 Z" fill="url(#catEarInner)" />
+      <circle cx="115" cy="20" r="2" fill="#00f2fe" />
+      </g>
+
+      
+      <path d="M 34 56 C 30 72 44 88 70 88 C 96 88 110 72 106 56 C 102 40 88 34 70 34 C 52 34 38 40 34 56 Z" fill="url(#catBody)" />
+
+      
+      <path d="M 44 60 C 40 70 48 80 70 80 C 92 80 100 70 96 60 C 92 50 82 52 70 52 C 58 52 48 50 44 60 Z" fill="url(#catFace)" />
+
+      
+      <g>
+      <path d="M 30 52 C 30 30 46 22 70 22 C 94 22 110 30 110 52" fill="none" stroke="#00f2fe" stroke-width="4.5" stroke-linecap="round" />
+      <rect x="22" y="44" width="10" height="20" rx="5" fill="url(#catHeadphone)" stroke="#ffffff" stroke-width="1" />
+      <circle cx="27" cy="54" r="2.5" fill="#a855f7" />
+      <rect x="108" y="44" width="10" height="20" rx="5" fill="url(#catHeadphone)" stroke="#ffffff" stroke-width="1" />
+      <circle cx="113" cy="54" r="2.5" fill="#a855f7" />
+      </g>
+
+      
+      <path d="M 64 36 L 70 42 L 76 36" fill="none" stroke="#00f2fe" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+
+      
+      <g>
+        <ellipse cx="52" cy="62" rx="6.5" ry="8.5" fill="#090a12" />
+        <ellipse cx="52" cy="63" rx="5.5" ry="7.5" fill="#0284c7" />
+        <ellipse cx="52" cy="64" rx="4" ry="5.5" fill="#00f2fe" />
+        <circle cx="50" cy="59" r="2.5" fill="#ffffff" />
+        <circle cx="54" cy="66" r="1.2" fill="#ffffff" />
+      </g>
+
+      
+      <g>
+        <path d="M 78 64 Q 86 54 94 64" fill="none" stroke="#090a12" stroke-width="3.5" stroke-linecap="round" />
+        <g transform="translate(94, 54)">
+          <polygon points="0,-7 2,-2 7,0 2,2 0,7 -2,2 -7,0 -2,-2" fill="#ffffff" />
+        </g>
+      </g>
+
+      
+      <polygon points="68,69 72,69 70,72" fill="#ec4899" />
+      <path d="M 65 72 Q 68 75 70 72 Q 72 75 75 72" fill="none" stroke="#090a12" stroke-width="1.8" stroke-linecap="round" />
+
+      
+      <ellipse cx="44" cy="70" rx="4" ry="2" fill="#f43f5e" opacity="0.4" />
+      <ellipse cx="94" cy="70" rx="4" ry="2" fill="#f43f5e" opacity="0.4" />
+
+      
+      <line x1="34" y1="65" x2="24" y2="64" stroke="#00f2fe" stroke-width="1.5" stroke-linecap="round" opacity="0.8" />
+      <line x1="35" y1="70" x2="26" y2="72" stroke="#00f2fe" stroke-width="1.5" stroke-linecap="round" opacity="0.8" />
+      <line x1="104" y1="65" x2="114" y2="64" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round" opacity="0.8" />
+      <line x1="103" y1="70" x2="112" y2="72" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round" opacity="0.8" />
+</svg>

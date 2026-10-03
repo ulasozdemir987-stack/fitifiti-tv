@@ -47,11 +47,14 @@ fun BoxScope.TrailerVideo(spec: TrailerSpec, visible: Boolean) {
     LaunchedEffect(spec) {
         if (url != null) return@LaunchedEffect
         delay(1200)
-        val id = app.trailers.find(spec.kind, spec.title, spec.year, spec.provider) ?: return@LaunchedEffect
+        val id = app.trailers.find(spec.kind, spec.title, spec.year, spec.provider)
+        Diag.log("fragman: \"${spec.title}\" → ${id ?: "yok"}")
+        if (id == null) return@LaunchedEffect
         repeat(18) {
-            if (app.trailers.isReady(id)) { url = app.trailers.fileUrl(id); return@LaunchedEffect }
+            if (app.trailers.isReady(id)) { Diag.log("fragman hazır: $id"); url = app.trailers.fileUrl(id); return@LaunchedEffect }
             delay(5000)
         }
+        Diag.log("fragman 90 sn'de hazırlanmadı: $id")
     }
     val u = url ?: return
     var ended by remember(u) { mutableStateOf(false) }
@@ -70,9 +73,13 @@ fun BoxScope.TrailerVideo(spec: TrailerSpec, visible: Boolean) {
         }
         DisposableEffect(player) {
             val l = object : Player.Listener {
-                override fun onRenderedFirstFrame() { shown = true }
+                override fun onRenderedFirstFrame() { shown = true; Diag.log("fragman oynuyor") }
                 override fun onPlaybackStateChanged(state: Int) { if (state == Player.STATE_ENDED) ended = true }
-                override fun onPlayerError(error: PlaybackException) { Diag.log("fragman hatası: ${error.errorCodeName}"); ended = true }
+                override fun onPlayerError(error: PlaybackException) {
+                    Diag.log("fragman hatası: ${error.errorCodeName} ${error.cause?.message ?: ""}")
+                    Diag.send("player", "fragman oynatılamadı: $u\n${error.errorCodeName}\n${error.cause}")
+                    ended = true
+                }
             }
             player.addListener(l)
             onDispose { pos = player.currentPosition; shown = false; player.removeListener(l); player.release() }

@@ -52,6 +52,9 @@ import com.fitifiti.tv.ui.LocalActions
 import com.fitifiti.tv.ui.PlayRequest
 import com.fitifiti.tv.ui.components.ProgressLine
 import com.fitifiti.tv.ui.components.Wordmark
+import com.fitifiti.tv.ui.components.MascotLoader
+import com.fitifiti.tv.ui.components.IndeterminateLine
+import com.fitifiti.tv.ui.components.KenBurns
 import com.fitifiti.tv.ui.screens.nextEpisodeIn
 import com.fitifiti.tv.ui.theme.C
 import com.fitifiti.tv.ui.theme.Display
@@ -464,12 +467,14 @@ fun Spinner(size: androidx.compose.ui.unit.Dp = 48.dp) {
 @Composable
 private fun StartingScreen(req: PlayRequest) {
     Box(Modifier.fillMaxSize().background(C.bg)) {
-        if (req.image != null) AsyncImage(model = req.image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize(), alpha = 0.18f)
+        if (req.image != null) KenBurns(req.image, 0.22f)
         Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-            Wordmark(52)
-            Spacer(Modifier.height(28.dp))
-            Spinner(40.dp)
-            Spacer(Modifier.height(16.dp))
+            MascotLoader(size = 96.dp)
+            Spacer(Modifier.height(18.dp))
+            Wordmark(40)
+            Spacer(Modifier.height(18.dp))
+            IndeterminateLine(Modifier.width(260.dp))
+            Spacer(Modifier.height(14.dp))
             Text("Görüntü hazırlanıyor…", color = C.muted)
         }
         Column(Modifier.align(Alignment.BottomStart).padding(56.dp)) {

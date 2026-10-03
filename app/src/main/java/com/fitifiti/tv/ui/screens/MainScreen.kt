@@ -108,7 +108,7 @@ private fun rememberSaveableTab() = androidx.compose.runtime.saveable.rememberSa
 private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data.local.ProfileEntity?, onProfiles: () -> Unit, tabFocus: FocusRequester) {
     Box(Modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(C.bg.copy(alpha = 0.85f), Color.Transparent))).padding(horizontal = 48.dp, vertical = 20.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Wordmark(26)
+            BrandLogo(26)
             Spacer(Modifier.width(40.dp))
             listOf(Tab.Home, Tab.Movies, Tab.Series, Tab.Live, Tab.Listem).forEach { t ->
                 NavText(t.label, t == tab, { onTab(t) }, if (t == tab) Modifier.focusRequester(tabFocus) else Modifier)
@@ -163,8 +163,10 @@ private fun NavIcon(icon: ImageVector, label: String, selected: Boolean, onClick
 private fun LoadingCatalog(step: String, progress: Float) {
     Box(Modifier.fillMaxSize().background(C.bg), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Wordmark(64)
-            Spacer(Modifier.height(36.dp))
+            MascotLoader(size = 110.dp)
+            Spacer(Modifier.height(20.dp))
+            Wordmark(56)
+            Spacer(Modifier.height(30.dp))
             Box(Modifier.width(420.dp)) { ProgressLine(progress, Modifier.fillMaxWidth(), height = 4.dp, track = C.fill3) }
             Spacer(Modifier.height(16.dp))
             Text(step, style = MaterialTheme.typography.bodyLarge, color = C.muted)

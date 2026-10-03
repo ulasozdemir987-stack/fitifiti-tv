@@ -56,8 +56,9 @@ fun MovieDetailScreen(m: Movie) {
 
     DetailScaffold(art.copy(backdrop = art.backdrop ?: info.backdrop), TrailerSpec("movie", m.name, m.year, info.trailer)) {
         item(key = "head") {
-            Column(Modifier.heightIn(min = (h * 0.9f).dp).padding(start = 48.dp, end = 48.dp, top = 64.dp, bottom = 24.dp), verticalArrangement = Arrangement.Bottom) {
-                HeroTitle(title, art.logo, maxWidthFraction = 0.4f)
+            // Başlık bloğu ekrana sığmalı (taşarsa üstü kesik açılıyordu): logo ≤110 dp, özet 3 satır, bilgi listesi ayrı öğede
+            Column(Modifier.detailHead().heightIn(min = (h * 0.86f).dp).padding(start = 48.dp, end = 48.dp, top = 48.dp, bottom = 20.dp), verticalArrangement = Arrangement.Bottom) {
+                HeroTitle(title, art.logo, maxWidthFraction = 0.36f, maxLogoHeight = 110.dp)
                 if (alt.isNotBlank() && art.logo == null) { Spacer(Modifier.height(4.dp)); Text(alt, style = MaterialTheme.typography.titleMedium, color = C.muted) }
                 Spacer(Modifier.height(14.dp))
                 MetaRow(listOf(m.year ?: info.releaseDate?.take(4),
@@ -66,10 +67,10 @@ fun MovieDetailScreen(m: Movie) {
                     info.age?.takeIf { it.isNotBlank() && it != "0" }?.let { "$it+" }?.replace("++", "+"),
                     // IMDb puanı varsa TMDB puanı tekrarlanmaz (aşağıdaki puan satırında)
                     if (art.vote > 0 && art.votes >= 25 && critics?.imdb == null) "TMDB ${"%.1f".format(art.vote)}" else null))
-                CriticsRow(critics, Modifier.padding(top = 12.dp))
-                Spacer(Modifier.height(12.dp))
+                CriticsRow(critics, Modifier.padding(top = 10.dp))
+                Spacer(Modifier.height(10.dp))
                 val overview = art.overview?.takeIf { it.isNotBlank() } ?: info.plot ?: m.plot
-                if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyLarge, color = C.muted, maxLines = 5, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.55f))
+                if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyLarge, color = C.muted, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.55f))
                 Spacer(Modifier.height(18.dp))
                 VariantPicker(m.variants, variant) { v -> app.settings.chooseVariant(item.key, v.label); variantTick++ }
                 if (m.variants.size >= 2) Spacer(Modifier.height(14.dp))
@@ -87,9 +88,10 @@ fun MovieDetailScreen(m: Movie) {
                     Btn("Listem", { app.user.toggleFavorite(m) }, kind = BtnKind.Secondary, icon = if (fav) Icons.Default.Check else Icons.Default.Add)
                     Btn(if (watched) "İzlenmedi yap" else "İzlendi", { app.user.markMovieWatched(m, !watched) }, kind = BtnKind.Ghost, icon = Icons.Default.DoneAll)
                 }
-                Spacer(Modifier.height(22.dp))
-                InfoList(listOf("Yönetmen" to info.director, "Oyuncular" to (if (cast.isEmpty()) info.cast else null), "Ülke" to info.country), Modifier.fillMaxWidth(0.6f))
             }
+        }
+        item(key = "info") {
+            InfoList(listOf("Yönetmen" to info.director, "Oyuncular" to (if (cast.isEmpty()) info.cast else null), "Ülke" to info.country), Modifier.padding(start = 48.dp, bottom = 24.dp).fillMaxWidth(0.6f))
         }
         castRow(cast)
         plainPosterRow("similar", "Benzer filmler", similar)

@@ -145,7 +145,7 @@ fun LivePlayerScreen(channelId: Int, list: List<Int>, onClose: () -> Unit) {
             },
     ) {
         VideoSurface(player, Modifier.fillMaxSize(), app.settings.value.subtitleScale)
-        if (loading && error == null) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Spinner() }
+        if (loading && error == null) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { MascotLoader(size = 72.dp) }
 
         // Kanal numarası yazılıyor
         if (digits.isNotEmpty()) Text(digits, style = Display.copy(fontSize = 64.sp), modifier = Modifier.align(Alignment.TopEnd).padding(48.dp))

@@ -12,6 +12,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.*
+import androidx.compose.ui.focus.onFocusChanged
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,12 +38,30 @@ import com.fitifiti.tv.ui.theme.Display
 @Composable
 fun DetailScaffold(art: HeroArt, trailer: TrailerSpec? = null, content: LazyListScope.() -> Unit) {
     val list = rememberLazyListState()
-    // fragman yalnız sayfanın tepesindeyken oynar (bölümlere / oyunculara inince durur)
-    val atTop by remember { derivedStateOf { list.firstVisibleItemIndex == 0 && list.firstVisibleItemScrollOffset < 260 } }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val half = with(density) { (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * 0.45f).dp.roundToPx() }
+    // fragman yalnız başlık bloğu ekrandayken oynar (bölümlere / oyunculara inince durur)
+    val atTop by remember { derivedStateOf { list.firstVisibleItemIndex == 0 && list.firstVisibleItemScrollOffset < half } }
     Box(Modifier.fillMaxSize().background(C.bg)) {
         HeroBackdrop(art, video = trailer?.let { t -> { TrailerVideo(t, atTop) } })
-        LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 80.dp), content = content)
+        CompositionLocalProvider(LocalDetailList provides list) {
+            LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = 80.dp), content = content)
+        }
     }
+}
+
+private val LocalDetailList = staticCompositionLocalOf<androidx.compose.foundation.lazy.LazyListState?> { null }
+
+/**
+ * Başlık bloğuna (ilk öğe) eklenir: içindeki bir düğme odak alınca liste EN ÜSTE kayar. Odak yalnız düğmeyi ekrana
+ * getirdiği için aşağıdan (bölümler/oyuncular) geri gelince başlığın üstü (logo, puanlar) kesik kalıyor ve yukarı
+ * odaklanacak bir şey olmadığından kaydırılamıyordu.
+ */
+@Composable
+fun Modifier.detailHead(): Modifier {
+    val list = LocalDetailList.current ?: return this
+    val scope = rememberCoroutineScope()
+    return this.onFocusChanged { if (it.hasFocus && (list.firstVisibleItemIndex != 0 || list.firstVisibleItemScrollOffset != 0)) scope.launch { list.animateScrollToItem(0) } }
 }
 
 /** "Sürüm" çipleri (Orijinal dil / Türkçe dublaj / 4K) */
