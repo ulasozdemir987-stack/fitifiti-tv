@@ -4,6 +4,10 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -40,6 +44,7 @@ fun AppRoot() {
     }
 
     BackHandler(enabled = nav.stack.size > 1) { nav.back() }
+    var crash by remember { mutableStateOf(runCatching { app.crashFile().takeIf { it.exists() }?.readText() }.getOrNull()) }
 
     CompositionLocalProvider(LocalActions provides actions) {
         Box(Modifier.fillMaxSize().background(C.bg)) {
@@ -63,6 +68,26 @@ fun AppRoot() {
                     }
                 }
             }
+            crash?.let { text -> CrashReport(text) { runCatching { app.crashFile().delete() }; crash = null } }
+        }
+    }
+}
+
+/** Önceki açılışta çöktüyse hatanın özeti (fotoğrafı çekilip geliştiriciye gönderilsin diye) */
+@Composable
+private fun CrashReport(text: String, onClose: () -> Unit) {
+    val f = remember { FocusRequester() }
+    LaunchedEffect(Unit) { delay(100); runCatching { f.requestFocus() } }
+    androidx.compose.ui.window.Dialog(onDismissRequest = onClose, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        androidx.compose.foundation.layout.Column(
+            Modifier.fillMaxSize().padding(40.dp).background(C.panel, androidx.compose.foundation.shape.RoundedCornerShape(18.dp)).padding(28.dp),
+        ) {
+            androidx.tv.material3.Text("Uygulama son açılışta kapandı", style = androidx.tv.material3.MaterialTheme.typography.headlineSmall)
+            androidx.tv.material3.Text("Bu ekranın fotoğrafını çekip gönderirsen sorunu bulup düzeltebiliriz.", color = C.muted)
+            androidx.compose.foundation.layout.Spacer(Modifier.height(14.dp))
+            androidx.tv.material3.Text(text.lines().filter { it.isNotBlank() }.take(28).joinToString("\n"), color = androidx.compose.ui.graphics.Color(0xCCFFFFFF),
+                fontSize = 11.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, modifier = Modifier.weight(1f))
+            com.fitifiti.tv.ui.components.Btn("Tamam", onClose, Modifier.focusRequester(f))
         }
     }
 }

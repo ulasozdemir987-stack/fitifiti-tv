@@ -11,7 +11,7 @@ fun hasTr(s: String): Boolean {
 
 fun displayTitle(value: Any?): String {
     val str = (value?.toString() ?: "").trim()
-    var res = str.replace(Regex("\\s*[([【]\\s*(?:19|20)\\d{2}\\s*[)\\]】]\\s*$"), "")
+    var res = str.replace(Regex("\\s*[(\\[【]\\s*(?:19|20)\\d{2}\\s*[)\\]】]\\s*$"), "")
     res = res.replace(Regex("\\s*\\[[^\\]]*\\]\\s*"), " ")
     res = res.replace(Regex("\\s{2,}"), " ")
     return res.trim()

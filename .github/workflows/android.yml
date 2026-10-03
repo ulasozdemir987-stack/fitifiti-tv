@@ -28,7 +28,7 @@ jobs:
       - name: APK derle
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon assembleDebug
+          ./gradlew --no-daemon testDebugUnitTest assembleDebug
 
       - name: APK'yı yükle
         uses: actions/upload-artifact@v4

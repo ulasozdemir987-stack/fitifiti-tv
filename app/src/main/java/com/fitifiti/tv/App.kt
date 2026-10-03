@@ -29,10 +29,17 @@ class App : Application(), ImageLoaderFactory {
     lateinit var art: ArtRepository
 
     fun client(a: Account = accounts.active!!) = XtreamClient(http, a)
+    fun crashFile() = java.io.File(filesDir, "last-crash.txt")
 
     override fun onCreate() {
         super.onCreate()
         instance = this
+        // Çökme raporu: bir sonraki açılışta ekranda gösterilir (TV'de logcat'e erişim zor)
+        val prev = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { t, e ->
+            runCatching { crashFile().writeText("sürüm ${BuildConfig.VERSION_NAME} · Android ${android.os.Build.VERSION.RELEASE} · ${android.os.Build.MODEL}\n" + e.stackTraceToString().take(8000)) }
+            prev?.uncaughtException(t, e)
+        }
         http = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS).readTimeout(90, TimeUnit.SECONDS)
             .followRedirects(true).followSslRedirects(true)

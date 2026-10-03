@@ -19,6 +19,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import java.io.File
+import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.json.encodeToStream
 
 @Serializable
 data class Catalog(
@@ -46,6 +48,7 @@ sealed interface CatalogStatus {
     data class Error(val message: String) : CatalogStatus
 }
 
+@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
 class CatalogRepository(private val ctx: Context, private val clientFor: (Account) -> XtreamClient) {
     private val scope = CoroutineScope(Dispatchers.IO)
     private val _catalog = MutableStateFlow(Catalog())
@@ -75,8 +78,10 @@ class CatalogRepository(private val ctx: Context, private val clientFor: (Accoun
                 val fresh = fetch(clientFor(account), quiet = cached != null && !cached.isEmpty)
                 set(fresh); _status.value = CatalogStatus.Ready
                 writeCache(account.id, fresh)
-            } catch (e: Exception) {
-                if (_catalog.value.isEmpty) _status.value = CatalogStatus.Error(e.message ?: "Katalog alınamadı")
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Throwable) { // bellek yetmezliği dahil: uygulama kapanmasın, hata gösterilsin
+                if (_catalog.value.isEmpty) _status.value = CatalogStatus.Error(if (e is OutOfMemoryError) "Katalog bu cihazın belleğine sığmadı" else e.message ?: "Katalog alınamadı")
             }
         }
     }
@@ -138,12 +143,13 @@ class CatalogRepository(private val ctx: Context, private val clientFor: (Accoun
 
     private fun cacheFile(accountId: String) = File(ctx.filesDir, "catalog-${accountId.hashCode()}.json")
     private suspend fun readCache(accountId: String): Catalog? = withContext(Dispatchers.IO) {
-        runCatching { cacheFile(accountId).takeIf { it.exists() }?.readText()?.let { AppJson.decodeFromString(Catalog.serializer(), it) } }.getOrNull()
+        // Akışla (dosyanın tamamı bir metin olarak belleğe alınmaz)
+        runCatching { cacheFile(accountId).takeIf { it.exists() }?.inputStream()?.buffered()?.use { AppJson.decodeFromStream(Catalog.serializer(), it) } }.getOrNull()
     }
     private suspend fun writeCache(accountId: String, c: Catalog) = withContext(Dispatchers.IO) {
         runCatching {
             val f = cacheFile(accountId); val tmp = File(f.path + ".tmp")
-            tmp.writeText(AppJson.encodeToString(Catalog.serializer(), c)); tmp.renameTo(f)
+            tmp.outputStream().buffered().use { AppJson.encodeToStream(Catalog.serializer(), c, it) }; tmp.renameTo(f)
         }
     }
 }
