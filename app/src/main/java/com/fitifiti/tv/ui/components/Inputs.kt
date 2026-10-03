@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.*
 import com.fitifiti.tv.ui.theme.C
 
-/** TV metin kutusu: kumandayla odaklanır, ortadaki tuş klavyeyi açar. Odakta beyaz çerçeve. */
+/** TV metin kutusu: kumandayla odaklanır, OK tuşu klavyeyi açar (odaklanınca kendiliğinden açılmaz). Odakta beyaz çerçeve. */
 @Composable
 fun TvTextField(
     value: String, onValueChange: (String) -> Unit, label: String, modifier: Modifier = Modifier,
@@ -42,8 +42,8 @@ fun TvTextField(
             textStyle = TextStyle(color = Color.White, fontSize = 18.sp),
             cursorBrush = SolidColor(C.primary),
             visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
-            keyboardOptions = KeyboardOptions(keyboardType = if (password) KeyboardType.Password else keyboard, imeAction = imeAction, autoCorrectEnabled = false),
-            keyboardActions = KeyboardActions(onDone = { onDone() }, onGo = { onDone() }, onSearch = { onDone() }, onNext = { onDone() }),
+            keyboardOptions = KeyboardOptions(keyboardType = if (password) KeyboardType.Password else keyboard, imeAction = imeAction, autoCorrectEnabled = false, showKeyboardOnFocus = false),
+            keyboardActions = KeyboardActions(onDone = { onDone() }, onGo = { onDone() }, onSearch = { onDone() }),
             modifier = Modifier.fillMaxWidth(),
             decorationBox = { inner ->
                 Row(

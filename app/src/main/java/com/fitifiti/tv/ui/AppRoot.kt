@@ -29,6 +29,7 @@ fun AppRoot() {
     val app = App.instance
     val nav = remember { Navigator(if (app.accounts.accounts.value.isEmpty()) Route.Login else Route.Profiles) }
     val actions = remember { Actions(nav) }
+    val accounts by app.accounts.accounts.collectAsState()
 
     fun selectProfile(p: ProfileEntity) {
         val acc = app.accounts.active ?: return
@@ -51,7 +52,7 @@ fun AppRoot() {
                         when (val r = entry.route) {
                             Route.Login -> LoginScreen(null, onDone = { nav.reset(Route.Profiles) }, onCancel = null)
                             is Route.AddAccount -> LoginScreen(r.editId, onDone = { app.catalog.clear(); nav.reset(Route.Profiles) }, onCancel = { nav.back() })
-                            Route.Profiles -> ProfilesScreen(::selectProfile, onAddAccount = { nav.push(Route.AddAccount()) }, onEditAccount = { nav.push(Route.AddAccount(it)) })
+                            Route.Profiles -> if (accounts.isEmpty()) LoginScreen(null, onDone = { nav.reset(Route.Profiles) }, onCancel = null) else ProfilesScreen(::selectProfile, onAddAccount = { nav.push(Route.AddAccount()) }, onEditAccount = { nav.push(Route.AddAccount(it)) })
                             Route.Main -> MainScreen(onProfiles = { app.user.profileId.value = -1; nav.reset(Route.Profiles) }, onEditAccount = { nav.push(Route.AddAccount(it)) }, onAddAccount = { nav.push(Route.AddAccount()) })
                             is Route.MovieDetail -> MovieDetailScreen(r.movie)
                             is Route.SeriesDetail -> SeriesDetailScreen(r.series, r.focusEpisodeId)

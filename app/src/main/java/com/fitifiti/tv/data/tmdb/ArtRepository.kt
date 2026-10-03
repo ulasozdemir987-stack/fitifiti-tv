@@ -16,6 +16,9 @@ import java.util.concurrent.ConcurrentHashMap
 /** Yazısız yatay sahne görseli + logolu başlık (sitedeki /api/art). TMDB anahtarı kullanıcının kendi anahtarıdır; yoksa boş döner. */
 data class Art(val backdrop: String? = null, val logo: String? = null, val poster: String? = null, val overview: String? = null, val vote: Double = 0.0, val votes: Int = 0, val tmdbId: Int? = null)
 
+data class CastMember(val name: String, val role: String?, val photo: String?)
+data class EpisodeArt(val name: String?, val overview: String?, val still: String?, val runtime: Int?)
+
 class ArtRepository(private val http: OkHttpClient, private val key: () -> String) {
     private val cache = ConcurrentHashMap<String, Art>()
 
@@ -64,6 +67,52 @@ class ArtRepository(private val http: OkHttpClient, private val key: () -> Strin
             if (!r.isSuccessful) return null
             return AppJson.parseToJsonElement(r.body?.string().orEmpty()) as? JsonObject
         }
+    }
+
+    private val castCache = ConcurrentHashMap<String, List<CastMember>>()
+    private val epCache = ConcurrentHashMap<String, Map<Int, EpisodeArt>>()
+
+    /** Oyuncu kadrosu (dizide tüm sezonların toplamı: aggregate_credits) */
+    suspend fun cast(kind: String, tmdbId: Int): List<CastMember> {
+        val k = key().trim(); if (k.isEmpty()) return emptyList()
+        val ck = "$kind-$tmdbId"
+        castCache[ck]?.let { return it }
+        val list = withContext(Dispatchers.IO) {
+            runCatching {
+                val path = if (kind == "series") "/tv/$tmdbId/aggregate_credits" else "/movie/$tmdbId/credits"
+                (get(k, path, mapOf("language" to "tr-TR"))?.get("cast") as? JsonArray).orEmpty().mapNotNull { it as? JsonObject }.take(16).map { o ->
+                    val role = o.str("character") ?: ((o["roles"] as? JsonArray)?.firstOrNull() as? JsonObject)?.str("character")
+                    CastMember(o.str("name") ?: "", role, o.str("profile_path")?.let { "https://image.tmdb.org/t/p/w185$it" })
+                }.filter { it.name.isNotBlank() }
+            }.getOrDefault(emptyList())
+        }
+        castCache[ck] = list
+        return list
+    }
+
+    /** Sezonun bölüm görselleri/özetleri (tr → en) */
+    suspend fun season(tmdbId: Int, season: Int): Map<Int, EpisodeArt> {
+        val k = key().trim(); if (k.isEmpty()) return emptyMap()
+        val ck = "$tmdbId-$season"
+        epCache[ck]?.let { return it }
+        val map = withContext(Dispatchers.IO) {
+            runCatching {
+                fun eps(lang: String) = (get(k, "/tv/$tmdbId/season/$season", mapOf("language" to lang))?.get("episodes") as? JsonArray).orEmpty().mapNotNull { it as? JsonObject }
+                val tr = eps("tr-TR")
+                val en = if (tr.any { it.str("overview").isNullOrBlank() }) eps("en-US").associateBy { it.int("episode_number") } else emptyMap()
+                tr.mapNotNull { o ->
+                    val n = o.int("episode_number") ?: return@mapNotNull null
+                    n to EpisodeArt(
+                        name = o.str("name")?.takeUnless { Regex("^(Bölüm|Episode) \\d+$").matches(it) } ?: en[n]?.str("name"),
+                        overview = o.str("overview")?.takeIf { it.isNotBlank() } ?: en[n]?.str("overview"),
+                        still = o.str("still_path")?.let { "https://image.tmdb.org/t/p/w500$it" },
+                        runtime = o.int("runtime"),
+                    )
+                }.toMap()
+            }.getOrDefault(emptyMap())
+        }
+        epCache[ck] = map
+        return map
     }
 
     /** Anahtar doğru mu? (Ayarlar'da) */

@@ -17,3 +17,4 @@ local.properties
 *.keystore
 app/build/
 fitifiti-tv/build/
+/.idea
