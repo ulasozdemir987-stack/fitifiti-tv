@@ -75,8 +75,10 @@ fun LiveScreen() {
 /** Sol menü öğesi: seçili = beyaz yazı + solda ince mor çizgi; odakta zemin (kategori odakla seçilir) */
 @Composable
 private fun CatItem(label: String, selected: Boolean, onSelect: () -> Unit) {
+    var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(focused, selected) { if (focused && !selected) { kotlinx.coroutines.delay(280); onSelect() } }
     Surface(
-        onClick = onSelect, modifier = Modifier.fillMaxWidth().onFocusChanged { if (it.isFocused && !selected) onSelect() },
+        onClick = onSelect, modifier = Modifier.fillMaxWidth().onFocusChanged { focused = it.isFocused },
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
         colors = ClickableSurfaceDefaults.colors(containerColor = Color.Transparent, focusedContainerColor = C.fill3, contentColor = if (selected) Color.White else C.muted, focusedContentColor = Color.White),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.02f),

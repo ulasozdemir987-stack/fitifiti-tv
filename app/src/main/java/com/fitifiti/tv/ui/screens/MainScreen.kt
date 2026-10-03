@@ -122,8 +122,10 @@ private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data
 @Composable
 private fun NavText(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier) {
     var focused by remember { mutableStateOf(false) }
+    // Sekmeler arasında hızla gezerken her birinin ağır sayfası çizilmesin: sekme üzerinde kısa süre durunca açılır
+    LaunchedEffect(focused, selected) { if (focused && !selected) { kotlinx.coroutines.delay(320); onClick() } }
     Surface(
-        onClick = onClick, modifier = modifier.padding(horizontal = 2.dp).onFocusChanged { focused = it.isFocused; if (it.isFocused && !selected) onClick() },
+        onClick = onClick, modifier = modifier.padding(horizontal = 2.dp).onFocusChanged { focused = it.isFocused },
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
         colors = ClickableSurfaceDefaults.colors(containerColor = Color.Transparent, focusedContainerColor = C.fill3, contentColor = if (selected) Color.White else C.muted, focusedContentColor = Color.White),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.04f),

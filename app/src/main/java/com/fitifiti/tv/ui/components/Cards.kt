@@ -62,7 +62,6 @@ fun PosterCard(item: Item, onClick: () -> Unit, modifier: Modifier = Modifier, w
                 colors = ClickableSurfaceDefaults.colors(containerColor = C.panel, focusedContainerColor = C.panel),
                 scale = ClickableSurfaceDefaults.scale(focusedScale = 1.08f),
                 border = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, Color.White), shape = CardShape)),
-                glow = ClickableSurfaceDefaults.glow(focusedGlow = Glow(Color.Black, 18.dp)),
             ) {
                 Box(Modifier.fillMaxSize()) {
                     PosterImage(item.image, item.title, Modifier.fillMaxSize())

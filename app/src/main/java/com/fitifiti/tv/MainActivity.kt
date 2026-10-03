@@ -33,6 +33,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Yön tuşu basılı tutulunca TV saniyede ~30 tekrar gönderir; zayıf işlemcide bunlar birikip odak gecikmeli
+    // ve "kayarak" ilerliyordu. Tekrarlar en fazla ~11/sn'ye indirilir (ilk basış hiç beklemez).
+    private var lastRepeatAt = 0L
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount > 0 && event.keyCode in DPAD) {
+            val now = SystemClock.uptimeMillis()
+            if (now - lastRepeatAt < 90) return true
+            lastRepeatAt = now
+        }
+        return super.dispatchKeyEvent(event)
+    }
+    private val DPAD = setOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT)
+
     override fun onStart() { super.onStart(); App.instance.remote.start() }
     override fun onStop() { super.onStop(); App.instance.remote.stop() }
 }
