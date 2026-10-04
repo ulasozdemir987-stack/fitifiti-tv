@@ -59,13 +59,14 @@ fun AppRoot() {
                             Route.Login -> LoginScreen(null, onDone = { nav.reset(Route.Profiles) }, onCancel = null)
                             is Route.AddAccount -> LoginScreen(r.editId, onDone = { app.catalog.clear(); nav.reset(Route.Profiles) }, onCancel = { nav.back() })
                             Route.Profiles -> if (accounts.isEmpty()) LoginScreen(null, onDone = { nav.reset(Route.Profiles) }, onCancel = null) else ProfilesScreen(::selectProfile, onAddAccount = { nav.push(Route.AddAccount()) }, onEditAccount = { nav.push(Route.AddAccount(it)) })
-                            Route.Main -> MainScreen(onProfiles = { app.user.profileId.value = -1; nav.reset(Route.Profiles) }, onEditAccount = { nav.push(Route.AddAccount(it)) }, onAddAccount = { nav.push(Route.AddAccount()) })
+                            Route.Main -> MainScreen(onProfiles = { app.user.profileId.value = -1; nav.reset(Route.Profiles) }, onEditAccount = { nav.push(Route.AddAccount(it)) }, onAddAccount = { nav.push(Route.AddAccount()) }, onEditChannels = { nav.push(Route.ChannelEdit) })
                             is Route.MovieDetail -> MovieDetailScreen(r.movie)
                             is Route.SeriesDetail -> SeriesDetailScreen(r.series, r.focusEpisodeId)
                             is Route.CategoryPage -> CategoryScreen(r.kind, r.categoryId, r.genre)
                             is Route.Platform -> PlatformScreen(r.brand)
                             is Route.Player -> PlayerScreen(r.req, onClose = { nav.back() })
                             is Route.LivePlayer -> LivePlayerScreen(r.channelId, r.list, onClose = { nav.back() })
+                            Route.ChannelEdit -> ChannelEditScreen(onBack = { nav.back() })
                         }
                     }
                 }

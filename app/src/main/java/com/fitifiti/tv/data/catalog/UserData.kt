@@ -94,4 +94,6 @@ class UserData(private val db: AppDb) {
     fun touchChannel(id: Int) = scope.launch { if (pid >= 0) db.recent().touchChannel(RecentChannelEntity(pid, id)) }
     fun addSearch(q: String) = scope.launch { if (pid >= 0 && q.isNotBlank()) db.recent().addSearch(RecentSearchEntity(pid, q.trim())) }
     fun clearSearches() = scope.launch { if (pid >= 0) db.recent().clearSearches(pid) }
+    fun upsertChannelConfig(c: ChannelConfigEntity) = scope.launch { db.channelConfigs().upsert(c) }
+    fun upsertChannelConfigs(list: List<ChannelConfigEntity>) = scope.launch { db.channelConfigs().upsertAll(list) }
 }

@@ -20,7 +20,7 @@ import com.fitifiti.tv.ui.theme.C
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAccount: () -> Unit) {
+fun SettingsScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAccount: () -> Unit, onEditChannels: () -> Unit = {}) {
     val app = App.instance
     val s by app.settings.settings.collectAsStateWithLifecycle()
     val accounts by app.accounts.accounts.collectAsStateWithLifecycle()
@@ -45,6 +45,8 @@ fun SettingsScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAd
         item { Section("Telefon kumandası") }
         item { SettingRow("Telefonu kumanda yap", hint = "QR'ı okut; yön tuşları, oynatma ve klavye telefondan. Aynı Wi-Fi gerekmez.", onClick = { pair = true }, icon = Icons.Default.PhoneAndroid, modifier = Modifier.fillMaxWidth(0.7f)) }
 
+        item { Section("Canlı TV") }
+        item { SettingRow("Kanalları düzenle", hint = "Sıralama, gizleme ve gruplama", onClick = onEditChannels, icon = Icons.Default.Tv, modifier = Modifier.fillMaxWidth(0.7f)) }
         item { Section("Oynatma") }
         item { SettingRow("Fragmanı otomatik oynat", if (s.trailerAutoplay) "Açık" else "Kapalı", hint = "Film ve dizi sayfasında", onClick = { app.settings.update { it.copy(trailerAutoplay = !it.trailerAutoplay) } }, icon = Icons.Default.Movie, modifier = Modifier.fillMaxWidth(0.7f)) }
         item { SettingRow("Fragman sesi", if (s.trailerSound) "Açık" else "Kapalı", onClick = { app.settings.update { it.copy(trailerSound = !it.trailerSound) } }, icon = Icons.Default.VolumeUp, modifier = Modifier.fillMaxWidth(0.7f)) }

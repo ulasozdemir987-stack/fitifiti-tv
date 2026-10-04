@@ -48,7 +48,7 @@ val LocalTopBar = compositionLocalOf { TopBarState() }
 
 @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
-fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAccount: () -> Unit, startTab: Tab = Tab.Home) {
+fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAccount: () -> Unit, onEditChannels: () -> Unit = {}, startTab: Tab = Tab.Home) {
     val app = App.instance
     var tab by rememberSaveableTab(startTab)
     val bar = remember { TopBarState() }
@@ -116,7 +116,7 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
                     Tab.Live -> LiveScreen()
                     Tab.Listem -> ListemScreen()
                     Tab.Search -> SearchScreen(searchKick) { searchKick = 0 }
-                    Tab.Settings -> SettingsScreen(onProfiles, onEditAccount, onAddAccount)
+                    Tab.Settings -> SettingsScreen(onProfiles, onEditAccount, onAddAccount, onEditChannels)
                 }
             }
             }
