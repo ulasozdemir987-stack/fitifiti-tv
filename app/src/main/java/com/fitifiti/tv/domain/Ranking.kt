@@ -15,13 +15,16 @@ class Ranking(c: Catalog) {
     private fun q(rating: Double) = if (rating <= 0 || rating >= 9.3) 0.0 else 6 + (rating - 6) * 0.45
     private fun recent(y: String?, span: Int) = y?.toIntOrNull()?.let { it >= year - span } ?: false
 
+    private val r = kotlin.random.Random((System.currentTimeMillis() / 86400000L).toInt())
+
     val newMovies: List<Movie> = c.movies.sortedByDescending { it.added }.take(30)
     val newSeries: List<Series> = c.series.sortedByDescending { it.added }.take(30)
 
-    val featuredMovies: List<Movie> = c.movies.filter { recent(it.year, 3) && q(it.rating) > 6.5 }.sortedByDescending { it.added }.take(30)
-        .ifEmpty { newMovies }
-    val featuredSeries: List<Series> = c.series.filter { recent(it.year, 4) && q(it.rating) > 6.8 }.sortedByDescending { it.added }.take(30)
-        .ifEmpty { newSeries }
+    val featuredMovies: List<Movie> = c.movies.filter { recent(it.year, 3) && q(it.rating) > 6.5 }
+        .shuffled(r).take(30).ifEmpty { newMovies.shuffled(r) }
+        
+    val featuredSeries: List<Series> = c.series.filter { recent(it.year, 4) && q(it.rating) > 6.8 }
+        .shuffled(r).take(30).ifEmpty { newSeries.shuffled(r) }
 
     val topMovies: List<Movie> = c.movies.filter { q(it.rating) > 0 }.sortedByDescending { q(it.rating) }.take(30)
     val topSeries: List<Series> = c.series.filter { q(it.rating) > 0 }.sortedByDescending { q(it.rating) }.take(30)
