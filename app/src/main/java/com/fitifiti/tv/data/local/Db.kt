@@ -161,8 +161,8 @@ interface ChannelConfigDao {
 }
 
 @Database(
-    entities = [ProfileEntity::class, ProgressEntity::class, FavoriteEntity::class, RecentChannelEntity::class, RecentSearchEntity::class, EpgEntity::class, ChannelConfigEntity::class],
-    version = 3, exportSchema = true,
+    entities = [ProfileEntity::class, ProgressEntity::class, FavoriteEntity::class, RecentChannelEntity::class, RecentSearchEntity::class, EpgEntity::class, ChannelConfigEntity::class, ReminderEntity::class],
+    version = 4, exportSchema = true,
 )
 abstract class AppDb : RoomDatabase() {
     abstract fun profiles(): ProfileDao
@@ -171,8 +171,36 @@ abstract class AppDb : RoomDatabase() {
     abstract fun recent(): RecentDao
     abstract fun epg(): EpgDao
     abstract fun channelConfigs(): ChannelConfigDao
+    abstract fun reminders(): ReminderDao
 
     companion object {
         fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "fitifiti.db").fallbackToDestructiveMigration().build()
     }
+}
+
+
+@Entity(tableName = "reminders")
+data class ReminderEntity(
+    @PrimaryKey val eventId: String,
+    val profileId: Long,
+    val title: String,
+    val channelId: Int,
+    val startTime: Long,
+    val endTime: Long,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Dao
+interface ReminderDao {
+    @Query("SELECT * FROM reminders WHERE profileId = :pid AND startTime >= :now ORDER BY startTime ASC")
+    fun observe(pid: Long, now: Long = System.currentTimeMillis()): Flow<List<ReminderEntity>>
+    
+    @Query("SELECT * FROM reminders WHERE startTime >= :now ORDER BY startTime ASC")
+    fun getAll(now: Long = System.currentTimeMillis()): List<ReminderEntity>
+    
+    @Upsert
+    suspend fun upsert(e: ReminderEntity)
+    
+    @Query("DELETE FROM reminders WHERE eventId = :eventId")
+    suspend fun delete(eventId: String)
 }

@@ -19,6 +19,7 @@ sealed interface Route {
     data class Player(val req: PlayRequest) : Route
     data class LivePlayer(val channelId: Int, ) : Route
     data object ChannelEdit : Route
+    data object LiveCalendar : Route
 }
 
 /** Oynatıcıya giden her şey */

@@ -11,6 +11,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Row
+import androidx.tv.material3.Text
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
@@ -67,6 +72,7 @@ fun AppRoot() {
                             is Route.Player -> PlayerScreen(r.req, onClose = { nav.back() })
                             is Route.LivePlayer -> LivePlayerScreen(r.channelId, onClose = { nav.back() })
                             Route.ChannelEdit -> ChannelEditScreen(onBack = { nav.back() })
+                            Route.LiveCalendar -> LiveCalendarScreen(onBack = { nav.back() })
                         }
                     }
                 }
@@ -76,6 +82,27 @@ fun AppRoot() {
             val update by com.fitifiti.tv.data.update.Updater.prompt.collectAsState()
             update?.let { info -> if (crash == null) com.fitifiti.tv.ui.components.UpdateDialog(info) { com.fitifiti.tv.data.update.Updater.dismiss() } }
             crash?.let { text -> CrashReport(text) { runCatching { app.crashFile().delete(); java.io.File(app.filesDir, "last-crash.sent").delete() }; crash = null } }
+            
+            val reminder by com.fitifiti.tv.domain.ReminderManager.currentReminder.collectAsState()
+            reminder?.let { rem ->
+                Box(Modifier.fillMaxSize().padding(top = 40.dp), contentAlignment = Alignment.TopCenter) {
+                    val focus = remember { FocusRequester() }
+                    LaunchedEffect(Unit) { kotlinx.coroutines.delay(100); runCatching { focus.requestFocus() } }
+                    androidx.tv.material3.Surface(
+                        onClick = { 
+                            com.fitifiti.tv.domain.ReminderManager.currentReminder.value = null
+                            nav.push(Route.LivePlayer(rem.channelId))
+                        },
+                        modifier = Modifier.focusRequester(focus),
+                        shape = androidx.tv.material3.ClickableSurfaceDefaults.shape(androidx.compose.foundation.shape.RoundedCornerShape(12.dp)),
+                        colors = androidx.tv.material3.ClickableSurfaceDefaults.colors(containerColor = com.fitifiti.tv.ui.theme.C.primary)
+                    ) {
+                        Row(Modifier.padding(horizontal = 24.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(" başlıyor ·  kanalına geç?", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
         }
     }
 }
