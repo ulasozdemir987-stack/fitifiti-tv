@@ -65,7 +65,7 @@ fun AppRoot() {
                             is Route.CategoryPage -> CategoryScreen(r.kind, r.categoryId, r.genre)
                             is Route.Platform -> PlatformScreen(r.brand)
                             is Route.Player -> PlayerScreen(r.req, onClose = { nav.back() })
-                            is Route.LivePlayer -> LivePlayerScreen(r.channelId, r.list, onClose = { nav.back() })
+                            is Route.LivePlayer -> LivePlayerScreen(r.channelId, onClose = { nav.back() })
                             Route.ChannelEdit -> ChannelEditScreen(onBack = { nav.back() })
                         }
                     }
