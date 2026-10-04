@@ -37,7 +37,7 @@ import android.os.SystemClock
 private var appStartNanos = 0L
 
 @Composable
-fun AnimatedBrandLogo(width: Dp, modifier: Modifier = Modifier, compact: Boolean = false, live: Boolean = false, replayKey: Any? = Unit, fixedTime: Float? = null) {
+fun AnimatedBrandLogo(width: Dp, modifier: Modifier = Modifier, compact: Boolean = false, live: Boolean = false, replayKey: Any? = Unit, waveKey: Any? = null, fixedTime: Float? = null) {
     if (appStartNanos == 0L) appStartNanos = SystemClock.elapsedRealtimeNanos()
     val measurer = rememberTextMeasurer()
     val glyphStyle = BRAND_GLYPH_STYLE
@@ -59,6 +59,8 @@ fun AnimatedBrandLogo(width: Dp, modifier: Modifier = Modifier, compact: Boolean
     val c3 by androidx.compose.animation.animateColorAsState(targetColors[2], label = "c3")
 
     var time by remember { mutableFloatStateOf(0f) }
+    var lastWaveTime by remember { mutableFloatStateOf(-10f) }
+    LaunchedEffect(waveKey) { if (waveKey != null) lastWaveTime = time }
     if (fixedTime != null) time = fixedTime
     else LaunchedEffect(replayKey, live) {
         val start = if (live) appStartNanos else withFrameNanos { it }
@@ -71,12 +73,12 @@ fun AnimatedBrandLogo(width: Dp, modifier: Modifier = Modifier, compact: Boolean
     val viewH = if (compact) 198f else 210f
 
     Canvas(modifier.size(width, width * (viewH / viewW))) { 
-        drawBrandLogo(time, f, tt, viewX, viewY, viewW, viewH, live, listOf(c1, c2, c3)) 
+        drawBrandLogo(time, f, tt, viewX, viewY, viewW, viewH, live, listOf(c1, c2, c3), lastWaveTime) 
     }
 }
 
 /** Logonun t anındaki karesi (çizim alanının genişliğine ölçeklenir) */
-fun DrawScope.drawBrandLogo(t: Float, f: TextLayoutResult, tt: TextLayoutResult, viewX: Float, viewY: Float, viewW: Float, viewH: Float, live: Boolean, liveColors: List<Color>) {
+fun DrawScope.drawBrandLogo(t: Float, f: TextLayoutResult, tt: TextLayoutResult, viewX: Float, viewY: Float, viewW: Float, viewH: Float, live: Boolean, liveColors: List<Color>, lastWaveTime: Float = -10f) {
         val s = size.width / viewW
         withTransform({ scale(s, s, Offset.Zero); translate(-viewX, -viewY) }) {
             // Harfler (doğal birimde, yatayda SX ölçekli)
@@ -92,8 +94,16 @@ fun DrawScope.drawBrandLogo(t: Float, f: TextLayoutResult, tt: TextLayoutResult,
                     if (live && g.ch == 'ı' && i < 6) { // first three 'i's (indices 1, 3, 5)
                         val idx = (i - 1) / 2 // 0, 1, 2
                         val delay = idx * 0.18f
-                        val eqTime = maxOf(0f, t - delay)
-                        eqScale = 0.7f + 1.2f * (0.5f - 0.5f * kotlin.math.cos(eqTime * Math.PI / 1.05f)).toFloat()
+                        val waveElapsed = (t - lastWaveTime - delay)
+                        if (waveElapsed >= 0f && waveElapsed <= 1.05f) {
+                            val p = waveElapsed / 1.05f
+                            eqScale = when {
+                                p < 0.25f -> 1f + (p / 0.25f) * 1.4f
+                                p < 0.45f -> 2.4f - ((p - 0.25f) / 0.2f) * 1.4f
+                                p < 0.65f -> 1f + ((p - 0.45f) / 0.2f) * 0.9f
+                                else -> 1.9f - ((p - 0.65f) / 0.35f) * 0.9f
+                            }
+                        }
                     }
                     
                     withTransform({ scale(1f + 0.06f * tap, (1f - 0.18f * tap) * eqScale, Offset(g.x + w / 2, FLOOR_Y)) }) {
