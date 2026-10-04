@@ -53,6 +53,10 @@ class MainActivity : ComponentActivity() {
             if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) { BackProbe.handled(); onBackPressedDispatcher.onBackPressed() }
             return true
         }
+        if (event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER || event.keyCode == KeyEvent.KEYCODE_ENTER) {
+            com.fitifiti.tv.ui.components.OkClock.record(event)
+            android.util.Log.i("fitiok", "a=${event.action} rep=${event.repeatCount} down=${event.downTime} ev=${event.eventTime} now=${SystemClock.uptimeMillis()} fl=${event.flags}")
+        }
         if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount > 0 && event.keyCode in DPAD) {
             val now = SystemClock.uptimeMillis()
             if (now - lastRepeatAt < 90) return true

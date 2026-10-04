@@ -41,4 +41,20 @@ class OkClicksTest {
         rule.onNodeWithTag("b").performKeyInput { keyDown(Key.DirectionCenter); advanceEventTime(800); keyUp(Key.DirectionCenter) }
         assertEquals(1, clicks); assertEquals(1, longs)
     }
+
+    /** Asıl kart (tv-material Surface) üzerinde: tekrar göndermeyen uzun basış da seçenekleri açmalı */
+    @Test fun onCard() {
+        var clicks = 0; var longs = 0
+        rule.setContent {
+            com.fitifiti.tv.ui.components.LandscapeCard("x", null, null, { clicks++ }, Modifier.testTag("c"), onLongClick = { longs++ })
+        }
+        rule.waitForIdle()
+        rule.onNodeWithTag("c").onChildren().filter(isFocusable()).onFirst().requestFocus()
+        rule.onRoot().performKeyInput { keyDown(Key.DirectionCenter); advanceEventTime(100); keyUp(Key.DirectionCenter) }
+        rule.waitForIdle()
+        assertEquals("kısa", 1, clicks); assertEquals(0, longs)
+        rule.onRoot().performKeyInput { keyDown(Key.DirectionCenter); advanceEventTime(900); keyUp(Key.DirectionCenter) }
+        rule.waitForIdle()
+        assertEquals("uzun", 1, clicks); assertEquals(1, longs)
+    }
 }
