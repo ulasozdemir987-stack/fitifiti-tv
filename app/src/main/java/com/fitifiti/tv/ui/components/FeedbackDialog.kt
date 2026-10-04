@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -35,6 +36,7 @@ fun FeedbackDialog(c: Feedback.Capture, onClose: () -> Unit) {
     var state by remember { mutableStateOf<String?>(null) } // null | gönderiliyor | gitti | olmadı
     val scope = rememberCoroutineScope()
     val first = remember { FocusRequester() }
+    val sendFr = remember { FocusRequester() }
     LaunchedEffect(Unit) { delay(120); runCatching { first.requestFocus() } }
     LaunchedEffect(state) { if (state == "gitti") { delay(1400); onClose() } }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -56,14 +58,15 @@ fun FeedbackDialog(c: Feedback.Capture, onClose: () -> Unit) {
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                TvTextField(note, { note = it }, "Not (isteğe bağlı)", placeholder = "Kısaca ne oldu? Telefondan da yazabilirsin", imeAction = androidx.compose.ui.text.input.ImeAction.Done)
+                // notun altından ↓ = Gönder (yön araması sağdaki Vazgeç'i seçiyordu)
+                TvTextField(note, { note = it }, "Not (isteğe bağlı)", Modifier.focusProperties { down = sendFr }, placeholder = "Kısaca ne oldu? Telefondan da yazabilirsin", imeAction = androidx.compose.ui.text.input.ImeAction.Done)
                 Spacer(Modifier.height(18.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Btn(if (state == "gönderiliyor") "Gönderiliyor…" else "Gönder", {
                         if (state == "gönderiliyor" || state == "gitti") return@Btn
                         state = "gönderiliyor"
                         scope.launch { state = if (Feedback.send(c, category, note)) "gitti" else "olmadı" }
-                    }, icon = Icons.Default.Send)
+                    }, Modifier.focusRequester(sendFr), icon = Icons.Default.Send)
                     Btn("Vazgeç", onClose, kind = BtnKind.Ghost)
                     when (state) {
                         "gitti" -> Text("Gönderildi, teşekkürler!", color = C.teal)
