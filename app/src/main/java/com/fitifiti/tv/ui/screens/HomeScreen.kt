@@ -52,7 +52,7 @@ fun HomeScreen() {
     }
 
     val platforms = remember {
-        listOf("Netflix", "Prime Video", "HBO Max", "Disney+", "Exxen", "BluTV", "Gain", "tabii")
+        listOf("netflix", "amazon", "hbo", "disney", "exxen", "max blu", "gain", "tabii", "b* connect", "apple")
     }
 
     HeroRowsLayout(first, requestInitialFocus = doFocus) { onFocus ->
@@ -62,11 +62,11 @@ fun HomeScreen() {
                 SectionTitle("Platformlar")
                 CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
                     LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        items(platforms) { name ->
+                        items(platforms) { key ->
                             CategoryCard(
-                                rawName = name,
+                                rawName = key,
                                 onClick = { 
-                                    val brandId = categoryStyle(name).logo ?: name.lowercase()
+                                    val brandId = categoryStyle(key).logo ?: key
                                     actions.openPlatform(brandId) 
                                 },
                                 modifier = Modifier.width(200.dp)
