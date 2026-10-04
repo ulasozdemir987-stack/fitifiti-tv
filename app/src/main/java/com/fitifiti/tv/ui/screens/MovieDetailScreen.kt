@@ -56,9 +56,9 @@ fun MovieDetailScreen(m: Movie) {
 
     DetailScaffold(art.copy(backdrop = art.backdrop ?: info.backdrop), TrailerSpec("movie", m.name, m.year, info.trailer)) {
         item(key = "head") {
-            // Başlık bloğu sol altta, ekranın yarısını geçmez (sahne/fragman görünsün): logo ≤72 dp, özet 2 satır,
+            // Başlık bloğu sol üstten başlar (alta yaslıyken logo ekranın ortasına iniyor, özet kesiliyordu): logo ≤72 dp, özet 4 satır,
             // ikincil eylemler yazısız yuvarlak düğmeler; bilgi listesi ayrı öğede
-            Column(Modifier.detailHead().heightIn(min = (h * 0.84f).dp).padding(start = 48.dp, end = 48.dp, top = 48.dp, bottom = 34.dp), verticalArrangement = Arrangement.Bottom) {
+            Column(Modifier.detailHead().heightIn(min = (h * 0.76f).dp).padding(start = 48.dp, end = 48.dp, top = 56.dp, bottom = 34.dp), verticalArrangement = Arrangement.Top) {
                 HeroTitle(title, art.logo, maxWidthFraction = 0.28f, maxLogoHeight = 72.dp)
                 if (alt.isNotBlank() && art.logo == null) { Spacer(Modifier.height(4.dp)); Text(alt, style = MaterialTheme.typography.titleMedium, color = C.muted) }
                 Spacer(Modifier.height(12.dp))
@@ -71,7 +71,7 @@ fun MovieDetailScreen(m: Movie) {
                 CriticsRow(critics, Modifier.padding(top = 8.dp))
                 Spacer(Modifier.height(8.dp))
                 val overview = art.overview?.takeIf { it.isNotBlank() } ?: info.plot ?: m.plot
-                if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.46f))
+                if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.5f))
                 Spacer(Modifier.height(16.dp))
                 VariantPicker(m.variants, variant) { v -> app.settings.chooseVariant(item.key, v.label); variantTick++ }
                 if (m.variants.size >= 2) Spacer(Modifier.height(14.dp))

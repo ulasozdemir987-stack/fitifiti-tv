@@ -40,12 +40,12 @@ object PreviewData {
 
     val movies = movieNames.mapIndexed { i, n ->
         Movie(id = 1000 + i, name = n, icon = "fake:poster:m$i", categoryId = "1", ext = "mp4", rating = 6.0 + (i % 4) * 0.7, added = 1_700_000_000L + i * 1000,
-            year = "${2018 + i % 8}", genre = genres[i % genres.size], plot = "Örnek özet: $n, bir ailenin geçmişiyle yüzleşmesini ve beklenmedik bir yolculuğa çıkmasını anlatıyor. İkinci cümle uzunluğu sınamak için.",
+            year = "${2018 + i % 8}", genre = genres[i % genres.size], plot = "Örnek özet: $n, bir ailenin geçmişiyle yüzleşmesini ve beklenmedik bir yolculuğa çıkmasını anlatıyor. İkinci cümle uzunluğu sınamak için. Üçüncü cümle: geçmişte kalan bir sır gün yüzüne çıktığında herkes saklandığı yerden çıkmak zorunda kalır ve hiçbir şey eskisi gibi olmaz.",
             tmdb = "${500 + i}", runtimeMin = 95 + i * 7)
     }
     val series = seriesNames.mapIndexed { i, n ->
         Series(id = 2000 + i, name = n, cover = "fake:poster:s$i", categoryId = "2", rating = 7.0 + (i % 3) * 0.6, added = 1_700_000_000L + i * 1000,
-            year = "${2016 + i % 9}", genre = genres[(i + 2) % genres.size], plot = "Örnek dizi özeti: $n. Sezonlar boyunca süren bir sır ve onu çözmeye çalışan insanlar.", backdrop = "fake:backdrop:s$i")
+            year = "${2016 + i % 9}", genre = genres[(i + 2) % genres.size], plot = "Örnek dizi özeti: $n. Sezonlar boyunca süren bir sır ve onu çözmeye çalışan insanlar. Her bölümde yeni bir ipucu ortaya çıkar, ama gerçeğe yaklaştıkça bedeli de ağırlaşır ve dostlar birer birer düşmana dönüşür.", backdrop = "fake:backdrop:s$i")
     }
     val channels = (0 until 16).map { Channel(id = 3000 + it, name = listOf("TRT 1", "ATV", "Show TV", "Star", "NOW", "TV8", "Kanal D", "beIN Sports")[it % 8] + if (it >= 8) " HD" else "", icon = null, categoryId = "3", num = it + 1) }
     val catalog = Catalog(movies, series, channels, listOf(Category("1", "Yerli Filmler")), listOf(Category("2", "Diziler")), listOf(Category("3", "Ulusal")), System.currentTimeMillis())

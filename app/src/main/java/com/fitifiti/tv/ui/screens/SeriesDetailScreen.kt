@@ -108,7 +108,7 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
 
     DetailScaffold(art.copy(backdrop = art.backdrop ?: info?.backdrop ?: s.backdrop), TrailerSpec("series", s.name, s.year, info?.trailer)) {
         item(key = "head") {
-            Column(Modifier.detailHead().heightIn(min = (h * 0.62f).dp).padding(start = 48.dp, end = 48.dp, top = 48.dp, bottom = 30.dp), verticalArrangement = Arrangement.Bottom) {
+            Column(Modifier.detailHead().heightIn(min = (h * 0.62f).dp).padding(start = 48.dp, end = 48.dp, top = 56.dp, bottom = 30.dp), verticalArrangement = Arrangement.Top) {
                 HeroTitle(title, art.logo, maxWidthFraction = 0.28f, maxLogoHeight = 72.dp)
                 if (alt.isNotBlank() && art.logo == null) { Spacer(Modifier.height(4.dp)); Text(alt, style = MaterialTheme.typography.titleMedium, color = C.muted) }
                 Spacer(Modifier.height(12.dp))
@@ -120,7 +120,7 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
                 CriticsRow(critics, Modifier.padding(top = 8.dp))
                 Spacer(Modifier.height(8.dp))
                 val overview = art.overview?.takeIf { it.isNotBlank() } ?: info?.plot ?: s.plot
-                if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.46f))
+                if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.5f))
                 Spacer(Modifier.height(16.dp))
                 VariantPicker(s.variants, variant) { v -> app.settings.chooseVariant(item.key, v.label); variantTick++; season = -1 }
                 if (s.variants.size >= 2) Spacer(Modifier.height(14.dp))
