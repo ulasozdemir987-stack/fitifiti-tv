@@ -47,22 +47,30 @@ fun HeroRowsLayout(
     var shown by remember { mutableStateOf(initial) }
     LaunchedEffect(initial?.key) { if (shown == null) shown = initial }
     val art = rememberArt(shown)
-    val density = LocalDensity.current
-    val topAlign = remember(density) {
-        val titleSpace = with(density) { 34.dp.toPx() }
-        object : BringIntoViewSpec {
-            override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float = offset - titleSpace
-        }
-    }
     val listState = rememberLazyListState()
+    val topBar = LocalTopBar.current
+
+    // Netflix / Prime tarzı: Aşağı kaydırınca üst çubuğu gizle, en tepedeyken göster
+    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
+        topBar.hidden = listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 60
+    }
+
     Box(Modifier.fillMaxSize()) {
         HeroBackdrop(art)
-        Column(Modifier.fillMaxSize()) {
-            HeroInfo(shown, art, heroLabel, Modifier.fillMaxWidth().fillMaxHeight(0.52f), primary)
-            CompositionLocalProvider(LocalBringIntoViewSpec provides topAlign) {
-                LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 200.dp)) {
-                    rows { shown = it }
+        CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec(36.dp)) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 120.dp)
+            ) {
+                item(key = "hero_info") {
+                    HeroInfo(
+                        shown, art, heroLabel,
+                        Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 12.dp),
+                        primary
+                    )
                 }
+                rows { shown = it }
             }
         }
     }
@@ -95,7 +103,7 @@ fun HeroInfo(item: Item?, art: HeroArt, label: String?, modifier: Modifier, prim
     Column(modifier.padding(start = 48.dp, top = 64.dp, end = 48.dp), verticalArrangement = Arrangement.Top) {
         if (item == null) return@Column
         if (label != null) { Text(label, style = MaterialTheme.typography.labelLarge, color = C.muted); Spacer(Modifier.height(8.dp)) }
-        HeroTitle(cardTitle(item.title), art.logo, maxWidthFraction = 0.28f, maxLogoHeight = 72.dp)
+        HeroTitle(cardTitle(item.title), art.logo, maxWidthFraction = 0.38f, maxLogoHeight = 96.dp)
         Spacer(Modifier.height(8.dp))
         val runtime = (item as? Item.M)?.m?.runtimeMin?.takeIf { it > 0 }?.let { com.fitifiti.tv.domain.formatDuration(it, "minutes") }
         MetaRow(listOf(item.year, runtime, item.genre?.split(',', '/', '&')?.take(2)?.joinToString(", ") { it.trim() },
@@ -135,7 +143,7 @@ fun HeroButtons(item: Item, progress: Map<String, ProgressEntity>, fav: Boolean,
 /** Vitrinli sayfalardaki afiş şeridi (ad vitrinde göründüğü için kartın altında yazı yok) */
 @OptIn(ExperimentalFoundationApi::class)
 fun LazyListScope.posterRow(
-    key: String, title: String, all: List<Item>, onFocusItem: (Item) -> Unit, ranked: Boolean = false, width: Dp = 196.dp,
+    key: String, title: String, all: List<Item>, onFocusItem: (Item) -> Unit, ranked: Boolean = false, width: Dp = 220.dp,
     badge: (Item) -> String? = { null },
 ) {
     // Aynı anahtar iki kez geçerse LazyRow uygulamayı düşürür (bazı sağlayıcılar aynı içeriği tekrar verir)
@@ -151,7 +159,7 @@ fun LazyListScope.posterRow(
                 LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     itemsIndexed(items, key = { _, it -> it.key }) { i, it ->
                         val p = progress[it.key]
-                        WideCard(it, onClick = { open(actions, it) }, width = if (ranked) 176.dp else width, rank = if (ranked) i + 1 else null,
+                        WideCard(it, onClick = { open(actions, it) }, width = if (ranked) 190.dp else width, rank = if (ranked) i + 1 else null,
                             progress = p?.fraction, watched = it is Item.M && p?.finished == true, badge = badge(it), onFocus = { onFocusItem(it) })
                     }
                 }
@@ -191,7 +199,7 @@ fun LazyListScope.continueRow(list: List<ProgressEntity>, onFocusItem: (Item) ->
                     LandscapeCard(
                         title = cardTitle(p.title.substringBefore(" · ")),
                         subtitle = listOfNotNull(if (p.kind == "episode") "${p.season ?: 1}. Sezon · Bölüm ${p.episodeNum ?: ""}" else null, remaining).joinToString(" · "),
-                        image = art.backdrop ?: p.image, onClick = { actions.playContinue(p) }, width = 196.dp,
+                        image = art.backdrop ?: p.image, onClick = { actions.playContinue(p) }, width = 220.dp,
                         progress = if (p.isUpNext) null else p.fraction, label = if (p.isUpNext) "Sıradaki bölüm" else null,
                         onFocus = item?.let { i -> { onFocusItem(i) } },
                         onLongClick = { menu = p },

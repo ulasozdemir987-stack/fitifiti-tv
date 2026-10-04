@@ -84,3 +84,10 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 * `data/diag/Diag.kt`: son 80 olay halkada (oynatıcı çözücüsü, biçim, düşen kare, hata, bellek). Rapor `POST https://ozul.com.tr/api/tv-report` (sitede; son 80 rapor `DATA_DIR/tv-reports.json`, okuma `x-monitor-key` ya da VPS'te dosya). Adreslerdeki hesap bilgisi hem uygulamada hem sunucuda temizlenir.
 * `FreezeWatchdog`: ana iş parçacığı 4 sn+ takılırsa o anki yığın + son olaylar hemen gönderilir (Android uygulamayı kapatsa bile rapor gitmiş olur). Çökmeler `last-crash.txt` → sonraki açılışta gönderilir + ekranda gösterilir.
 * Oynatıcı tamponu 48 MB ile sınırlı (varsayılan ~140 MB Java belleği düşük bellekli TV'lerde 4K'da sorun çıkarıyordu).
+
+## Güncelleme — 2026-10-04 (2.9.4): Netflix Tarzı Tam Sayfa Kaydırma & Optimize Ölçek
+* **HeroRowsLayout:** Eskiden sabit üst alan olarak tutulan `HeroInfo`, artık `LazyColumn`'ın ilk öğesi olarak entegre edildi.
+* **Tam Sayfa Sörf:** Kullanıcı aşağı kaydırdığında vitrin doğal biçimde yukarı kayıp ekrandan çıkar ve üst menü çubuğu gizlenir (`TopBarState.hidden`). Tüm ekran (100%) şeritlere açılır; ekranda aynı anda tam 3 şerit birden görünür, rahatça sörf yapılır.
+* **Geri Dönüş:** En üste (Row 1'den yukarı) çıkıldığında odak `HeroButtons`'a ("Oynat") döner, vitrin ve üst çubuk pürüzsüzce geri gelir.
+* **Kart ve Logo Ölçekleri:** Kart genişlikleri 220dp (sıralı 190dp) olarak ayarlandı; 1080p (540dp TV Compose) ölçeğinde tam 3 dikey satır ve yatayda 4 tam + 1 ucu görünen kart dizilimi sağlandı.
+

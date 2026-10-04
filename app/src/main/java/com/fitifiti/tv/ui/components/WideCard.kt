@@ -34,7 +34,7 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun WideCard(
-    item: Item, onClick: () -> Unit, modifier: Modifier = Modifier, width: Dp = 196.dp,
+    item: Item, onClick: () -> Unit, modifier: Modifier = Modifier, width: Dp = 220.dp,
     progress: Float? = null, watched: Boolean = false, badge: String? = null, rank: Int? = null,
     onFocus: (() -> Unit)? = null, showText: Boolean = false,
 ) {
