@@ -68,7 +68,9 @@ object PreviewData {
             app.art.seed("movie", m.name, m.year, m.tmdb, Art(backdrop = "fake:backdrop:m$i", logo = if (i % 3 == 1) "fake:logo:${m.name}" else null, poster = m.icon,
                 overview = m.plot, vote = 7.1 + i % 3 * 0.4, votes = 1200, tmdbId = 500 + i))
             app.art.seedCast("movie", 500 + i, cast)
-            app.art.seedCritics("movie", 500 + i, Critics(imdb = 7.4, imdbVotes = 52000, rt = 88, mc = 69, awards = "2 ödül, 5 adaylık"))
+            app.art.seedCritics("movie", 500 + i, Critics(imdb = 7.4, imdbVotes = 52000, rt = 88, mc = 69, awards = "2 Oscar kazandı · 120 ödül, 247 adaylık",
+                imdbId = "tt100$i", major = listOf(com.fitifiti.tv.data.tmdb.AwardCount("Oscar", 2, 11))))
+            app.art.seedAwards("tt100$i", listOf(com.fitifiti.tv.data.tmdb.AwardCount("Altın Küre", 1, 4), com.fitifiti.tv.data.tmdb.AwardCount("Venedik", 1, 1), com.fitifiti.tv.data.tmdb.AwardCount("Emmy", 0, 2)))
         }
         series.forEachIndexed { i, s ->
             app.art.seed("series", s.name, s.year, null, Art(backdrop = "fake:backdrop:s$i", logo = if (i % 2 == 0) "fake:logo:${s.name}" else null, poster = s.cover,

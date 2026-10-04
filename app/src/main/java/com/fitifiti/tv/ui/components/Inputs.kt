@@ -73,6 +73,12 @@ fun TvTextField(
     // Yazı alanı ilk eklendiğinde onFocusChanged "odakta değil" diye de çağrılır: odağı bir kez almadan bunu
     // "odak kaybedildi" sayıp yazmayı bitirmek, Ara simgesinden gelen isteği anında iptal ediyordu
     var editHadFocus by remember { mutableStateOf(false) }
+    var restoreBox by remember { mutableStateOf(false) }
+    LaunchedEffect(restoreBox) {
+        if (!restoreBox) return@LaunchedEffect
+        repeat(5) { kotlinx.coroutines.delay(30); if (runCatching { boxFr.requestFocus() }.isSuccess && fieldFocused) { restoreBox = false; return@LaunchedEffect } }
+        restoreBox = false
+    }
     LaunchedEffect(editing) {
         if (!editing) return@LaunchedEffect
         editHadFocus = false
@@ -118,7 +124,11 @@ fun TvTextField(
                     onNext = { finish(true) },
                 ),
                 modifier = Modifier.fillMaxWidth().focusRequester(editFr)
-                    .onFocusChanged { if (it.isFocused) editHadFocus = true else if (editHadFocus && editing) editing = false }
+                    .onFocusChanged {
+                        if (it.isFocused) editHadFocus = true
+                        // beklenmedik odak kaybı (klavye Geri ile kapanınca): odak hiçbir yere geçmiyor, tuşlar boşa gidiyordu → kutuya geri ver
+                        else if (editHadFocus && editing) { editing = false; restoreBox = true }
+                    }
                     // yazarken ↑/↓ yazmayı bitirip odağı taşır
                     .onPreviewKeyEvent { e ->
                         if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false

@@ -68,7 +68,10 @@ fun MovieDetailScreen(m: Movie) {
                     info.age?.takeIf { it.isNotBlank() && it != "0" }?.let { "$it+" }?.replace("++", "+"),
                     // IMDb puanı varsa TMDB puanı tekrarlanmaz (aşağıdaki puan satırında)
                     if (art.vote > 0 && art.votes >= 25 && critics?.imdb == null) "TMDB ${"%.1f".format(art.vote)}" else null))
-                CriticsRow(critics, Modifier.padding(top = 8.dp))
+                val wikiAwards by produceState(emptyList<com.fitifiti.tv.data.tmdb.AwardCount>(), critics?.imdbId) { critics?.imdbId?.let { value = app.art.awards(it) } }
+                val laurels = remember(critics, wikiAwards) { laurelBadges(critics, wikiAwards) }
+                CriticsRow(critics?.copy(awards = awardsRemainder(critics?.awards, laurels)), Modifier.padding(top = 8.dp))
+                AwardLaurels(laurels, Modifier.padding(top = 12.dp))
                 Spacer(Modifier.height(8.dp))
                 val overview = art.overview?.takeIf { it.isNotBlank() } ?: info.plot ?: m.plot
                 if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.5f))

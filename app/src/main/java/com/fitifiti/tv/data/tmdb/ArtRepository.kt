@@ -19,7 +19,10 @@ import java.util.concurrent.ConcurrentHashMap
 data class Art(val backdrop: String? = null, val logo: String? = null, val poster: String? = null, val overview: String? = null, val vote: Double = 0.0, val votes: Int = 0, val tmdbId: Int? = null)
 
 /** IMDb / Rotten Tomatoes / Metacritic + ödül özeti (OMDb; sitenin /api/reviews'i üzerinden) */
-data class Critics(val imdb: Double? = null, val imdbVotes: Int? = null, val rt: Int? = null, val mc: Int? = null, val awards: String? = null)
+data class Critics(val imdb: Double? = null, val imdbVotes: Int? = null, val rt: Int? = null, val mc: Int? = null, val awards: String? = null,
+                   val imdbId: String? = null, val major: List<AwardCount> = emptyList())
+/** Büyük tören başına ödül/adaylık (Oscar, Emmy, Altın Küre, BAFTA, Cannes…) */
+data class AwardCount(val family: String, val wins: Int, val noms: Int)
 
 data class CastMember(val name: String, val role: String?, val photo: String?)
 data class EpisodeArt(val name: String?, val overview: String?, val still: String?, val runtime: Int?)
@@ -146,13 +149,37 @@ class ArtRepository(private val http: OkHttpClient, private val key: () -> Strin
                 http.newCall(Request.Builder().url(url).build()).execute().use { r ->
                     if (!r.isSuccessful) return@runCatching null
                     val o = (AppJson.parseToJsonElement(r.body?.string().orEmpty()) as? JsonObject)?.get("critics") as? JsonObject ?: return@runCatching Critics()
-                    Critics(o.dbl("imdb"), o.dbl("imdbVotes")?.toInt(), o.dbl("rt")?.toInt(), o.dbl("mc")?.toInt(), o.str("awards"))
+                    val major = (o["major"] as? JsonArray).orEmpty().mapNotNull { it as? JsonObject }.mapNotNull { m ->
+                        AwardCount(m.str("family") ?: return@mapNotNull null, m.int("wins") ?: 0, m.int("noms") ?: 0)
+                    }
+                    Critics(o.dbl("imdb"), o.dbl("imdbVotes")?.toInt(), o.dbl("rt")?.toInt(), o.dbl("mc")?.toInt(), o.str("awards"), o.str("imdbId"), major)
                 }
             }.getOrNull()
         } ?: return null
         criticsCache[ck] = c
         return c
     }
+
+    private val awardsCache = ConcurrentHashMap<String, List<AwardCount>>()
+
+    /** Wikidata'dan tören başına ödüller (sitenin /api/awards'ı; OMDb özeti yalnız en önemli töreni söylüyor) */
+    suspend fun awards(imdbId: String): List<AwardCount> {
+        awardsCache[imdbId]?.let { return it }
+        if (offline) return emptyList()
+        val list = withContext(Dispatchers.IO) {
+            runCatching {
+                val url = "$REMOTE_BASE/api/awards".toHttpUrl().newBuilder().addQueryParameter("imdbId", imdbId).build()
+                http.newCall(Request.Builder().url(url).build()).execute().use { r ->
+                    if (!r.isSuccessful) return@runCatching null
+                    ((AppJson.parseToJsonElement(r.body?.string().orEmpty()) as? JsonObject)?.get("groups") as? JsonArray).orEmpty().mapNotNull { it as? JsonObject }
+                        .mapNotNull { g -> AwardCount(g.str("name") ?: return@mapNotNull null, g.int("wins") ?: 0, g.int("noms") ?: 0) }
+                }
+            }.getOrNull()
+        } ?: return emptyList()
+        awardsCache[imdbId] = list
+        return list
+    }
+    fun seedAwards(imdbId: String, list: List<AwardCount>) { awardsCache[imdbId] = list }
 
     /** Anahtar doğru mu? (Ayarlar'da) */
     suspend fun validate(k: String): Boolean = withContext(Dispatchers.IO) {
