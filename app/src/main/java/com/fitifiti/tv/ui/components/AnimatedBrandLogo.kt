@@ -297,6 +297,9 @@ private val MOUTH = path("M 64 72 Q 67 76.5 70 72.5 Q 73 76.5 76 72")
 private val INK = Color(0xFF090A12)
 private val CYAN = Color(0xFF00F2FE)
 
+/** Yalnız kedi (140×140 çerçevede; uygulama simgesi/banner üretimi için) */
+fun DrawScope.drawBrandCat(t: Float) = drawCat(t)
+
 private fun DrawScope.drawCat(t: Float) {
     // Kuyruk + yıldız
     rotate(loop(t, 3.2f, 0f, 0f to -7f, 0.5f to 9f, 1f to -7f), Offset(46f, 110f)) {
