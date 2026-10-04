@@ -40,7 +40,7 @@ import com.fitifiti.tv.ui.LocalScreenActive
 import com.fitifiti.tv.ui.components.*
 import com.fitifiti.tv.ui.theme.C
 
-enum class Tab(val label: String) { Home("Ana Sayfa"), Movies("Filmler"), Series("Diziler"), Live("Canlı TV"), Listem("Listem"), Search("Ara"), Settings("Ayarlar") }
+enum class Tab(val label: String) { Home("Keşfet"), Movies("Filmler"), Series("Diziler"), Live("Canlı TV"), Listem("Listem"), Search("Ara"), Settings("Ayarlar") }
 
 /** Üst çubuk görünürlüğü: sekme içeriği aşağı kaydırınca gizlenir */
 class TopBarState { var hidden by mutableStateOf(false) }

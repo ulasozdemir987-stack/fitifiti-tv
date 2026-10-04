@@ -17,6 +17,7 @@ class Actions(val nav: Navigator) {
     fun openMovie(m: Movie) = nav.push(Route.MovieDetail(m))
     fun openSeries(s: Series, focusEpisodeId: String? = null) = nav.push(Route.SeriesDetail(s, focusEpisodeId))
     fun openCategory(kind: String, categoryId: String?, genre: String? = null) = nav.push(Route.CategoryPage(kind, categoryId, genre))
+    fun openPlatform(brand: String) = nav.push(Route.Platform(brand))
     fun playChannel(id: Int, list: List<Int>) { app.user.touchChannel(id); nav.push(Route.LivePlayer(id, list)) }
 
     /** Seçili sürüm: içerik başına seçim → genel tercih (dublaj/4K benzerliği) → tutulan kopya */

@@ -15,11 +15,13 @@ import com.fitifiti.tv.data.xtream.Channel
 import com.fitifiti.tv.data.xtream.Movie
 import com.fitifiti.tv.data.xtream.Series
 import com.fitifiti.tv.domain.Ranking
+import com.fitifiti.tv.domain.categoryStyle
 import com.fitifiti.tv.ui.LocalActions
 import com.fitifiti.tv.ui.components.*
 
 private var initialFocusDone = false
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen() {
     val app = App.instance
@@ -49,7 +51,31 @@ fun HomeScreen() {
         }
     }
 
+    val platforms = remember {
+        listOf("Netflix", "Prime Video", "HBO Max", "Disney+", "Exxen", "BluTV", "Gain", "tabii")
+    }
+
     HeroRowsLayout(first, requestInitialFocus = doFocus) { onFocus ->
+        item(key = "platforms") {
+            val actions = LocalActions.current
+            Column(Modifier.padding(bottom = 22.dp)) {
+                SectionTitle("Platformlar")
+                CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
+                    LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        items(platforms) { name ->
+                            CategoryCard(
+                                rawName = name,
+                                onClick = { 
+                                    val brandId = categoryStyle(name).logo ?: name.lowercase()
+                                    actions.openPlatform(brandId) 
+                                },
+                                modifier = Modifier.width(200.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
         continueRow(cont, onFocus)
         posterRow("listem", "Listem", listem, onFocus)
         posterRow("fm", "Öne çıkan filmler", rows.fm, onFocus)

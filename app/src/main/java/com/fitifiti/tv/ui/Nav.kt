@@ -15,6 +15,7 @@ sealed interface Route {
     data class MovieDetail(val movie: Movie) : Route
     data class SeriesDetail(val series: Series, val focusEpisodeId: String? = null) : Route
     data class CategoryPage(val kind: String, val categoryId: String?, val genre: String? = null) : Route
+    data class Platform(val brand: String) : Route
     data class Player(val req: PlayRequest) : Route
     data class LivePlayer(val channelId: Int, val list: List<Int>) : Route
 }

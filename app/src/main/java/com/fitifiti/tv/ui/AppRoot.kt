@@ -63,6 +63,7 @@ fun AppRoot() {
                             is Route.MovieDetail -> MovieDetailScreen(r.movie)
                             is Route.SeriesDetail -> SeriesDetailScreen(r.series, r.focusEpisodeId)
                             is Route.CategoryPage -> CategoryScreen(r.kind, r.categoryId, r.genre)
+                            is Route.Platform -> PlatformScreen(r.brand)
                             is Route.Player -> PlayerScreen(r.req, onClose = { nav.back() })
                             is Route.LivePlayer -> LivePlayerScreen(r.channelId, r.list, onClose = { nav.back() })
                         }
