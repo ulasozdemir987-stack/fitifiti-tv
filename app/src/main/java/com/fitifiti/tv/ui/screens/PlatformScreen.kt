@@ -16,6 +16,8 @@ import com.fitifiti.tv.ui.theme.C
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 
 @Composable
 fun PlatformScreen(brand: String) {
@@ -24,8 +26,9 @@ fun PlatformScreen(brand: String) {
     val cont by app.user.continueList.collectAsStateWithLifecycle()
 
     val (movies, series) = remember(cat, brand) {
-        val m = cat.movies.filter { categoryStyle(cat.catName[it.categoryId]).logo == brand }
-        val s = cat.series.filter { categoryStyle(cat.catName[it.categoryId]).logo == brand }
+        val validCatIds = cat.catName.entries.filter { categoryStyle(it.value).logo == brand }.map { it.key }.toSet()
+        val m = cat.movies.filter { it.categoryId in validCatIds }
+        val s = cat.series.filter { it.categoryId in validCatIds }
         m to s
     }
 
@@ -78,37 +81,55 @@ fun PlatformScreen(brand: String) {
 
     val first = remember(rows) { rows.fs.firstOrNull() ?: rows.fm.firstOrNull() }
     val brandLogoRes = "file:///android_asset/brands/$brand.${if (brand == "exxen" || brand == "gain") "png" else "svg"}"
+    val tint = remember(brand) { brandTint(brand) }
 
-    var showContent by remember { mutableStateOf(false) }
+    var animState by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(800)
-        showContent = true
+        animState = 1
+        kotlinx.coroutines.delay(1000)
+        animState = 2
     }
 
+    val logoScale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (animState == 0) 0.85f else if (animState == 1) 1f else 1.25f,
+        animationSpec = androidx.compose.animation.core.tween(durationMillis = if (animState == 0) 0 else if (animState == 1) 1000 else 600, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+        label = "logoScale"
+    )
+    val logoAlpha by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (animState == 2) 0f else 1f,
+        animationSpec = androidx.compose.animation.core.tween(500),
+        label = "logoAlpha"
+    )
+    val contentAlpha by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (animState == 2) 1f else 0f,
+        animationSpec = androidx.compose.animation.core.tween(800, delayMillis = 200),
+        label = "contentAlpha"
+    )
+
     Box(Modifier.fillMaxSize().background(brandBg), contentAlignment = Alignment.Center) {
-        androidx.compose.animation.AnimatedVisibility(
-            visible = !showContent,
-            exit = androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(500)) + androidx.compose.animation.scaleOut(targetScale = 1.15f, animationSpec = androidx.compose.animation.core.tween(500))
-        ) {
-            AsyncImage(model = brandLogoRes, contentDescription = brandName, modifier = Modifier.height(140.dp).widthIn(max = 500.dp), contentScale = ContentScale.Fit)
+        if (contentAlpha < 1f) {
+            AsyncImage(
+                model = brandLogoRes, contentDescription = brandName,
+                modifier = Modifier.height(140.dp).widthIn(max = 500.dp).scale(logoScale).alpha(logoAlpha),
+                contentScale = ContentScale.Fit, colorFilter = tint
+            )
         }
 
-        androidx.compose.animation.AnimatedVisibility(
-            visible = showContent,
-            enter = androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(700))
-        ) {
-            HeroRowsLayout(first, requestInitialFocus = true) { onFocus ->
-                item {
-                    Row(Modifier.fillMaxWidth().padding(start = 48.dp, bottom = 24.dp), verticalAlignment = Alignment.CenterVertically) {
-                        AsyncImage(model = brandLogoRes, contentDescription = brandName, modifier = Modifier.height(48.dp).widthIn(max = 200.dp), contentScale = ContentScale.Fit)
+        if (animState == 2) {
+            Box(Modifier.fillMaxSize().alpha(contentAlpha)) {
+                HeroRowsLayout(first, requestInitialFocus = true) { onFocus ->
+                    item {
+                        Row(Modifier.fillMaxWidth().padding(start = 48.dp, bottom = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                            AsyncImage(model = brandLogoRes, contentDescription = brandName, modifier = Modifier.height(48.dp).widthIn(max = 200.dp), contentScale = ContentScale.Fit, colorFilter = tint)
+                        }
                     }
+                    posterRow("fs", "$brandName Orijinal Dizileri", rows.fs, onFocus)
+                    posterRow("fm", "$brandName Orijinal Filmleri", rows.fm, onFocus)
+                    posterRow("ts", "En Beğenilen Diziler", rows.ts, onFocus, ranked = true)
+                    posterRow("tm", "En Beğenilen Filmler", rows.tm, onFocus, ranked = true)
+                    rows.gs.forEach { (g, list) -> posterRow("gs-$g", "$g Dizileri", list, onFocus) }
+                    rows.gm.forEach { (g, list) -> posterRow("gm-$g", "$g Filmleri", list, onFocus) }
                 }
-                posterRow("fs", "$brandName Orijinal Dizileri", rows.fs, onFocus)
-                posterRow("fm", "$brandName Orijinal Filmleri", rows.fm, onFocus)
-                posterRow("ts", "En Beğenilen Diziler", rows.ts, onFocus, ranked = true)
-                posterRow("tm", "En Beğenilen Filmler", rows.tm, onFocus, ranked = true)
-                rows.gs.forEach { (g, list) -> posterRow("gs-$g", "$g Dizileri", list, onFocus) }
-                rows.gm.forEach { (g, list) -> posterRow("gm-$g", "$g Filmleri", list, onFocus) }
             }
         }
     }
