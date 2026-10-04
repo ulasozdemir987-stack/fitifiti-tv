@@ -140,16 +140,16 @@ fun PauseScreen(visible: Boolean, req: PlayRequest, meta: PlayerMeta, compact: B
             Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to Color(0xF2050508), 0.45f to Color(0xB3050508), 0.8f to Color(0x33050508), 1f to Color.Transparent)))
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0x80000000), 0.3f to Color.Transparent, 0.7f to Color.Transparent, 1f to Color(0x99000000))))
             run {
-                Column(Modifier.padding(start = 56.dp, top = 40.dp).fillMaxWidth(0.5f)) {
+                Column(Modifier.padding(start = 56.dp, top = 40.dp)) {
                     Text("İzliyorsun", style = MaterialTheme.typography.labelLarge, color = C.muted)
                     Spacer(Modifier.height(10.dp))
                     TitleArt(req, meta, if (compact) 56.dp else 76.dp, 340.dp, if (compact) 28 else 34)
-                    episodeLine(req, meta)?.let { Spacer(Modifier.height(10.dp)); Text(it, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                    episodeLine(req, meta)?.let { Spacer(Modifier.height(10.dp)); Text(it, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.5f)) }
                     Spacer(Modifier.height(6.dp))
                     MetaLine(meta)
                     (meta.epOverview ?: meta.overview)?.let {
                         Spacer(Modifier.height(10.dp))
-                        Text(it, style = MaterialTheme.typography.bodyMedium, color = Color(0xB3FFFFFF), maxLines = if (compact) 2 else 3, overflow = TextOverflow.Ellipsis)
+                        Text(it, style = MaterialTheme.typography.bodyMedium, color = Color(0xB3FFFFFF), maxLines = if (compact) 2 else 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.5f))
                     }
                     if (meta.cast.isNotEmpty()) {
                         Spacer(Modifier.height(16.dp))

@@ -303,7 +303,7 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
                 } else false
             },
     ) {
-        VideoSurface(player, Modifier.fillMaxSize(), settings.subtitleScale)
+        VideoSurface(player, Modifier.fillMaxSize(), settings.subtitleScale, raiseSubtitles = controls)
 
         // Duraklatma ekranı + X-Ray (kontrollerin altında)
         PauseScreen((pausedLong || xray) && started && error == null && !askResume && !sleeping && panel == Panel.None && nextCountdown < 0, req, meta, compact = controls)

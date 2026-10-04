@@ -95,7 +95,7 @@ fun mediaItem(url: String, live: Boolean = false): MediaItem {
 /** Görüntü + altyazı katmanı (kontroller Compose ile, PlayerView'un kendi kontrolleri kapalı) */
 @OptIn(UnstableApi::class)
 @Composable
-fun VideoSurface(player: ExoPlayer, modifier: Modifier, subtitleScale: Float = 1f) {
+fun VideoSurface(player: ExoPlayer, modifier: Modifier, subtitleScale: Float = 1f, raiseSubtitles: Boolean = false) {
     AndroidView(
         factory = { c ->
             PlayerView(c).apply {
@@ -116,7 +116,8 @@ fun VideoSurface(player: ExoPlayer, modifier: Modifier, subtitleScale: Float = 1
                 }
             }
         },
-        update = { it.player = player },
+        // Kontroller açıkken altyazı ilerleme çubuğunun üstüne çıkar (Netflix gibi)
+        update = { it.player = player; it.subtitleView?.setBottomPaddingFraction(if (raiseSubtitles) 0.27f else 0.07f) },
         modifier = modifier,
     )
 }
