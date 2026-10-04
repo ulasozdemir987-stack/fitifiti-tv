@@ -40,7 +40,6 @@ fun Modifier.okClicks(onClick: () -> Unit, onLong: () -> Unit): Modifier = compo
             AKey.KEYCODE_DPAD_CENTER, AKey.KEYCODE_ENTER, AKey.KEYCODE_NUMPAD_ENTER -> when (e.type) {
                 KeyEventType.KeyDown -> {
                     if (e.nativeKeyEvent.repeatCount == 0) { downAt = SystemClock.uptimeMillis(); repeated = false } else repeated = true
-                    android.util.Log.i("fitiok", "card down rep=${e.nativeKeyEvent.repeatCount}")
                     true
                 }
                 KeyEventType.KeyUp -> {
@@ -48,7 +47,6 @@ fun Modifier.okClicks(onClick: () -> Unit, onLong: () -> Unit): Modifier = compo
                     if (downAt == 0L) return@onPreviewKeyEvent true
                     val n = e.nativeKeyEvent
                     val long = repeated || n.eventTime - n.downTime >= 500 || SystemClock.uptimeMillis() - downAt >= 500 || OkClock.lastHeld >= 500
-                    android.util.Log.i("fitiok", "card up long=$long rep=$repeated held=${OkClock.lastHeld} dt=${SystemClock.uptimeMillis() - downAt}")
                     downAt = 0L
                     if (long) onLong() else onClick()
                     true
