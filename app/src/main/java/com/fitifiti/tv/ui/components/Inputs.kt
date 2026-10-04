@@ -70,8 +70,14 @@ fun TvTextField(
         keyboardCtl?.hide()
         if (next) focusManager.moveFocus(FocusDirection.Down) else runCatching { boxFr.requestFocus() }
     }
+    // Yazı alanı ilk eklendiğinde onFocusChanged "odakta değil" diye de çağrılır: odağı bir kez almadan bunu
+    // "odak kaybedildi" sayıp yazmayı bitirmek, Ara simgesinden gelen isteği anında iptal ediyordu
+    var editHadFocus by remember { mutableStateOf(false) }
     LaunchedEffect(editing) {
-        if (editing) { kotlinx.coroutines.delay(30); runCatching { editFr.requestFocus() }; keyboardCtl?.show() }
+        if (!editing) return@LaunchedEffect
+        editHadFocus = false
+        repeat(10) { kotlinx.coroutines.delay(30); runCatching { editFr.requestFocus() }; if (editHadFocus) { keyboardCtl?.show(); return@LaunchedEffect } }
+        editing = false
     }
 
     val shape = RoundedCornerShape(12.dp)
@@ -112,7 +118,7 @@ fun TvTextField(
                     onNext = { finish(true) },
                 ),
                 modifier = Modifier.fillMaxWidth().focusRequester(editFr)
-                    .onFocusChanged { if (!it.isFocused && editing) editing = false }
+                    .onFocusChanged { if (it.isFocused) editHadFocus = true else if (editHadFocus && editing) editing = false }
                     // yazarken ↑/↓ yazmayı bitirip odağı taşır
                     .onPreviewKeyEvent { e ->
                         if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
