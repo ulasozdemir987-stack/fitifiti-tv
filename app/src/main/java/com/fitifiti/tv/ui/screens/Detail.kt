@@ -17,6 +17,7 @@ import androidx.compose.ui.focus.onFocusEvent
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -47,7 +48,7 @@ fun DetailScaffold(art: HeroArt, trailer: TrailerSpec? = null, content: LazyList
     val trailerState = remember { TrailerState() }
     Box(Modifier.fillMaxSize().background(C.bg)) {
         CompositionLocalProvider(LocalTrailerState provides trailerState) {
-        HeroBackdrop(art, video = trailer?.let { t -> { TrailerVideo(t, atTop) } })
+        HeroBackdrop(art, modifier = Modifier.graphicsLayer { translationY = if (list.firstVisibleItemIndex == 0) -list.firstVisibleItemScrollOffset.toFloat() else -size.height }, video = trailer?.let { t -> { TrailerVideo(t, atTop) } })
         // TV'de varsayılan kaydırma odaktaki öğeyi ekranın üst %30'una çeker: "Oynat"a odaklanınca sayfa ~300 px
         // aşağı kayıyor, başlığın üstü kesiliyordu. Yalnız gerektiği kadar kaydır (öğe zaten görünüyorsa hiç kaydırma).
         CompositionLocalProvider(LocalDetailList provides list, LocalBringIntoViewSpec provides rememberRowSpec(24.dp)) {

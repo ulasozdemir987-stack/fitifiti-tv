@@ -108,7 +108,7 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
 
     DetailScaffold(art.copy(backdrop = art.backdrop ?: info?.backdrop ?: s.backdrop), TrailerSpec("series", s.name, s.year, info?.trailer)) {
         item(key = "head") {
-            Column(Modifier.detailHead().heightIn(min = (h * 0.62f).dp).padding(start = 48.dp, end = 48.dp, top = 56.dp, bottom = 30.dp), verticalArrangement = Arrangement.Top) {
+            Column(Modifier.detailHead().heightIn(min = h.dp).padding(start = 48.dp, end = 48.dp, top = 56.dp, bottom = 30.dp), verticalArrangement = Arrangement.Top) {
                 HeroTitle(title, art.logo, maxWidthFraction = 0.28f, maxLogoHeight = 72.dp)
                 if (alt.isNotBlank() && art.logo == null) { Spacer(Modifier.height(4.dp)); Text(alt, style = MaterialTheme.typography.titleMedium, color = C.muted) }
                 Spacer(Modifier.height(12.dp))
