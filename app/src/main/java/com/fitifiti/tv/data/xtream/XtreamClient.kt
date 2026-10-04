@@ -126,7 +126,7 @@ open class XtreamClient(private val http: OkHttpClient, val account: Account) {
         if (seasons.isEmpty() && info == null) throw XtreamException("Bölüm listesi boş geldi")
         return SeriesInfo(
             seasons = seasons, plot = info?.str("plot"), cast = info?.str("cast"), director = info?.str("director"),
-            genre = info?.str("genre"), backdrop = info?.firstStr("backdrop_path") ?: info?.str("cover"),
+            genre = info?.str("genre"), country = info?.str("country"), age = info?.str("age"), tmdbId = info?.str("tmdb_id"), backdrop = info?.firstStr("backdrop_path") ?: info?.str("cover"),
             releaseDate = info?.str("releaseDate") ?: info?.str("release_date"), rating = info?.dbl("rating") ?: 0.0,
             trailer = info?.str("youtube_trailer"),
         )

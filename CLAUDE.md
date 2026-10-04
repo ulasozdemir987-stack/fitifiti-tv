@@ -99,3 +99,4 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 * **Derleme Düzeltmeleri:** Compose'un `foundation`, `graphics`, `layout` ve `animation` modülleri eksiksiz içe aktarıldı, TV'de test edildi.
 
 ⌀⌀ 䜀ﰀ渀挀攀氀氀攀洀攀 ⴀ ㈀　㈀㘀ⴀ㄀　ⴀ　㐀 ⠀㈀⸀㤀⸀㘀⤀㨀 䄀渀椀洀愀猀礀漀渀氀甀 䌀愀渀氀㄀ 䴀攀渀ﰀ 䰀漀最漀猀甀ഀ਀⨀ ⨀⨀䄀渀椀洀愀琀攀搀䈀爀愀渀搀䰀漀最漀 ☀ 䴀愀椀渀匀挀爀攀攀渀㨀⨀⨀ �猀琀 洀攀渀ﰀ 甀戀甀ἀ甁渀搀愀欀椀 ⠀吀漀瀀䈀愀爀⤀ 猀琀愀琀椀欀 昀㄀琁㄀昁㄀琁㄀ 氀漀最漀猀甀 欀愀氀搀㄀爁㄀氁愀爀愀欀 礀攀爀椀渀攀 䄀渀椀洀愀琀攀搀䈀爀愀渀搀䰀漀最漀 攀欀氀攀渀搀椀⸀ 䰀漀最漀礀愀 挀漀洀瀀愀挀琀 ⠀欀㄀爁瀀㄀氁洀㄀弁 最爀ﰀ渀ﰀ洀⤀ 瘀攀 氀椀瘀攀 ⠀眀攀戀 猀椀琀攀猀椀渀搀攀欀椀 眀漀爀搀洀愀爀欀 最椀戀椀⤀ 洀漀搀氀愀爀㄀ 攀欀氀攀渀搀椀⸀ഀ਀⨀ ⨀⨀䌀愀渀氀㄀ 䴀漀搀㨀⨀⨀ 　氁欀 ﰀ ✀㄀✁ 栀愀爀昀椀 攀欀漀氀愀礀稀攀爀 最椀戀椀 甀稀愀礀㄀瀁 欀㄀猁愀氀㄀礁漀爀Ⰰ 猀漀渀 ✀㄀✁ ⠀欀攀搀椀渀椀渀 欀漀渀搀甀ἀ甁⤀ 猀愀戀椀琀⸀ 䰀漀最漀 爀攀渀欀氀攀爀椀 最ﰀ渀ﰀ渀 猀愀愀琀椀渀攀 最爀攀 瀀愀氀攀琀琀攀渀 ⠀猀愀戀愀栀Ⰰ ἀ氁攀渀Ⰰ 愀欀开愁洀Ⰰ 最攀挀攀⤀ 礀甀洀甀开愁欀 最攀椀开氁攀爀氀攀 ⠀愀渀椀洀愀琀攀䌀漀氀漀爀䄀猀匀琀愀琀攀⤀ 搀攀ἀ椁开椁礀漀爀⸀ഀ਀�
+- v2.9.9: Diziler ve filmler icin afis detay bilgileri (ulke, yonetmen) eklendi, Hero alani asagiya yaslandi.
