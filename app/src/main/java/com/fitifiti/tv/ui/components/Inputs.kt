@@ -43,9 +43,11 @@ import com.fitifiti.tv.ui.theme.C
 fun TvTextField(
     value: String, onValueChange: (String) -> Unit, label: String, modifier: Modifier = Modifier,
     placeholder: String = "", password: Boolean = false, keyboard: KeyboardType = KeyboardType.Text,
-    imeAction: ImeAction = ImeAction.Next, onDone: () -> Unit = {}, icon: ImageVector? = null,
+    imeAction: ImeAction = ImeAction.Next, onDone: () -> Unit = {}, icon: ImageVector? = null, startEditing: Int = 0,
 ) {
     var editing by remember { mutableStateOf(false) }
+    // Dışarıdan "yazmaya başla" (ör. Ara simgesine basınca): kutuya odak + klavye
+    LaunchedEffect(startEditing) { if (startEditing > 0) editing = true }
     var fieldFocused by remember { mutableStateOf(false) }
     val boxFr = remember { FocusRequester() }
     val editFr = remember { FocusRequester() }

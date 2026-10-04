@@ -62,17 +62,14 @@ fun PillBtn(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, ic
         onClick = onClick, modifier = modifier,
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(50)),
         colors = ClickableSurfaceDefaults.colors(
-            containerColor = if (primary) Color.White else Color(0xB3121218), contentColor = if (primary) Color.Black else Color.White,
+            containerColor = Color(0x33FFFFFF), contentColor = Color.White,
             focusedContainerColor = Color.White, focusedContentColor = Color.Black,
         ),
-        border = ClickableSurfaceDefaults.border(
-            border = Border(androidx.compose.foundation.BorderStroke(1.dp, Color(0x33FFFFFF)), shape = RoundedCornerShape(50)),
-            focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.dp, C.primary), shape = RoundedCornerShape(50)),
-        ),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.05f),
+        glow = ClickableSurfaceDefaults.glow(focusedGlow = Glow(Color.White.copy(alpha = 0.25f), 10.dp)),
     ) {
-        Row(Modifier.padding(horizontal = 22.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        Row(Modifier.padding(horizontal = 20.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
             if (icon != null) { Spacer(Modifier.width(8.dp)); Icon(icon, null, Modifier.size(20.dp)) }
         }
     }

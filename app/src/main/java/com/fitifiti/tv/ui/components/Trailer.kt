@@ -47,10 +47,10 @@ val LocalTrailerState = staticCompositionLocalOf<TrailerState?> { null }
 fun TrailerMuteButton(modifier: Modifier = Modifier) {
     val st = LocalTrailerState.current ?: return
     if (!st.playing) return
-    Btn(if (st.muted) "Sesi aç" else "Sesi kapat", {
+    IconAction(if (st.muted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp, if (st.muted) "Sesi aç" else "Sesi kapat", {
         st.muted = !st.muted
         App.instance.settings.update { it.copy(trailerSound = !st.muted) }
-    }, modifier, kind = BtnKind.Ghost, icon = if (st.muted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp)
+    }, modifier)
 }
 
 /**

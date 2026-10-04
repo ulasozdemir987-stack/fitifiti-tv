@@ -1,5 +1,7 @@
 package com.fitifiti.tv.ui.components
 
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+
 import com.fitifiti.tv.ui.rememberFocus
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -67,24 +69,43 @@ fun MetaRow(parts: List<String?>, modifier: Modifier = Modifier, color: Color = 
 
 enum class BtnKind { Primary, Secondary, Ghost }
 
-/** Sitedeki Btn: birincil beyaz, ikincil yarı saydam. Odakta hafif büyür + beyaz halka. */
+/**
+ * Düğme (Netflix / Apple TV tarzı, çerçevesiz): dinlenirken buzlu cam (beyaz %16), odakta düz beyaz + siyah yazı ve
+ * hafif büyüme. Odak rengin kendisiyle belli olur; halka/çerçeve yok. Ghost: dinlenirken saydam.
+ */
 @Composable
 fun Btn(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, kind: BtnKind = BtnKind.Primary, icon: ImageVector? = null, enabled: Boolean = true) {
-    val (bg, fg) = when (kind) {
-        BtnKind.Primary -> Color.White to Color.Black
-        BtnKind.Secondary -> C.fill3 to Color.White
-        BtnKind.Ghost -> Color.Transparent to Color.White
-    }
+    val rest = when (kind) { BtnKind.Ghost -> Color.Transparent; BtnKind.Primary -> Color(0x33FFFFFF); BtnKind.Secondary -> Color(0x24FFFFFF) }
     Button(
         onClick = onClick, enabled = enabled, modifier = modifier.rememberFocus(),
         shape = ButtonDefaults.shape(RoundedCornerShape(50)),
-        colors = ButtonDefaults.colors(containerColor = bg, contentColor = fg, focusedContainerColor = if (kind == BtnKind.Primary) Color.White else Color(0x33FFFFFF), focusedContentColor = fg),
-        scale = ButtonDefaults.scale(focusedScale = 1.06f),
-        border = ButtonDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.dp, if (kind == BtnKind.Primary) C.primary else Color.White), shape = RoundedCornerShape(50))),
-        contentPadding = PaddingValues(horizontal = 22.dp, vertical = 10.dp),
+        colors = ButtonDefaults.colors(containerColor = rest, contentColor = Color.White, focusedContainerColor = Color.White, focusedContentColor = Color.Black),
+        scale = ButtonDefaults.scale(focusedScale = 1.05f),
+        glow = ButtonDefaults.glow(focusedGlow = Glow(Color.White.copy(alpha = 0.25f), 10.dp)),
+        contentPadding = PaddingValues(start = if (icon != null) 16.dp else 20.dp, end = 20.dp, top = 9.dp, bottom = 9.dp),
     ) {
-        if (icon != null) { Icon(icon, null, Modifier.size(20.dp)); Spacer(Modifier.width(8.dp)) }
-        Text(text, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        if (icon != null) { Icon(icon, null, Modifier.size(18.dp)); Spacer(Modifier.width(7.dp)) }
+        Text(text, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+    }
+}
+
+/**
+ * Yuvarlak ikon eylemi (Listem, İzlendi, Baştan, Ses…): ikincil eylemler yazısız, yer kaplamaz; adı yalnız odaktayken
+ * altında belirir. active = durum açık (listede / izlendi) → ikon mor tonlu.
+ */
+@Composable
+fun IconAction(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier, active: Boolean = false, size: Dp = 40.dp) {
+    val src = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val focused by src.collectIsFocusedAsState()
+    Box(contentAlignment = Alignment.TopCenter) {
+        Surface(
+            onClick = onClick, modifier = modifier.size(size).rememberFocus(), interactionSource = src,
+            shape = ClickableSurfaceDefaults.shape(CircleShape),
+            colors = ClickableSurfaceDefaults.colors(containerColor = Color(0x24FFFFFF), contentColor = if (active) Color(0xFFC4B5FD) else Color.White, focusedContainerColor = Color.White, focusedContentColor = Color.Black),
+            scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),
+            glow = ClickableSurfaceDefaults.glow(focusedGlow = Glow(Color.White.copy(alpha = 0.25f), 10.dp)),
+        ) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(icon, label, Modifier.size(size * 0.48f)) } }
+        if (focused) Text(label, Modifier.offset(y = size + 7.dp).wrapContentWidth(unbounded = true), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1, softWrap = false)
     }
 }
 

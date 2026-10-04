@@ -112,21 +112,21 @@ fun HeroInfo(item: Item?, art: HeroArt, label: String?, modifier: Modifier, prim
 fun HeroButtons(item: Item, progress: Map<String, ProgressEntity>, fav: Boolean, primaryFocus: FocusRequester? = null) {
     val app = App.instance
     val actions = LocalActions.current
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
         when (item) {
             is Item.M -> {
                 val p = progress[item.key]
                 val resume = p != null && !p.finished && p.positionMs > 15_000
                 Btn(if (resume) "Devam et" else "Oynat", { actions.playMovie(item.m) }, Modifier.then(primaryFocus?.let { Modifier.focusRequester(it) } ?: Modifier), icon = Icons.Default.PlayArrow)
-                Btn("Detaylar", { actions.openMovie(item.m) }, kind = BtnKind.Secondary, icon = Icons.Default.Info)
-                Btn("Listem", { app.user.toggleFavorite(item.m) }, kind = BtnKind.Secondary, icon = if (fav) Icons.Default.Check else Icons.Default.Add)
+                IconAction(Icons.Default.Info, "Detaylar", { actions.openMovie(item.m) })
+                IconAction(if (fav) Icons.Default.Check else Icons.Default.Add, if (fav) "Listemden çıkar" else "Listeme ekle", { app.user.toggleFavorite(item.m) }, active = fav)
             }
             is Item.S -> {
                 val last = progress.values.filter { it.seriesId == item.s.id }.maxByOrNull { it.updatedAt }
                 if (last != null && !last.finished) Btn("Devam et · ${last.episodeNum ?: ""}. bölüm", { actions.playContinue(last) }, Modifier.then(primaryFocus?.let { Modifier.focusRequester(it) } ?: Modifier), icon = Icons.Default.PlayArrow)
-                Btn("Bölümler", { actions.openSeries(item.s) }, if (last == null || last.finished) Modifier.then(primaryFocus?.let { Modifier.focusRequester(it) } ?: Modifier) else Modifier,
-                    kind = if (last != null && !last.finished) BtnKind.Secondary else BtnKind.Primary, icon = if (last == null || last.finished) Icons.Default.PlayArrow else Icons.Default.Info)
-                Btn("Listem", { app.user.toggleFavorite(item.s) }, kind = BtnKind.Secondary, icon = if (fav) Icons.Default.Check else Icons.Default.Add)
+                if (last == null || last.finished) Btn("Bölümler", { actions.openSeries(item.s) }, Modifier.then(primaryFocus?.let { Modifier.focusRequester(it) } ?: Modifier), icon = Icons.Default.PlayArrow)
+                else IconAction(Icons.Default.Info, "Bölümler", { actions.openSeries(item.s) })
+                IconAction(if (fav) Icons.Default.Check else Icons.Default.Add, if (fav) "Listemden çıkar" else "Listeme ekle", { app.user.toggleFavorite(item.s) }, active = fav)
             }
         }
     }

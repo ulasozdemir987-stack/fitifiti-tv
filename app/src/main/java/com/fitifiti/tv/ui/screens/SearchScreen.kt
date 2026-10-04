@@ -25,7 +25,9 @@ import kotlinx.coroutines.withContext
 
 /** Arama: Türkçe/aksan duyarsız, yazım hatasına toleranslı (cihazdaki dizin); kanallar adla */
 @Composable
-fun SearchScreen() {
+fun SearchScreen(startEditing: Int = 0, onEditStarted: () -> Unit = {}) {
+    // istek bir kez işlenir (sekmeye sonra yalnız odakla dönülünce klavye kendiliğinden açılmasın)
+    LaunchedEffect(startEditing) { if (startEditing > 0) { kotlinx.coroutines.delay(400); onEditStarted() } }
     val app = App.instance
     var q by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
     val recent by app.user.recentSearches.collectAsStateWithLifecycle()
@@ -46,7 +48,7 @@ fun SearchScreen() {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 100.dp, bottom = 80.dp)) {
         item(key = "field") {
             Column(Modifier.padding(horizontal = 48.dp).padding(bottom = 22.dp)) {
-                TvTextField(q, { q = it }, "", Modifier.fillMaxWidth(0.6f), placeholder = "Film, dizi, kanal ara", icon = Icons.Default.Search, imeAction = ImeAction.Search, onDone = { app.user.addSearch(q) })
+                TvTextField(q, { q = it }, "", Modifier.fillMaxWidth(0.6f), placeholder = "Film, dizi, kanal ara", icon = Icons.Default.Search, imeAction = ImeAction.Search, onDone = { app.user.addSearch(q) }, startEditing = startEditing)
                 if (q.isBlank() && recent.isNotEmpty()) {
                     Spacer(Modifier.height(16.dp))
                     Text("Son aramalar", style = MaterialTheme.typography.labelLarge, color = C.muted)

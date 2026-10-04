@@ -104,9 +104,9 @@ fun LandscapeCard(title: String, subtitle: String?, image: String?, onClick: () 
                   imageFit: ContentScale = ContentScale.Crop, onLongClick: (() -> Unit)? = null) {
     Column(modifier.width(width)) {
         Surface(
-            onClick = onClick, onLongClick = onLongClick,
+            onClick = onClick,
             modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).rememberFocus()
-                .then(if (onLongClick != null) Modifier.onPreviewKeyEvent { e -> if (e.type == KeyEventType.KeyDown && e.key.nativeKeyCode == android.view.KeyEvent.KEYCODE_MENU) { onLongClick(); true } else false } else Modifier).then(if (onFocus != null) Modifier.focusReport(onFocus = onFocus) else Modifier),
+                .then(if (onLongClick != null) Modifier.okClicks(onClick, onLongClick) else Modifier).then(if (onFocus != null) Modifier.focusReport(onFocus = onFocus) else Modifier),
             shape = ClickableSurfaceDefaults.shape(CardShape),
             colors = ClickableSurfaceDefaults.colors(containerColor = C.panel, focusedContainerColor = C.panel),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),

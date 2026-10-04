@@ -108,23 +108,23 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
 
     DetailScaffold(art.copy(backdrop = art.backdrop ?: info?.backdrop ?: s.backdrop), TrailerSpec("series", s.name, s.year, info?.trailer)) {
         item(key = "head") {
-            Column(Modifier.detailHead().heightIn(min = (h * 0.62f).dp).padding(start = 48.dp, end = 48.dp, top = 48.dp, bottom = 18.dp), verticalArrangement = Arrangement.Bottom) {
-                HeroTitle(title, art.logo, maxWidthFraction = 0.36f, maxLogoHeight = 110.dp)
+            Column(Modifier.detailHead().heightIn(min = (h * 0.62f).dp).padding(start = 48.dp, end = 48.dp, top = 48.dp, bottom = 30.dp), verticalArrangement = Arrangement.Bottom) {
+                HeroTitle(title, art.logo, maxWidthFraction = 0.28f, maxLogoHeight = 72.dp)
                 if (alt.isNotBlank() && art.logo == null) { Spacer(Modifier.height(4.dp)); Text(alt, style = MaterialTheme.typography.titleMedium, color = C.muted) }
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(12.dp))
                 MetaRow(listOf(s.year ?: info?.releaseDate?.take(4),
                     (info?.genre ?: s.genre)?.split(',', '/', '&')?.take(3)?.joinToString(", ") { it.trim() },
                     if (seasons.isNotEmpty()) (if (seasons.size == 1) "${seasons.values.first().size} bölüm" else "${seasons.size} sezon") else null,
                     // IMDb puanı varsa TMDB puanı tekrarlanmaz (aşağıdaki puan satırında)
                     if (art.vote > 0 && art.votes >= 25 && critics?.imdb == null) "TMDB ${"%.1f".format(art.vote)}" else null))
-                CriticsRow(critics, Modifier.padding(top = 10.dp))
-                Spacer(Modifier.height(10.dp))
+                CriticsRow(critics, Modifier.padding(top = 8.dp))
+                Spacer(Modifier.height(8.dp))
                 val overview = art.overview?.takeIf { it.isNotBlank() } ?: info?.plot ?: s.plot
-                if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyLarge, color = C.muted, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.55f))
-                Spacer(Modifier.height(18.dp))
+                if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.46f))
+                Spacer(Modifier.height(16.dp))
                 VariantPicker(s.variants, variant) { v -> app.settings.chooseVariant(item.key, v.label); variantTick++; season = -1 }
                 if (s.variants.size >= 2) Spacer(Modifier.height(14.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                     val t = target
                     val label = when {
                         t == null -> if (load is Load.Loading) "Yükleniyor…" else "Oynat"
@@ -133,7 +133,7 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
                         else -> "Oynat"
                     }
                     Btn(label, { t?.let { actions.playEpisode(s, it.first, seasons, variant?.id) } }, Modifier.focusRequester(playFocus), icon = Icons.Default.PlayArrow)
-                    Btn("Listem", { app.user.toggleFavorite(s) }, kind = BtnKind.Secondary, icon = if (fav) Icons.Default.Check else Icons.Default.Add)
+                    IconAction(if (fav) Icons.Default.Check else Icons.Default.Add, if (fav) "Listemden çıkar" else "Listeme ekle", { app.user.toggleFavorite(s) }, active = fav)
                     TrailerMuteButton()
                 }
             }

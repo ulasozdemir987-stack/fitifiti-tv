@@ -62,6 +62,8 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
     val contentMem = remember(screenMem) { com.fitifiti.tv.ui.FocusMemory(screenMem) }
     val profileId by app.user.profileId.collectAsStateWithLifecycle()
     val profile by produceState<com.fitifiti.tv.data.local.ProfileEntity?>(null, profileId) { value = app.db.profiles().get(profileId) }
+    // Ara simgesine OK: arama sayfası + yazı kutusunda klavye açılır
+    var searchKick by remember { mutableIntStateOf(0) }
 
     // Geri / ana sayfa: önce sekme değişir, odak yeni seçili sekmeye yeniden bağlanınca verilir. Eskiden odak hemen
     // isteniyordu → hâlâ ESKİ sekmeye bağlı olduğundan oraya gidiyor, "üzerinde durunca açılır" kuralı da eski sekmeyi
@@ -112,14 +114,14 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
                     Tab.Series -> MediaScreen("series")
                     Tab.Live -> LiveScreen()
                     Tab.Listem -> ListemScreen()
-                    Tab.Search -> SearchScreen()
+                    Tab.Search -> SearchScreen(searchKick) { searchKick = 0 }
                     Tab.Settings -> SettingsScreen(onProfiles, onEditAccount, onAddAccount)
                 }
             }
             }
             }
             AnimatedVisibility(!bar.hidden, enter = fadeIn() + slideInVertically { -it }, exit = fadeOut() + slideOutVertically { -it }) {
-                TopBar(tab, { if (it != tab) { tab = it; bar.hidden = false } }, profile, onProfiles, tabFocus, contentFocus, contentMem,
+                TopBar(tab, { if (it != tab) { tab = it; bar.hidden = false } }, profile, onProfiles, tabFocus, contentFocus, contentMem, onSearch = { tab = Tab.Search; bar.hidden = false; searchKick++ },
                     solid = tab == Tab.Settings || tab == Tab.Listem || tab == Tab.Search || tab == Tab.Live)
             }
         }
@@ -130,7 +132,7 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
 private fun rememberSaveableTab() = androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(Tab.Home) }
 
 @Composable
-private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data.local.ProfileEntity?, onProfiles: () -> Unit, tabFocus: FocusRequester, contentFocus: FocusRequester, contentMem: com.fitifiti.tv.ui.FocusMemory, solid: Boolean = false) {
+private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data.local.ProfileEntity?, onProfiles: () -> Unit, tabFocus: FocusRequester, contentFocus: FocusRequester, contentMem: com.fitifiti.tv.ui.FocusMemory, onSearch: () -> Unit, solid: Boolean = false) {
     // çubuktaki her öğeden ↓ = içerikte en son odaklanan öğe, yoksa içeriğin ilk öğesi
     // (FocusProperties en yakın odak hedefine kadar üstteki düğümlerden, her aramada yeniden okunur)
     Box(Modifier.focusProperties { down = contentMem.last ?: contentFocus }.fillMaxWidth().background(if (solid) Brush.verticalGradient(0f to C.bg, 0.82f to C.bg, 1f to C.bg.copy(alpha = 0f)) else Brush.verticalGradient(listOf(C.bg.copy(alpha = 0.85f), Color.Transparent))).padding(horizontal = 48.dp, vertical = 12.dp)) {
@@ -141,8 +143,8 @@ private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data
                 NavText(t.label, t == tab, { onTab(t) }, if (t == tab) Modifier.focusRequester(tabFocus) else Modifier)
             }
             Spacer(Modifier.weight(1f))
-            NavIcon(Icons.Default.Search, "Ara", tab == Tab.Search) { onTab(Tab.Search) }
-            NavIcon(Icons.Default.Settings, "Ayarlar", tab == Tab.Settings) { onTab(Tab.Settings) }
+            NavIcon(Icons.Default.Search, "Ara", tab == Tab.Search, onFocusOpen = { onTab(Tab.Search) }, onClick = onSearch)
+            NavIcon(Icons.Default.Settings, "Ayarlar", tab == Tab.Settings, onFocusOpen = { onTab(Tab.Settings) }) { onTab(Tab.Settings) }
             Spacer(Modifier.width(10.dp))
             if (profile != null) Surface(
                 onClick = onProfiles, modifier = Modifier.size(34.dp),
@@ -176,9 +178,13 @@ private fun NavText(label: String, selected: Boolean, onClick: () -> Unit, modif
 }
 
 @Composable
-private fun NavIcon(icon: ImageVector, label: String, selected: Boolean, onClick: () -> Unit) {
+private fun NavIcon(icon: ImageVector, label: String, selected: Boolean, onFocusOpen: () -> Unit, onClick: () -> Unit) {
+    // Sekmeler gibi: üzerinde kısa süre durunca sayfası açılır (eskiden yalnız OK ile açılıyordu; Ara simgesinde
+    // hiçbir şey olmayınca uygulama donmuş sanılıyordu)
+    var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(focused, selected) { if (focused && !selected) { kotlinx.coroutines.delay(320); onFocusOpen() } }
     Surface(
-        onClick = onClick, modifier = Modifier.padding(horizontal = 4.dp).size(38.dp),
+        onClick = onClick, modifier = Modifier.padding(horizontal = 4.dp).size(38.dp).onFocusChanged { focused = it.isFocused },
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(50)),
         colors = ClickableSurfaceDefaults.colors(containerColor = if (selected) C.fill3 else Color.Transparent, focusedContainerColor = Color.White, contentColor = Color.White, focusedContentColor = Color.Black),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),
