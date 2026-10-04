@@ -5,6 +5,8 @@ import android.os.SystemClock
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.fitifiti.tv.data.remote.RemoteBus
 import com.fitifiti.tv.ui.AppRoot
@@ -14,7 +16,13 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { FitifitiTheme { AppRoot() } }
+        setContent {
+            FitifitiTheme {
+                // Soğuk açılışta kedili logo animasyonu (sitedeki açılış gibi), sonra uygulama
+                var splash by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(savedInstanceState == null) }
+                if (splash) com.fitifiti.tv.ui.components.BrandSplash { splash = false } else AppRoot()
+            }
+        }
         // Telefon kumandasından gelen tuşlar, kumandanın kendi tuşlarıyla aynı yoldan işlenir
         lifecycleScope.launch {
             RemoteBus.keys.collect { k ->

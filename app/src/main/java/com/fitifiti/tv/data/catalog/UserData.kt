@@ -58,6 +58,18 @@ class UserData(private val db: AppDb) {
 
     fun saveProgress(e: ProgressEntity) = scope.launch { if (pid >= 0) db.progress().upsert(e.copy(profileId = pid, updatedAt = System.currentTimeMillis())) }
     fun removeProgress(key: String) = scope.launch { if (pid >= 0) db.progress().delete(pid, key) }
+    /** "İzlemeye devam et"ten kaldır: filmde kaydı siler; dizide bitmemiş tüm bölüm kayıtlarını (bitenler "izlendi" işareti olarak kalır) */
+    fun removeFromContinue(p: ProgressEntity) = scope.launch {
+        if (pid < 0) return@launch
+        val s = p.seriesId
+        if (s == null) db.progress().delete(pid, p.key)
+        else db.progress().forSeries(pid, s).filter { !it.finished }.forEach { db.progress().delete(pid, it.key) }
+    }
+    /** Kaydı izlendi say (konum = süre) */
+    fun markFinished(p: ProgressEntity) = scope.launch {
+        if (pid < 0 || p.durationMs <= 0) return@launch
+        db.progress().upsert(p.copy(profileId = pid, positionMs = p.durationMs, updatedAt = System.currentTimeMillis()))
+    }
     fun markMovieWatched(m: Movie, watched: Boolean) = scope.launch {
         if (pid < 0) return@launch
         val key = "movie-${m.id}"

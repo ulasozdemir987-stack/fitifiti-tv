@@ -18,6 +18,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -28,18 +30,29 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.*
 import com.fitifiti.tv.ui.theme.C
 
-/** Oynatıcı düğmesi: çerçevesiz yuvarlak ikon, odakta beyaz zemin + siyah ikon (sitedeki CtrlBtn'in TV hali) */
+/**
+ * Oynatıcı düğmesi: çerçevesiz yuvarlak ikon, odakta beyaz zemin + siyah ikon (sitedeki CtrlBtn'in TV hali).
+ * Netflix TV gibi adı yalnız odaktayken altında görünür (yer kaplamaz).
+ */
 @Composable
-fun CtrlBtn(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier, size: Dp = 56.dp, active: Boolean = false) {
-    Surface(
-        onClick = onClick, modifier = modifier.size(size),
-        shape = ClickableSurfaceDefaults.shape(CircleShape),
-        colors = ClickableSurfaceDefaults.colors(
-            containerColor = if (active) Color(0x33FFFFFF) else Color.Transparent, contentColor = Color.White,
-            focusedContainerColor = Color.White, focusedContentColor = Color.Black,
-        ),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),
-    ) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(icon, label, Modifier.size(size * 0.5f)) } }
+fun CtrlBtn(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier, size: Dp = 52.dp, active: Boolean = false, showLabel: Boolean = true) {
+    val src = remember { MutableInteractionSource() }
+    val focused by src.collectIsFocusedAsState()
+    Box(contentAlignment = Alignment.TopCenter) {
+        Surface(
+            onClick = onClick, modifier = modifier.size(size), interactionSource = src,
+            shape = ClickableSurfaceDefaults.shape(CircleShape),
+            colors = ClickableSurfaceDefaults.colors(
+                containerColor = if (active) C.primary.copy(alpha = 0.28f) else Color.Transparent, contentColor = if (active) Color(0xFFC4B5FD) else Color.White,
+                focusedContainerColor = Color.White, focusedContentColor = Color.Black,
+            ),
+            scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),
+        ) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(icon, label, Modifier.size(size * 0.52f)) } }
+        if (showLabel && focused) Text(
+            label, Modifier.offset(y = size + 6.dp).wrapContentWidth(unbounded = true),
+            fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1, softWrap = false,
+        )
+    }
 }
 
 /** Metinli oynatıcı düğmesi ("Girişi atla", "Sonraki bölüm") */
@@ -65,16 +78,20 @@ fun PillBtn(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, ic
     }
 }
 
-/** İlerleme çubuğu: mor → turkuaz geçiş, odakta kalınlaşır, tutamaç belirir */
+/** İlerleme çubuğu: mor → turkuaz geçiş çubuğun tamamına yayılır, dolan kısım soldan açılır; odakta kalınlaşır, tutamaç o noktanın rengini alır */
 @Composable
-fun SeekBar(fraction: Float, buffered: Float, focused: Boolean, modifier: Modifier = Modifier) {
-    val h = if (focused) 8.dp else 4.dp
-    BoxWithConstraints(modifier.fillMaxWidth().height(20.dp), contentAlignment = Alignment.CenterStart) {
+fun SeekBar(fraction: Float, buffered: Float, focused: Boolean, modifier: Modifier = Modifier, bubble: String? = null) {
+    val f = fraction.coerceIn(0f, 1f)
+    val h = if (focused) 7.dp else 4.dp
+    BoxWithConstraints(modifier.fillMaxWidth().height(22.dp), contentAlignment = Alignment.CenterStart) {
         val w = maxWidth
-        Box(Modifier.fillMaxWidth().height(h).clip(RoundedCornerShape(50)).background(Color(0x33FFFFFF)))
-        Box(Modifier.fillMaxWidth(buffered.coerceIn(0f, 1f)).height(h).clip(RoundedCornerShape(50)).background(Color(0x40FFFFFF)))
-        Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(h).clip(RoundedCornerShape(50)).background(C.progress))
-        if (focused) Box(Modifier.offset(x = (w * fraction.coerceIn(0f, 1f)) - 9.dp).size(18.dp).clip(CircleShape).background(Color.White))
+        Box(Modifier.fillMaxWidth().height(h).clip(RoundedCornerShape(50)).background(Color(0x2EFFFFFF)))
+        Box(Modifier.fillMaxWidth(buffered.coerceIn(0f, 1f)).height(h).clip(RoundedCornerShape(50)).background(Color(0x33FFFFFF)))
+        Box(Modifier.fillMaxWidth().height(h).clip(RoundedCornerShape(50)).drawWithContent {
+            clipRect(right = size.width * f) { this@drawWithContent.drawContent() }
+        }.background(C.progress))
+        if (focused || bubble != null) Box(Modifier.offset(x = (w * f) - 9.dp).size(18.dp).clip(CircleShape).background(Color.White).padding(3.dp).clip(CircleShape).background(progressColor(f)))
+        if (bubble != null) Box(Modifier.offset(x = ((w * f) - 34.dp).coerceIn(0.dp, w - 68.dp), y = (-30).dp).width(68.dp), contentAlignment = Alignment.Center) { ScrubBubble(bubble) }
     }
 }
 

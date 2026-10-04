@@ -170,6 +170,16 @@ fun LazyListScope.continueRow(list: List<ProgressEntity>, onFocusItem: (Item) ->
         val app = App.instance
         val actions = LocalActions.current
         val cat by app.catalog.catalog.collectAsStateWithLifecycle()
+        var menu by remember { mutableStateOf<ProgressEntity?>(null) }
+        menu?.let { p ->
+            val item: Item? = if (p.kind == "movie") cat.movieById[p.itemId.toIntOrNull() ?: -1]?.item() else p.seriesId?.let { cat.seriesById[it] }?.item()
+            com.fitifiti.tv.ui.components.OptionsDialog(cardTitle(p.title.substringBefore(" · ")), buildList {
+                add((if (p.isUpNext) "Oynat" else "Devam et") to { actions.playContinue(p) })
+                if (item != null) add((if (item is Item.S) "Bölümleri gör" else "Detaylar") to { open(actions, item) })
+                if (p.durationMs > 0) add("İzlendi olarak işaretle" to { app.user.markFinished(p) })
+                add("Devam et'ten kaldır" to { app.user.removeFromContinue(p) })
+            }) { menu = null }
+        }
         Column(Modifier.padding(bottom = 14.dp)) {
             SectionTitle("İzlemeye devam et")
             CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
@@ -184,6 +194,7 @@ fun LazyListScope.continueRow(list: List<ProgressEntity>, onFocusItem: (Item) ->
                         image = art.backdrop ?: p.image, onClick = { actions.playContinue(p) }, width = 196.dp,
                         progress = if (p.isUpNext) null else p.fraction, label = if (p.isUpNext) "Sıradaki bölüm" else null,
                         onFocus = item?.let { i -> { onFocusItem(i) } },
+                        onLongClick = { menu = p },
                     )
                 }
             }

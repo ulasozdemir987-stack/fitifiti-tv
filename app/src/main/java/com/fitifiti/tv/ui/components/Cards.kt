@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
@@ -100,11 +101,12 @@ private fun PosterFallback(title: String, modifier: Modifier) = Box(modifier.bac
 @Composable
 fun LandscapeCard(title: String, subtitle: String?, image: String?, onClick: () -> Unit, modifier: Modifier = Modifier,
                   width: androidx.compose.ui.unit.Dp = 300.dp, progress: Float? = null, label: String? = null, onFocus: (() -> Unit)? = null,
-                  imageFit: ContentScale = ContentScale.Crop) {
+                  imageFit: ContentScale = ContentScale.Crop, onLongClick: (() -> Unit)? = null) {
     Column(modifier.width(width)) {
         Surface(
-            onClick = onClick,
-            modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).rememberFocus().then(if (onFocus != null) Modifier.focusReport(onFocus = onFocus) else Modifier),
+            onClick = onClick, onLongClick = onLongClick,
+            modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).rememberFocus()
+                .then(if (onLongClick != null) Modifier.onPreviewKeyEvent { e -> if (e.type == KeyEventType.KeyDown && e.key.nativeKeyCode == android.view.KeyEvent.KEYCODE_MENU) { onLongClick(); true } else false } else Modifier).then(if (onFocus != null) Modifier.focusReport(onFocus = onFocus) else Modifier),
             shape = ClickableSurfaceDefaults.shape(CardShape),
             colors = ClickableSurfaceDefaults.colors(containerColor = C.panel, focusedContainerColor = C.panel),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),

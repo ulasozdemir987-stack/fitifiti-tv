@@ -91,6 +91,10 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
     var nextCountdown by remember { mutableIntStateOf(-1) }
     var upNextSaved by remember { mutableStateOf(false) }
     var tracksTick by remember { mutableIntStateOf(0) }
+    var xray by remember { mutableStateOf(false) }
+    var pausedLong by remember { mutableStateOf(false) }
+    var pairOpen by remember { mutableStateOf(false) }
+    val meta = rememberPlayerMeta(req)
 
     val rootFocus = remember { FocusRequester() }
     val playFocus = remember { FocusRequester() }
@@ -197,7 +201,7 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
             dur = player.duration.takeIf { it > 0 && it != MC.TIME_UNSET } ?: 0
             buffered = player.bufferedPosition
             val now = System.currentTimeMillis()
-            if (controls && playing && panel == Panel.None && scrub == null && now - lastInput > 4_500) { controls = false; runCatching { rootFocus.requestFocus() } }
+            if (controls && (playing || pausedLong || xray) && panel == Panel.None && scrub == null && now - lastInput > (if (playing) 4_500 else 6_000)) { controls = false; runCatching { rootFocus.requestFocus() } }
             if (now - lastSave > 10_000 && playing) { lastSave = now; saveProgress() }
             (sleep as? Sleep.At)?.let { s ->
                 val left = s.endAt - now
@@ -223,6 +227,12 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
         player.seekTo(target); pos = target; scrub = null; touch()
     }
     LaunchedEffect(Unit) { runCatching { rootFocus.requestFocus() } }
+    // Duraklatınca 0,6 sn sonra duraklatma ekranı (oynatma sürene kadar kalır); oynayınca X-Ray de kapanır
+    LaunchedEffect(playing, started, scrub) {
+        if (playing) { pausedLong = false; xray = false; return@LaunchedEffect }
+        if (!started || scrub != null) return@LaunchedEffect
+        delay(600); pausedLong = true
+    }
     // Telefon kumandası: oynatılan içerik telefonda görünür, telefondaki çubukla sarılır
     DisposableEffect(Unit) {
         com.fitifiti.tv.data.remote.RemoteBus.screen.value = "player"
@@ -254,6 +264,7 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
             panel != Panel.None -> panel = Panel.None
             nextCountdown >= 0 -> { nextCountdown = -1; nextDismissed = true; runCatching { rootFocus.requestFocus() } }
             controls -> { controls = false; runCatching { rootFocus.requestFocus() } }
+            xray -> xray = false
             else -> onClose()
         }
     }
@@ -284,7 +295,9 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
                         }
                         AKey.KEYCODE_DPAD_LEFT -> { stepSeek(false, e.nativeKeyEvent.repeatCount); pendingFocus = seekFocus; true }
                         AKey.KEYCODE_DPAD_RIGHT -> { stepSeek(true, e.nativeKeyEvent.repeatCount); pendingFocus = seekFocus; true }
-                        AKey.KEYCODE_DPAD_UP, AKey.KEYCODE_DPAD_DOWN, AKey.KEYCODE_MENU, AKey.KEYCODE_INFO -> { showControls(playFocus); true }
+                        // ▲ = X-Ray (Prime Video gibi): duraklatıp oyuncuları ve bilgiyi gösterir; tekrar ▲ kapatır
+                        AKey.KEYCODE_DPAD_UP, AKey.KEYCODE_INFO -> { if (xray) xray = false else { xray = true; player.pause() }; true }
+                        AKey.KEYCODE_DPAD_DOWN, AKey.KEYCODE_MENU -> { showControls(playFocus); true }
                         else -> false
                     }
                 } else false
@@ -292,28 +305,34 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
     ) {
         VideoSurface(player, Modifier.fillMaxSize(), settings.subtitleScale)
 
-        // Yükleniyor
-        if (!started && error == null && !askResume) StartingScreen(req)
-        else if (loading && error == null) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Spinner() }
+        // Duraklatma ekranı + X-Ray (kontrollerin altında)
+        PauseScreen((pausedLong || xray) && started && error == null && !askResume && !sleeping && panel == Panel.None && nextCountdown < 0, req, meta, compact = controls)
 
-        // Kontroller
+        // Yükleniyor
+        if (!started && error == null && !askResume) PlayerLoading(req, meta)
+        else if (loading && error == null && !pausedLong) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Spinner() }
+
+        // Kontroller (sitedeki gibi çerçevesiz, büyük; başlık alt çubuğun ortasında)
         AnimatedVisibility(controls && error == null && !askResume && !sleeping, enter = fadeIn(), exit = fadeOut()) {
             Box(Modifier.fillMaxSize()) {
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0xB3000000), 0.25f to Color.Transparent, 0.55f to Color.Transparent, 1f to Color(0xD9000000))))
-                Column(Modifier.align(Alignment.TopStart).padding(horizontal = 56.dp, vertical = 36.dp)) {
-                    Text(cardTitle(req.title), style = Display.copy(fontSize = 30.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    req.subtitle?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = Color(0xCCFFFFFF), maxLines = 1) }
+                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color(0x99000000), 0.18f to Color.Transparent, 0.6f to Color.Transparent, 1f to Color(0xE6000000))))
+                // Üst: küçük logo · saat ve bitiş saati · uyku
+                Row(Modifier.align(Alignment.TopStart).fillMaxWidth().padding(horizontal = 56.dp, vertical = 28.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (!(pausedLong || xray)) com.fitifiti.tv.ui.components.BrandLogo(18)
+                    Spacer(Modifier.weight(1f))
+                    val sl = sleep
+                    if (sl is Sleep.At) Text("Uyku · ${((sl.endAt - System.currentTimeMillis()) / 60_000 + 1).coerceAtLeast(1)} dk", color = Color(0xFFC4B5FD), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(end = 18.dp))
+                    if (sl == Sleep.EpisodeEnd) Text("Uyku · bitince", color = Color(0xFFC4B5FD), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(end = 18.dp))
+                    val endsAt = if (dur > 0) java.text.SimpleDateFormat("HH:mm", java.util.Locale("tr")).format(java.util.Date(System.currentTimeMillis() + (dur - pos).coerceAtLeast(0))) else null
+                    Text(listOfNotNull(java.text.SimpleDateFormat("HH:mm", java.util.Locale("tr")).format(java.util.Date()), endsAt?.let { "Bitiş $it" }).joinToString("  ·  "), style = MaterialTheme.typography.labelLarge, color = Color(0xB3FFFFFF))
                 }
-                (sleep as? Sleep.At)?.let { s -> Text("Uyku · ${((s.endAt - System.currentTimeMillis()) / 60_000 + 1).coerceAtLeast(1)} dk", Modifier.align(Alignment.TopEnd).padding(40.dp), color = C.primary, style = MaterialTheme.typography.labelLarge) }
-                if (sleep == Sleep.EpisodeEnd) Text("Uyku · bölüm bitince", Modifier.align(Alignment.TopEnd).padding(40.dp), color = C.primary, style = MaterialTheme.typography.labelLarge)
 
-                Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(horizontal = 56.dp, vertical = 32.dp)) {
+                Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(start = 56.dp, end = 56.dp, bottom = 34.dp)) {
                     // İlerleme (konum yalnız bu bölümde okunur → saniyede iki kez yalnız burası çizilir)
                     val displayPos = scrub ?: pos
                     val src = remember { MutableInteractionSource() }
                     val seekFocused by src.collectIsFocusedAsState()
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(clock(displayPos), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(80.dp))
                         Box(
                             Modifier.weight(1f).focusRequester(seekFocus).focusable(interactionSource = src)
                                 .onPreviewKeyEvent { e ->
@@ -325,23 +344,34 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
                                         else -> false
                                     }
                                 },
-                        ) { SeekBar(if (dur > 0) displayPos.toFloat() / dur else 0f, if (dur > 0) buffered.toFloat() / dur else 0f, seekFocused) }
-                        Text("-" + clock((dur - displayPos).coerceAtLeast(0)), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(90.dp).padding(start = 12.dp))
+                        ) { SeekBar(if (dur > 0) displayPos.toFloat() / dur else 0f, if (dur > 0) buffered.toFloat() / dur else 0f, seekFocused, bubble = scrub?.let { clock(it) }) }
+                        Text("-" + clock((dur - displayPos).coerceAtLeast(0)), style = MaterialTheme.typography.bodyMedium, color = Color(0xD9FFFFFF), modifier = Modifier.padding(start = 16.dp))
                     }
-                    Spacer(Modifier.height(14.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        CtrlBtn(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, if (playing) "Duraklat" else "Oynat", { touch(); if (player.isPlaying) player.pause() else player.play() }, Modifier.focusRequester(playFocus), size = 64.dp)
-                        CtrlBtn(Icons.Default.Replay10, "10 sn geri", { touch(); player.seekBack() })
-                        CtrlBtn(Icons.Default.Forward10, "10 sn ileri", { touch(); player.seekForward() })
-                        Spacer(Modifier.weight(1f))
-                        CtrlBtn(Icons.Default.Subtitles, "Ses ve altyazı", { panel = Panel.Tracks })
-                        if (seasons != null && req.kind == "episode") CtrlBtn(Icons.Default.VideoLibrary, "Bölümler", { panel = Panel.Episodes })
-                        CtrlBtn(Icons.Default.Bedtime, "Uyku zamanlayıcısı", { panel = Panel.Sleep }, active = sleep != null)
-                        if (next != null) CtrlBtn(Icons.Default.SkipNext, "Sonraki bölüm", { playNext() })
+                    Spacer(Modifier.height(10.dp))
+                    Box(Modifier.fillMaxWidth().height(70.dp)) {
+                        Row(Modifier.align(Alignment.TopStart), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            CtrlBtn(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, if (playing) "Duraklat" else "Oynat", { touch(); if (player.isPlaying) player.pause() else player.play() }, Modifier.focusRequester(playFocus), size = 56.dp)
+                            CtrlBtn(Icons.Default.Replay10, "10 sn geri", { touch(); player.seekBack() })
+                            CtrlBtn(Icons.Default.Forward10, "10 sn ileri", { touch(); player.seekForward() })
+                        }
+                        Column(Modifier.align(Alignment.TopCenter).padding(top = 6.dp).widthIn(max = 300.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(cardTitle(req.series?.name ?: req.movie?.name ?: req.title.substringBefore(" · ")), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            req.episode?.let { e -> Text(listOfNotNull("S${e.season} · B${e.num}", meta.epName).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = C.muted, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                        }
+                        Row(Modifier.align(Alignment.TopEnd), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            CtrlBtn(Icons.Default.PersonSearch, "X-Ray", { touch(); if (xray) xray = false else { xray = true; player.pause() } }, active = xray)
+                            if (seasons != null && req.kind == "episode") CtrlBtn(Icons.Default.VideoLibrary, "Bölümler", { panel = Panel.Episodes })
+                            CtrlBtn(Icons.Default.Subtitles, "Ses ve altyazı", { panel = Panel.Tracks })
+                            CtrlBtn(Icons.Default.Bedtime, "Uyku", { panel = Panel.Sleep }, active = sleep != null)
+                            CtrlBtn(Icons.Default.PhoneAndroid, "Telefonla kumanda", { pairOpen = true })
+                            if (next != null) CtrlBtn(Icons.Default.SkipNext, "Sonraki bölüm", { playNext() })
+                        }
                     }
                 }
             }
         }
+        if (pairOpen) com.fitifiti.tv.ui.components.RemotePairDialog { pairOpen = false; touch() }
+
 
         // Girişi atla
         if (introVisible && !controls && nextCountdown < 0) Box(Modifier.fillMaxSize().padding(48.dp), contentAlignment = Alignment.BottomEnd) {
@@ -412,7 +442,7 @@ fun PlayerScreen(req: PlayRequest, onClose: () -> Unit) {
         }
 
         // Kaldığın yerden devam et
-        if (askResume) ResumePrompt(req, onResume = { askResume = false; player.seekTo(req.startMs); player.play(); runCatching { rootFocus.requestFocus() } },
+        if (askResume) ResumePrompt(req, meta, onResume = { askResume = false; player.seekTo(req.startMs); player.play(); runCatching { rootFocus.requestFocus() } },
             onRestart = { askResume = false; player.seekTo(0); player.play(); runCatching { rootFocus.requestFocus() } })
 
         // Hata
@@ -460,57 +490,6 @@ fun Spinner(size: androidx.compose.ui.unit.Dp = 48.dp) {
     androidx.compose.foundation.Canvas(Modifier.size(size)) {
         drawArc(Color(0x26FFFFFF), 0f, 360f, false, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4.dp.toPx()))
         drawArc(Color(0xD9FFFFFF), r, 90f, false, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round))
-    }
-}
-
-/** Açılış ekranı: içeriğin görseli karartılmış + logo + belirsiz çizgi */
-@Composable
-private fun StartingScreen(req: PlayRequest) {
-    Box(Modifier.fillMaxSize().background(C.bg)) {
-        if (req.image != null) KenBurns(req.image, 0.22f)
-        Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-            MascotLoader(size = 96.dp)
-            Spacer(Modifier.height(18.dp))
-            Wordmark(40)
-            Spacer(Modifier.height(18.dp))
-            IndeterminateLine(Modifier.width(260.dp))
-            Spacer(Modifier.height(14.dp))
-            Text("Görüntü hazırlanıyor…", color = C.muted)
-        }
-        Column(Modifier.align(Alignment.BottomStart).padding(56.dp)) {
-            Text(cardTitle(req.title), style = Display.copy(fontSize = 28.sp))
-            req.subtitle?.let { Text(it, color = C.muted) }
-        }
-    }
-}
-
-/** "Kaldığın yerden" ekranı: görsel, ad, ilerleme, Devam et / Baştan başlat; 20 sn içinde seçilmezse devam eder */
-@Composable
-private fun ResumePrompt(req: PlayRequest, onResume: () -> Unit, onRestart: () -> Unit) {
-    var left by remember { mutableIntStateOf(20) }
-    val f = remember { FocusRequester() }
-    LaunchedEffect(Unit) { delay(100); runCatching { f.requestFocus() } }
-    LaunchedEffect(left) { if (left <= 0) onResume() else { delay(1000); left-- } }
-    Box(Modifier.fillMaxSize().background(C.bg)) {
-        if (req.image != null) AsyncImage(model = req.image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize(), alpha = 0.3f)
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to C.bg, 0.6f to C.bg.copy(alpha = 0.6f), 1f to Color.Transparent)))
-        Column(Modifier.align(Alignment.BottomStart).padding(64.dp)) {
-            Text("Kaldığın yerden devam et", style = MaterialTheme.typography.labelLarge, color = C.muted)
-            Spacer(Modifier.height(8.dp))
-            Text(cardTitle(req.title), style = Display.copy(fontSize = 40.sp), maxLines = 2)
-            req.subtitle?.let { Text(it, style = MaterialTheme.typography.titleMedium, color = Color(0xCCFFFFFF)) }
-            Spacer(Modifier.height(18.dp))
-            Text(clock(req.startMs), color = C.muted)
-            Spacer(Modifier.height(24.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column {
-                    PillBtn("Devam et", onResume, Modifier.focusRequester(f), icon = Icons.Default.PlayArrow, primary = true)
-                    Spacer(Modifier.height(6.dp))
-                    Box(Modifier.width(150.dp)) { ProgressLine(1f - left / 20f, Modifier.fillMaxWidth(), height = 2.dp, track = Color.Transparent) }
-                }
-                PillBtn("Baştan başlat", onRestart, icon = Icons.Default.Replay)
-            }
-        }
     }
 }
 
