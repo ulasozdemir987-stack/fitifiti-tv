@@ -96,3 +96,8 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri Ã§alÄ±ÅŸtÄ
 * **HeroBillboardBackdrop:** Vitrin (Hero) resmi artÄ±k ekrana yayÄ±lmak yerine, sadece kendi vitrin (billboard) kutusu iÃ§erisinde kalÄ±yor ve alt kenardan yukarÄ± doÄŸru maskelenerek (`BlendMode.DstIn`) sinematik zeminle birleÅŸiyor (sitedeki `-webkit-mask-image` tekniÄŸi Compose'da uygulandÄ±). AÅŸaÄŸÄ± kaydÄ±rÄ±ldÄ±ÄŸÄ±nda resim ekrandan temiz bir ÅŸekilde Ã§Ä±kÄ±yor.
 * **Derleme DÃ¼zeltmeleri:** Compose'un `foundation`, `graphics`, `layout` ve `animation` modÃ¼lleri eksiksiz iÃ§e aktarÄ±ldÄ±, TV'de test edildi.
 
+
+ # #   G ü n c e l l e m e   -   2 0 2 6 - 1 0 - 0 4   ( 2 . 9 . 6 ) :   A n i m a s y o n l u   C a n l 1  M e n ü   L o g o s u  
+ *   * * A n i m a t e d B r a n d L o g o   &   M a i n S c r e e n : * *   Ü s t   m e n ü   ç u b u u n d a k i   ( T o p B a r )   s t a t i k   f 1t 1f 1t 1  l o g o s u   k a l d 1r 1l a r a k   y e r i n e   A n i m a t e d B r a n d L o g o   e k l e n d i .   L o g o y a   c o m p a c t   ( k 1r p 1l m 1_  g ö r ü n ü m )   v e   l i v e   ( w e b   s i t e s i n d e k i   w o r d m a r k   g i b i )   m o d l a r 1  e k l e n d i .  
+ *   * * C a n l 1  M o d : * *   0l k   ü ç   ' 1'   h a r f i   e k o l a y z e r   g i b i   u z a y 1p   k 1s a l 1y o r ,   s o n   ' 1'   ( k e d i n i n   k o n d u u )   s a b i t .   L o g o   r e n k l e r i   g ü n ü n   s a a t i n e   g ö r e   p a l e t t e n   ( s a b a h ,   ö l e n ,   a k _a m ,   g e c e )   y u m u _a k   g e ç i _l e r l e   ( a n i m a t e C o l o r A s S t a t e )   d e i _i y o r .  
+ 

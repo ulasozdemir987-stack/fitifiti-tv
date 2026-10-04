@@ -1,4 +1,4 @@
-package com.fitifiti.tv.ui.components
+﻿package com.fitifiti.tv.ui.components
 
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
@@ -32,41 +32,71 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.fitifiti.tv.ui.theme.Manrope
+import android.os.SystemClock
 
-/**
- * Sitedeki animasyonlu marka logosunun (components/animated-brand-logo.tsx) TV hali: siber kedi ilk "f"nin
- * arkasından başını uzatıp bakar, saklanır, f'nin tepesine zıplar, "fıtı fıtı" ritmiyle her "ı"ya konup t/f/t'nin
- * üstünden seker, son "ı"ya oturur, kameraya dönüp göz kırpar; kuyruk, bacaklar, göğüs rozeti döngüde.
- * CSS keyframe'leri burada küçük bir anahtar kare motoruyla (aynı anlar, aynı eğriler) tek Canvas'ta çizilir.
- * Sahne birimleri sitedeki SVG ile aynı (viewBox 70 0 440 210).
- */
+private var appStartNanos = 0L
+
 @Composable
-fun AnimatedBrandLogo(width: Dp, modifier: Modifier = Modifier, replayKey: Any? = Unit, fixedTime: Float? = null) {
+fun AnimatedBrandLogo(width: Dp, modifier: Modifier = Modifier, compact: Boolean = false, live: Boolean = false, replayKey: Any? = Unit, fixedTime: Float? = null) {
+    if (appStartNanos == 0L) appStartNanos = SystemClock.elapsedRealtimeNanos()
     val measurer = rememberTextMeasurer()
     val glyphStyle = BRAND_GLYPH_STYLE
     val unit = remember { Density(1f, 1f) }
     val f = remember(measurer) { measurer.measure("f", glyphStyle, density = unit) }
     val tt = remember(measurer) { measurer.measure("t", glyphStyle, density = unit) }
+    
+    val targetColors = remember {
+        val h = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        when {
+            h in 5..10 -> listOf(Color(0xFFFB923C), Color(0xFFF472B6), Color(0xFFFBBF24))
+            h in 11..16 -> listOf(Color(0xFF2DD4BF), Color(0xFF22D3EE), Color(0xFFA78BFA))
+            h in 17..20 -> listOf(Color(0xFFF472B6), Color(0xFFC084FC), Color(0xFFFB7185))
+            else -> listOf(Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFFA855F7))
+        }
+    }
+    val c1 by androidx.compose.animation.animateColorAsState(targetColors[0], label = "c1")
+    val c2 by androidx.compose.animation.animateColorAsState(targetColors[1], label = "c2")
+    val c3 by androidx.compose.animation.animateColorAsState(targetColors[2], label = "c3")
+
     var time by remember { mutableFloatStateOf(0f) }
     if (fixedTime != null) time = fixedTime
-    else LaunchedEffect(replayKey) {
-        val start = withFrameNanos { it }
+    else LaunchedEffect(replayKey, live) {
+        val start = if (live) appStartNanos else withFrameNanos { it }
         while (true) withFrameNanos { time = (it - start) / 1e9f }
     }
-    Canvas(modifier.size(width, width * (VIEW_H / VIEW_W))) { drawBrandLogo(time, f, tt) }
+    
+    val viewX = if (compact) 86f else 70f
+    val viewY = if (compact) 4f else 0f
+    val viewW = if (compact) 400f else 440f
+    val viewH = if (compact) 198f else 210f
+
+    Canvas(modifier.size(width, width * (viewH / viewW))) { 
+        drawBrandLogo(time, f, tt, viewX, viewY, viewW, viewH, live, listOf(c1, c2, c3)) 
+    }
 }
 
 /** Logonun t anındaki karesi (çizim alanının genişliğine ölçeklenir) */
-fun DrawScope.drawBrandLogo(t: Float, f: TextLayoutResult, tt: TextLayoutResult) {
-        val s = size.width / VIEW_W
-        withTransform({ scale(s, s, Offset.Zero); translate(-VIEW_X, -VIEW_Y) }) {
+fun DrawScope.drawBrandLogo(t: Float, f: TextLayoutResult, tt: TextLayoutResult, viewX: Float, viewY: Float, viewW: Float, viewH: Float, live: Boolean, liveColors: List<Color>) {
+        val s = size.width / viewW
+        withTransform({ scale(s, s, Offset.Zero); translate(-viewX, -viewY) }) {
             // Harfler (doğal birimde, yatayda SX ölçekli)
             withTransform({ translate(TEXT_X, 0f); scale(SX, 1f, Offset.Zero) }) {
-                GLYPHS.forEach { g ->
-                    val brush = if (g.half == 0) TXT_A else TXT_B
+                val bA = if (live && liveColors.size >= 2) Brush.verticalGradient(listOf(liveColors[0], liveColors[1])) else TXT_A
+                val bB = if (live && liveColors.size >= 3) Brush.verticalGradient(liveColors) else TXT_B
+                GLYPHS.forEachIndexed { i, g ->
+                    val brush = if (g.half == 0) bA else bB
                     val tap = g.tap.maxOfOrNull { tapAmount(t, it) } ?: 0f
                     val w = if (g.ch == 'ı') 31f else if (g.ch == 'f') 42f else 46f
-                    withTransform({ scale(1f + 0.06f * tap, 1f - 0.18f * tap, Offset(g.x + w / 2, FLOOR_Y)) }) {
+                    
+                    var eqScale = 1f
+                    if (live && g.ch == 'ı' && i < 6) { // first three 'i's (indices 1, 3, 5)
+                        val idx = (i - 1) / 2 // 0, 1, 2
+                        val delay = idx * 0.18f
+                        val eqTime = maxOf(0f, t - delay)
+                        eqScale = 0.7f + 1.2f * (0.5f - 0.5f * kotlin.math.cos(eqTime * Math.PI / 1.05f)).toFloat()
+                    }
+                    
+                    withTransform({ scale(1f + 0.06f * tap, (1f - 0.18f * tap) * eqScale, Offset(g.x + w / 2, FLOOR_Y)) }) {
                         when (g.ch) {
                             'ı' -> drawRoundRect(brush, Offset(g.x + 7.5f, I_TOP), Size(16f, X_HEIGHT), CornerRadius(2.6f))
                             'f' -> drawText(f, brush, Offset(g.x, FLOOR_Y - f.firstBaseline))
@@ -327,3 +357,4 @@ private fun DrawScope.leg(x: Float, rot: Float, sy: Float) {
         drawCircle(CYAN, 4f, Offset(x + 6f, 134f))
     }
 }
+
