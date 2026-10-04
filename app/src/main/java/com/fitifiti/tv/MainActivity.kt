@@ -44,13 +44,25 @@ class MainActivity : ComponentActivity() {
     // Yön tuşu basılı tutulunca TV saniyede ~30 tekrar gönderir; zayıf işlemcide bunlar birikip odak gecikmeli
     // ve "kayarak" ilerliyordu. Tekrarlar en fazla ~11/sn'ye indirilir (ilk basış hiç beklemez).
     private var lastRepeatAt = 0L
+    private var backDownAt = 0L
+    private var backLong = false
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         // Geri tuşu Compose'a HİÇ verilmez: Compose TV'de geri tuşunu önce "odağı üst gruba taşı" (FocusDirection.Exit)
         // olarak kullanıp tüketiyordu → iç içe her odak grubu için bir basış gerekiyordu ("3-4 kez basmam gerekiyor").
         // Doğrudan geri dağıtıcısına (BackHandler'lar) gider. Açılır pencereler kendi penceresinde, etkilenmez.
         if (event.keyCode == KeyEvent.KEYCODE_BACK) {
             BackProbe.key(event)
-            if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) { BackProbe.handled(); onBackPressedDispatcher.onBackPressed() }
+            // Geri'ye uzun basış (≥ 1 sn) = "Sorun bildir": o anki ekranın görüntüsü alınır, geri işlenmez
+            val now = SystemClock.uptimeMillis()
+            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) { backDownAt = now; backLong = false }
+            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount > 0 && !backLong && backDownAt > 0 && now - backDownAt >= 1000) {
+                backLong = true; com.fitifiti.tv.data.diag.Feedback.capture(this, com.fitifiti.tv.data.diag.Diag.lastScreen)
+            }
+            if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) {
+                if (!backLong && backDownAt > 0 && now - backDownAt >= 1000) { backLong = true; com.fitifiti.tv.data.diag.Feedback.capture(this, com.fitifiti.tv.data.diag.Diag.lastScreen) }
+                if (!backLong) { BackProbe.handled(); onBackPressedDispatcher.onBackPressed() }
+                backDownAt = 0L
+            }
             return true
         }
         if (event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER || event.keyCode == KeyEvent.KEYCODE_ENTER) {

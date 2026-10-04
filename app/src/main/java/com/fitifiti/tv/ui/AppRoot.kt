@@ -69,6 +69,8 @@ fun AppRoot() {
                     }
                 }
             }
+            val fb by com.fitifiti.tv.data.diag.Feedback.pending.collectAsState()
+            fb?.let { c -> com.fitifiti.tv.ui.components.FeedbackDialog(c) { com.fitifiti.tv.data.diag.Feedback.pending.value = null } }
             val update by com.fitifiti.tv.data.update.Updater.prompt.collectAsState()
             update?.let { info -> if (crash == null) com.fitifiti.tv.ui.components.UpdateDialog(info) { com.fitifiti.tv.data.update.Updater.dismiss() } }
             crash?.let { text -> CrashReport(text) { runCatching { app.crashFile().delete(); java.io.File(app.filesDir, "last-crash.sent").delete() }; crash = null } }

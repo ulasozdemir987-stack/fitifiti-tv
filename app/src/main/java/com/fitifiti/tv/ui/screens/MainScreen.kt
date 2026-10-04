@@ -64,6 +64,7 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
     val profile by produceState<com.fitifiti.tv.data.local.ProfileEntity?>(null, profileId) { value = app.db.profiles().get(profileId) }
     // Ara simgesine OK: arama sayfası + yazı kutusunda klavye açılır
     var searchKick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(tab) { com.fitifiti.tv.data.diag.Diag.lastScreen = "Ana ekran · ${tab.label}" }
 
     // Geri / ana sayfa: önce sekme değişir, odak yeni seçili sekmeye yeniden bağlanınca verilir. Eskiden odak hemen
     // isteniyordu → hâlâ ESKİ sekmeye bağlı olduğundan oraya gidiyor, "üzerinde durunca açılır" kuralı da eski sekmeyi

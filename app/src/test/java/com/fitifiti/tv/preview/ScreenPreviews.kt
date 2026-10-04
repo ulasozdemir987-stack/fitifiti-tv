@@ -4,6 +4,8 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.input.key.Key
@@ -52,11 +54,28 @@ class ScreenPreviews {
         keys.forEach { k -> rule.onRoot().performKeyInput { pressKey(k) }; settle(500) }
         val v = rule.activity.window.decorView
         val bmp = Bitmap.createBitmap(v.width, v.height, Bitmap.Config.ARGB_8888)
-        v.draw(Canvas(bmp))
+        val canvas = Canvas(bmp)
+        v.draw(canvas)
+        // açık pencereler (Dialog) ayrı pencerede: ekrandaki yerlerine, arkası karartılarak çizilir
+        windowRoots().filter { it !== v && it.isShown }.forEach { w ->
+            canvas.drawColor(0x99000000.toInt())
+            val loc = IntArray(2); w.getLocationOnScreen(loc)
+            val x = if (loc[0] == 0 && w.width < v.width) (v.width - w.width) / 2f else loc[0].toFloat()
+            val y = if (loc[1] == 0 && w.height < v.height) (v.height - w.height) / 2f else loc[1].toFloat()
+            canvas.save(); canvas.translate(x, y); w.draw(canvas); canvas.restore()
+        }
         val small = Bitmap.createScaledBitmap(bmp, 960, 540, true)
         val out = File("build/screens").apply { mkdirs() }
         File(out, "$name.png").outputStream().use { small.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun windowRoots(): List<android.view.View> = runCatching {
+        val c = Class.forName("android.view.WindowManagerGlobal")
+        val g = c.getMethod("getInstance").invoke(null)
+        val f = c.getDeclaredField("mViews").apply { isAccessible = true }
+        (f.get(g) as List<android.view.View>).toList()
+    }.getOrDefault(emptyList())
 
     /** Saati ilerletir; arka planda (görsel, Room) biten işlerin ana iş parçacığına dönmesini bekler */
     private fun settle(ms: Long) {
@@ -95,4 +114,11 @@ class ScreenPreviews {
     @Test fun playerLoading() = shoot("player-loading", settle = 3000) { PlayerLoading(req(false), meta(false)) }
     @Test fun playerPause() = shoot("player-pause") { PauseScreen(true, req(true), meta(true), compact = false) }
     @Test fun playerResume() = shoot("player-resume") { ResumePrompt(req(false), meta(false), ::noop, ::noop) }
+    @Test fun feedback() = shoot("feedback") {
+        val bmp = android.graphics.Bitmap.createBitmap(960, 540, android.graphics.Bitmap.Config.ARGB_8888).apply { eraseColor(0xFF2A2140.toInt()) }
+        Box(androidx.compose.ui.Modifier.fillMaxSize()) {
+            MainScreen({}, {}, {})
+            com.fitifiti.tv.ui.components.FeedbackDialog(com.fitifiti.tv.data.diag.Feedback.Capture(null, bmp, "", "Ana ekran"), {})
+        }
+    }
 }

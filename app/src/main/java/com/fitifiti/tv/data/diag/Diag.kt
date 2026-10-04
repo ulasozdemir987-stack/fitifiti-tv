@@ -25,6 +25,8 @@ import kotlin.concurrent.thread
  */
 object Diag {
     private val ring = ArrayDeque<String>()
+    /** en üstteki ekran (Sorun bildir için) */
+    @Volatile var lastScreen = "?"
     private val clock = SimpleDateFormat("HH:mm:ss", Locale.US)
 
     fun log(s: String) = synchronized(ring) {

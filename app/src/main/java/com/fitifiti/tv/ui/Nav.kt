@@ -44,8 +44,16 @@ class Navigator(start: Route) {
     private var seq = 0L
     val stack = mutableStateListOf(Entry(seq++, start))
     val top get() = stack.last().route
-    fun push(r: Route) { com.fitifiti.tv.data.diag.Diag.log("ekran +${r::class.simpleName}"); stack.add(Entry(seq++, r)) }
-    fun replace(r: Route) { if (stack.isNotEmpty()) stack.removeAt(stack.lastIndex); stack.add(Entry(seq++, r)) }
-    fun reset(r: Route) { stack.clear(); stack.add(Entry(seq++, r)) }
-    fun back(): Boolean { if (stack.size <= 1) return false; com.fitifiti.tv.data.diag.Diag.log("ekran −${stack.last().route::class.simpleName}"); stack.removeAt(stack.lastIndex); return true }
+    fun push(r: Route) { com.fitifiti.tv.data.diag.Diag.log("ekran +${describe(r)}"); stack.add(Entry(seq++, r)); noteTop() }
+    fun replace(r: Route) { if (stack.isNotEmpty()) stack.removeAt(stack.lastIndex); stack.add(Entry(seq++, r)); noteTop() }
+    fun reset(r: Route) { stack.clear(); stack.add(Entry(seq++, r)); noteTop() }
+    fun back(): Boolean { if (stack.size <= 1) return false; com.fitifiti.tv.data.diag.Diag.log("ekran −${describe(stack.last().route)}"); stack.removeAt(stack.lastIndex); noteTop(); return true }
+    /** "Sorun bildir" raporunda hangi ekranda olunduğu */
+    private fun noteTop() { com.fitifiti.tv.data.diag.Diag.lastScreen = describe(top) }
+    private fun describe(r: Route): String = when (r) {
+        is Route.MovieDetail -> "Film: ${r.movie.name}"
+        is Route.SeriesDetail -> "Dizi: ${r.series.name}"
+        is Route.Player -> "Oynatıcı: ${r.req.title}"
+        else -> r::class.simpleName ?: "?"
+    }
 }

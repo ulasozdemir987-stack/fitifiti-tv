@@ -96,6 +96,10 @@ fun SettingsScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAd
             }, icon = Icons.Default.SwapHoriz, modifier = Modifier.fillMaxWidth(0.7f))
         }
         item { SettingRow("Hesap ekle", onClick = onAddAccount, icon = Icons.Default.Add, modifier = Modifier.fillMaxWidth(0.7f)) }
+        item {
+            val act = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+            SettingRow("Sorun bildir", hint = "Herhangi bir ekranda Geri tuşuna 1 sn basılı tut: o ekranın görüntüsü geliştiriciye gider", onClick = { act?.let { com.fitifiti.tv.data.diag.Feedback.capture(it, "Ayarlar") } }, icon = Icons.Default.BugReport, modifier = Modifier.fillMaxWidth(0.7f))
+        }
         item { SettingRow("Kataloğu yenile", hint = "Sağlayıcıdan film, dizi ve kanal listesini yeniden indir", onClick = { active?.let { EpgCache.clear(); app.catalog.start(it, force = true) } }, icon = Icons.Default.Refresh, modifier = Modifier.fillMaxWidth(0.7f)) }
         if (active != null) item {
             SettingRow(if (confirmRemove) "Emin misin? Hesabı kaldır" else "Hesabı bu cihazdan kaldır", onClick = {
