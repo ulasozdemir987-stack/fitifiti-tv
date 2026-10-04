@@ -1,5 +1,9 @@
 package com.fitifiti.tv.ui.screens
 
+import android.os.SystemClock
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.BringIntoViewSpec
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
@@ -10,15 +14,28 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -32,46 +49,118 @@ import com.fitifiti.tv.domain.cardTitle
 import com.fitifiti.tv.ui.LocalActions
 import com.fitifiti.tv.ui.components.*
 import com.fitifiti.tv.ui.theme.C
+import kotlinx.coroutines.launch
 
-/** Odaktaki içerik vitrinde: üstte sabit bilgi alanı, altında şeritler; şerit odağa gelince listenin tepesine hizalanır. */
+/**
+ * Vitrinli sayfa (sitedeki Dashboard / MediaHome): en üstte sayfayla birlikte kayan vitrin (öne çıkanlar 8 sn'de bir
+ * döner), altında şeritler sayfa zemininde. Vitrin görseli YALNIZ vitrin kutusunda: eskiden ekranı kaplayan arka plan
+ * odaktaki kartın görseline dönüyordu, aşağı inince şeritlerin arkasında kocaman soluk bir resim kalıyordu (2.9.4).
+ * Şeride inince şerit başlığı ekranın tepesine hizalanır (vitrin yukarı kayıp çıkar, üst çubuk gizlenir, aynı anda
+ * 3 şerit görünür); vitrin düğmelerine dönünce sayfa en üste kayar.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HeroRowsLayout(
     initial: Item?,
-    heroLabel: String? = null,
+    heroItems: List<Item> = listOfNotNull(initial),
+    heroLabel: (Item) -> String? = { null },
     requestInitialFocus: Boolean = false,
     rows: LazyListScope.(onFocusItem: (Item) -> Unit) -> Unit,
 ) {
+    val items = remember(heroItems) { heroItems.distinctBy { it.key } }
     val primary = remember { FocusRequester() }
     if (requestInitialFocus) LaunchedEffect(Unit) { kotlinx.coroutines.delay(150); runCatching { primary.requestFocus() } }
-    var shown by remember { mutableStateOf(initial) }
-    LaunchedEffect(initial?.key) { if (shown == null) shown = initial }
+    var index by remember { mutableIntStateOf(0) }
+    val shown = if (items.isEmpty()) null else items[index % items.size]
     val art = rememberArt(shown)
+    rememberArt(if (items.size > 1) items[(index + 1) % items.size] else null) // sıradaki vitrinin görselleri önceden
     val listState = rememberLazyListState()
     val topBar = LocalTopBar.current
+    val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
+    val heroHeight = (LocalConfiguration.current.screenHeightDp * 0.82f).dp
+    val hero = remember { HeroState() }
 
-    // Netflix / Prime tarzı: Aşağı kaydırınca üst çubuğu gizle, en tepedeyken göster
-    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
-        topBar.hidden = listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 60
+    // en tepedeyken üst çubuk görünür, şeritlere inince çekilir
+    LaunchedEffect(listState) {
+        val limit = with(density) { 60.dp.toPx() }
+        snapshotFlow { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > limit }.collect { topBar.hidden = it }
+    }
+    // dönen vitrin (sitedeki gibi 8 sn): vitrin görünürken ve kumandaya 8 sn dokunulmadıysa sıradakine geçer
+    LaunchedEffect(items.size) {
+        if (items.size < 2) return@LaunchedEffect
+        while (true) {
+            kotlinx.coroutines.delay(1000)
+            val now = SystemClock.uptimeMillis()
+            if (listState.firstVisibleItemIndex != 0 || now - hero.lastKey < 8000 || now - hero.lastSwitch < 8000) continue
+            val hadFocus = hero.focused
+            index = (index + 1) % items.size
+            hero.lastSwitch = now
+            // film ↔ dizi geçişinde düğmeler yeniden kurulur; odak kaybolmasın diye asıl düğmeye geri verilir
+            if (hadFocus) { withFrameNanos {}; withFrameNanos {}; runCatching { primary.requestFocus() } }
+        }
+    }
+    // dikey kaydırma: vitrin düğmesi odaktaysa sayfa en üste, şeritteyse şerit başlığı ekranın tepesine
+    val spec = remember(density) {
+        val rowTop = with(density) { (22 + 34).dp.toPx() } // üst boşluk + SectionTitle
+        object : BringIntoViewSpec {
+            override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float =
+                if (hero.focused) {
+                    if (listState.firstVisibleItemIndex == 0) -listState.firstVisibleItemScrollOffset.toFloat() else offset - hero.buttonsOffset
+                } else offset - rowTop
+        }
     }
 
-    Box(Modifier.fillMaxSize()) {
-        HeroBackdrop(art)
-        CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec(36.dp)) {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 120.dp)
-            ) {
-                item(key = "hero_info") {
-                    HeroInfo(
-                        shown, art, heroLabel,
-                        Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 12.dp),
-                        primary
-                    )
+    Box(Modifier.fillMaxSize().cinematicBackground().onPreviewKeyEvent { hero.lastKey = SystemClock.uptimeMillis(); false }) {
+        CompositionLocalProvider(LocalBringIntoViewSpec provides spec) {
+            LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 120.dp)) {
+                item(key = "hero") {
+                    Box(Modifier.fillMaxWidth().height(heroHeight)
+                        .onGloballyPositioned { hero.heroTop = it.positionInRoot().y }
+                        .onFocusChanged { f ->
+                            val was = hero.focused
+                            hero.focused = f.hasFocus
+                            if (f.hasFocus && !was) scope.launch {
+                                withFrameNanos {}
+                                if (listState.firstVisibleItemIndex != 0 || listState.firstVisibleItemScrollOffset != 0) listState.animateScrollToItem(0)
+                            }
+                        }
+                        .focusGroup()) {
+                        HeroBillboardBackdrop(art, Modifier.fillMaxSize())
+                        HeroInfo(shown, art, shown?.let(heroLabel), Modifier.align(Alignment.BottomStart).padding(start = 48.dp, end = 48.dp, bottom = 40.dp), primary) { hero.buttonsTop = it }
+                        if (items.size > 1) HeroDots(items.size, index % items.size, Modifier.align(Alignment.BottomEnd).padding(end = 48.dp, bottom = 56.dp))
+                    }
                 }
-                rows { shown = it }
+                rows { }
             }
+        }
+    }
+}
+
+private class HeroState {
+    var focused = false
+    var lastKey = 0L
+    var lastSwitch = SystemClock.uptimeMillis()
+    var heroTop = 0f
+    var buttonsTop = 0f
+    /** düğme satırının vitrin kutusunun tepesine uzaklığı (px; kaydırmadan bağımsız) */
+    val buttonsOffset get() = buttonsTop - heroTop
+}
+
+/** Sitedeki `.cinematic-bg`: zemin + sol üstte mor, sağ üstte turkuaz çok hafif ışıma */
+private fun Modifier.cinematicBackground() = drawBehind {
+    drawRect(C.bg)
+    drawRect(Brush.radialGradient(listOf(C.primary.copy(alpha = 0.10f), Color.Transparent), center = Offset(size.width * 0.2f, -size.height * 0.1f), radius = size.width * 0.5f))
+    drawRect(Brush.radialGradient(listOf(C.teal.copy(alpha = 0.07f), Color.Transparent), center = Offset(size.width * 0.9f, 0f), radius = size.width * 0.42f))
+}
+
+/** Vitrin sırası (sitedeki noktalar): etkin olan uzun beyaz çizgi */
+@Composable
+private fun HeroDots(count: Int, active: Int, modifier: Modifier) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        repeat(count) { i ->
+            val w by animateDpAsState(if (i == active) 22.dp else 6.dp, tween(500), label = "dot")
+            Box(Modifier.width(w).height(3.dp).clip(RoundedCornerShape(2.dp)).background(if (i == active) Color.White else Color.White.copy(alpha = 0.3f)))
         }
     }
 }
@@ -95,7 +184,7 @@ fun rememberRowSpec(pad: Dp = 48.dp): BringIntoViewSpec {
 
 /** Vitrin bilgisi + eylem düğmeleri (odaktaki içerik için) */
 @Composable
-fun HeroInfo(item: Item?, art: HeroArt, label: String?, modifier: Modifier, primary: FocusRequester? = null) {
+fun HeroInfo(item: Item?, art: HeroArt, label: String?, modifier: Modifier, primary: FocusRequester? = null, onButtonsPositioned: (Float) -> Unit = {}) {
     val app = App.instance
     val actions = LocalActions.current
     val progress by app.user.progressMap.collectAsStateWithLifecycle()
@@ -112,15 +201,15 @@ fun HeroInfo(item: Item?, art: HeroArt, label: String?, modifier: Modifier, prim
         val overview = art.overview ?: when (item) { is Item.M -> item.m.plot; is Item.S -> item.s.plot }
         if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.45f))
         Spacer(Modifier.height(12.dp))
-        HeroButtons(item, progress, favorites.any { it.key == item.key }, primary)
+        HeroButtons(item, progress, favorites.any { it.key == item.key }, primary, onButtonsPositioned)
     }
 }
 
 @Composable
-fun HeroButtons(item: Item, progress: Map<String, ProgressEntity>, fav: Boolean, primaryFocus: FocusRequester? = null) {
+fun HeroButtons(item: Item, progress: Map<String, ProgressEntity>, fav: Boolean, primaryFocus: FocusRequester? = null, onPositioned: (Float) -> Unit = {}) {
     val app = App.instance
     val actions = LocalActions.current
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+    Row(Modifier.onGloballyPositioned { onPositioned(it.positionInRoot().y) }, horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
         when (item) {
             is Item.M -> {
                 val p = progress[item.key]

@@ -91,3 +91,8 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 * **Geri Dönüş:** En üste (Row 1'den yukarı) çıkıldığında odak `HeroButtons`'a ("Oynat") döner, vitrin ve üst çubuk pürüzsüzce geri gelir.
 * **Kart ve Logo Ölçekleri:** Kart genişlikleri 220dp (sıralı 190dp) olarak ayarlandı; 1080p (540dp TV Compose) ölçeğinde tam 3 dikey satır ve yatayda 4 tam + 1 ucu görünen kart dizilimi sağlandı.
 
+## Güncelleme — 2026-10-04 (2.9.5): Sinematik Zemin ve Hero Maskesi (Web Site Uyumu)
+* **Cinematic Background:** Eskiden vitrin arkaplanı odaktaki filme göre tam ekran değişiyor ve aşağı kaydırıldığında şeritlerin arkasında kalıyordu. Artık uygulamanın ana arkaplanı sitedeki `.cinematic-bg` gibi çok hafif mor-turkuaz degrade ışımalı (glow) sabit koyu zemin oldu.
+* **HeroBillboardBackdrop:** Vitrin (Hero) resmi artık ekrana yayılmak yerine, sadece kendi vitrin (billboard) kutusu içerisinde kalıyor ve alt kenardan yukarı doğru maskelenerek (`BlendMode.DstIn`) sinematik zeminle birleşiyor (sitedeki `-webkit-mask-image` tekniği Compose'da uygulandı). Aşağı kaydırıldığında resim ekrandan temiz bir şekilde çıkıyor.
+* **Derleme Düzeltmeleri:** Compose'un `foundation`, `graphics`, `layout` ve `animation` modülleri eksiksiz içe aktarıldı, TV'de test edildi.
+

@@ -6,9 +6,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -67,6 +75,38 @@ fun HeroBackdrop(art: HeroArt, modifier: Modifier = Modifier, video: (@Composabl
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to C.bg.copy(alpha = 0.55f), 0.18f to Color.Transparent, 0.62f to Color.Transparent, 1f to C.bg)))
     }
 }
+
+/**
+ * Ana sayfa / Filmler / Diziler vitrini (sitedeki `.hero-media` + `.hero-fade`): görsel YALNIZ vitrin kutusunun içinde,
+ * sayfayla birlikte kayar. Alt kenar zemin rengiyle boyanmaz, görselin kendisi maskeyle saydamlaşır (sitedeki çok duraklı
+ * eğri) → sayfa zeminindeki ışımayla vitrinin bittiği yerde çizgi oluşmaz. Soldan koyulaşma yazı okunsun diye.
+ */
+@Composable
+fun HeroBillboardBackdrop(art: HeroArt, modifier: Modifier = Modifier) {
+    Box(modifier
+        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+        .drawWithContent { drawContent(); drawRect(Brush.verticalGradient(*BillboardMask), blendMode = BlendMode.DstIn) }) {
+        Crossfade(targetState = art.backdrop to art.poster, animationSpec = tween(700), label = "billboard") { (bd, poster) ->
+            Box(Modifier.fillMaxSize()) {
+                if (bd != null) AsyncImage(model = bd, contentDescription = null, contentScale = ContentScale.Crop, alignment = BiasAlignment(0f, -0.5f), modifier = Modifier.fillMaxSize())
+                else if (poster != null) {
+                    // yatay sahne görseli yoksa: afişin renginden hafif zemin + sağda afişin kendisi (sitedeki gibi)
+                    AsyncImage(model = poster, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().blur(60.dp).graphicsLayer { alpha = 0.25f; scaleX = 1.25f; scaleY = 1.25f })
+                    AsyncImage(model = poster, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.align(Alignment.TopEnd).padding(top = 72.dp, end = 96.dp).fillMaxHeight(0.62f).aspectRatio(2f / 3f).clip(RoundedCornerShape(12.dp)))
+                }
+            }
+        }
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to C.bg.copy(alpha = 0.92f), 0.38f to C.bg.copy(alpha = 0.55f), 0.70f to Color.Transparent)))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to Color.Black.copy(alpha = 0.5f), 0.09f to Color.Black.copy(alpha = 0.28f), 0.18f to Color.Black.copy(alpha = 0.1f), 0.28f to Color.Transparent)))
+    }
+}
+
+/** globals.css `.hero-media` maskesi (yukarıdan aşağı): üst %32 tam görünür, alta doğru eğriyle kaybolur */
+private val BillboardMask = arrayOf(
+    0f to Color.Black, 0.32f to Color.Black, 0.40f to Color.Black.copy(alpha = 0.95f), 0.49f to Color.Black.copy(alpha = 0.85f),
+    0.58f to Color.Black.copy(alpha = 0.7f), 0.67f to Color.Black.copy(alpha = 0.5f), 0.76f to Color.Black.copy(alpha = 0.3f),
+    0.85f to Color.Black.copy(alpha = 0.14f), 0.93f to Color.Black.copy(alpha = 0.04f), 1f to Color.Transparent,
+)
 
 /** Logo varsa logo, yoksa Manrope başlık */
 @Composable
