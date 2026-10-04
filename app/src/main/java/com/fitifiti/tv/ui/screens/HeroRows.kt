@@ -248,7 +248,7 @@ fun LazyListScope.posterRow(
                 LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     itemsIndexed(items, key = { _, it -> it.key }) { i, it ->
                         val p = progress[it.key]
-                        WideCard(it, onClick = { open(actions, it) }, width = if (ranked) 190.dp else width, rank = if (ranked) i + 1 else null,
+                        WideCard(it, onClick = { open(actions, it) }, width = if (ranked) 280.dp else width, rank = if (ranked) i + 1 else null,
                             progress = p?.fraction, watched = it is Item.M && p?.finished == true, badge = badge(it), onFocus = { onFocusItem(it) })
                     }
                 }

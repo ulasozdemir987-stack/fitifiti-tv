@@ -18,9 +18,9 @@ class Ranking(c: Catalog) {
     val newMovies: List<Movie> = c.movies.sortedByDescending { it.added }.take(30)
     val newSeries: List<Series> = c.series.sortedByDescending { it.added }.take(30)
 
-    val featuredMovies: List<Movie> = c.movies.filter { recent(it.year, 2) && q(it.rating) > 6.6 }.sortedByDescending { q(it.rating) + it.added / 1e12 }.take(30)
+    val featuredMovies: List<Movie> = c.movies.filter { recent(it.year, 3) && q(it.rating) > 6.5 }.sortedByDescending { it.added }.take(30)
         .ifEmpty { newMovies }
-    val featuredSeries: List<Series> = c.series.filter { recent(it.year, 3) && q(it.rating) > 6.6 }.sortedByDescending { q(it.rating) + it.added / 1e12 }.take(30)
+    val featuredSeries: List<Series> = c.series.filter { recent(it.year, 4) && q(it.rating) > 6.8 }.sortedByDescending { it.added }.take(30)
         .ifEmpty { newSeries }
 
     val topMovies: List<Movie> = c.movies.filter { q(it.rating) > 0 }.sortedByDescending { q(it.rating) }.take(30)

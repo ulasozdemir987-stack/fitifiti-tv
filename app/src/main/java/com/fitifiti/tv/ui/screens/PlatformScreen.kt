@@ -80,6 +80,14 @@ fun PlatformScreen(brand: String) {
     }
 
     val first = remember(rows) { rows.fs.firstOrNull() ?: rows.fm.firstOrNull() }
+    val heroItems = remember(rows, first) {
+        val list = mutableListOf<Item>()
+        if (first != null) list.add(first)
+        list.addAll(rows.fs.take(4))
+        list.addAll(rows.fm.take(4))
+        list.distinctBy { it.key }.take(8)
+    }
+
     val brandLogoRes = "file:///android_asset/brands/$brand.${if (brand == "exxen" || brand == "gain") "png" else "svg"}"
     val tint = remember(brand) { brandTint(brand) }
 
@@ -117,7 +125,7 @@ fun PlatformScreen(brand: String) {
 
         if (animState == 2) {
             Box(Modifier.fillMaxSize().alpha(contentAlpha)) {
-                HeroRowsLayout(first, requestInitialFocus = true) { onFocus ->
+                HeroRowsLayout(first, heroItems = heroItems, requestInitialFocus = true) { onFocus ->
                     item {
                         Row(Modifier.fillMaxWidth().padding(start = 48.dp, bottom = 24.dp), verticalAlignment = Alignment.CenterVertically) {
                             AsyncImage(model = brandLogoRes, contentDescription = brandName, modifier = Modifier.height(48.dp).widthIn(max = 200.dp), contentScale = ContentScale.Fit, colorFilter = tint)

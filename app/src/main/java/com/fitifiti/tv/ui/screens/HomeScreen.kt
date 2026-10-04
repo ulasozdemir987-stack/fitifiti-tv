@@ -55,7 +55,15 @@ fun HomeScreen() {
         listOf("netflix", "amazon", "hbo", "disney", "exxen", "max blu", "gain", "tabii", "b* connect", "apple")
     }
 
-    HeroRowsLayout(first, requestInitialFocus = doFocus) { onFocus ->
+    val heroItems = remember(first, rows) {
+        val list = mutableListOf<Item>()
+        if (first != null) list.add(first)
+        list.addAll(rows.fm.take(5))
+        list.addAll(rows.fs.take(5))
+        list.distinctBy { it.key }.take(8)
+    }
+
+    HeroRowsLayout(first, heroItems = heroItems, requestInitialFocus = doFocus) { onFocus ->
         item(key = "platforms") {
             val actions = LocalActions.current
             Column(Modifier.padding(bottom = 22.dp)) {
