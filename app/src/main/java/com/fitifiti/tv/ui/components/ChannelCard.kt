@@ -47,8 +47,8 @@ fun ChannelLogo(channel: Channel, modifier: Modifier) {
 
 /** Şu an oynayan program (5 dk önbellekli) */
 @Composable
-fun rememberEpg(id: Int, limit: Int = 4): List<EpgItem> {
-    val v by produceState(EpgCache.cached(id) ?: emptyList(), id) { value = EpgCache.get(id, limit) }
+fun rememberEpg(channel: Channel): List<EpgItem> {
+    val v by produceState(emptyList<EpgItem>(), channel.id) { value = EpgCache.getNowNext(channel.epgId, channel.id) }
     return v
 }
 
@@ -58,7 +58,7 @@ fun hhmm(t: Long): String = clock.format(Date(t))
 /** Kanal kartı: logo + ad + şimdiki program + ilerleme (sitedeki Canlı TV Tile) */
 @Composable
 fun ChannelCard(channel: Channel, onClick: () -> Unit, modifier: Modifier = Modifier, width: Dp = 240.dp, label: String? = null, onFocus: (() -> Unit)? = null) {
-    val epg = rememberEpg(channel.id)
+    val epg = rememberEpg(channel)
     val now = epg.now()
     Column(modifier.width(width)) {
         Surface(

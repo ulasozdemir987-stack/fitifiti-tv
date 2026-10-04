@@ -102,15 +102,75 @@ interface RecentDao {
     @Query("DELETE FROM recent_searches WHERE profileId = :p") suspend fun clearSearches(p: Long)
 }
 
+
+
+@Entity(tableName = "epg", primaryKeys = ["channel", "start"])
+data class EpgEntity(
+    val channel: String, // epgChannelId
+    val start: Long,
+    val end: Long,
+    val title: String,
+    val desc: String
+)
+
+@Dao
+interface EpgDao {
+    @Query("SELECT * FROM epg WHERE channel = :channel AND end > :now ORDER BY start ASC LIMIT 2")
+    suspend fun nowNext(channel: String, now: Long = System.currentTimeMillis()): List<EpgEntity>
+
+    @Query("SELECT * FROM epg WHERE channel IN (:channels) AND end > :from AND start < :to ORDER BY channel, start ASC")
+    suspend fun range(channels: List<String>, from: Long, to: Long): List<EpgEntity>
+
+    @Query("SELECT * FROM epg WHERE title LIKE '%' || :query || '%' AND end > :now ORDER BY start ASC LIMIT :limit")
+    suspend fun search(query: String, now: Long = System.currentTimeMillis(), limit: Int = 100): List<EpgEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(items: List<EpgEntity>)
+
+    @Query("DELETE FROM epg WHERE end < :cutoff")
+    suspend fun deleteOld(cutoff: Long = System.currentTimeMillis() - 6 * 3600_000L)
+    
+    @Query("DELETE FROM epg")
+    suspend fun clearAll()
+}
+
+
+@Entity(tableName = "channel_config", primaryKeys = ["profileId", "channelId"])
+data class ChannelConfigEntity(
+    val profileId: Long,
+    val channelId: Int,
+    val isHidden: Boolean = false,
+    val customName: String? = null,
+    val sortOrder: Int = 0,
+    val customList: String? = null // null means only in "Tüm kanallar", else also in that list
+)
+
+@Dao
+interface ChannelConfigDao {
+    @Query("SELECT * FROM channel_config WHERE profileId = :p")
+    fun observe(p: Long): Flow<List<ChannelConfigEntity>>
+
+    @Upsert
+    suspend fun upsert(c: ChannelConfigEntity)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(list: List<ChannelConfigEntity>)
+
+    @Query("DELETE FROM channel_config WHERE profileId = :p")
+    suspend fun clear(p: Long)
+}
+
 @Database(
-    entities = [ProfileEntity::class, ProgressEntity::class, FavoriteEntity::class, RecentChannelEntity::class, RecentSearchEntity::class],
-    version = 1, exportSchema = true,
+    entities = [ProfileEntity::class, ProgressEntity::class, FavoriteEntity::class, RecentChannelEntity::class, RecentSearchEntity::class, EpgEntity::class, ChannelConfigEntity::class],
+    version = 3, exportSchema = true,
 )
 abstract class AppDb : RoomDatabase() {
     abstract fun profiles(): ProfileDao
     abstract fun progress(): ProgressDao
     abstract fun favorites(): FavoriteDao
     abstract fun recent(): RecentDao
+    abstract fun epg(): EpgDao
+    abstract fun channelConfigs(): ChannelConfigDao
 
     companion object {
         fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "fitifiti.db").fallbackToDestructiveMigration().build()

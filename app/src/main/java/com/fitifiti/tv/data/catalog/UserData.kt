@@ -5,6 +5,7 @@ import com.fitifiti.tv.data.local.FavoriteEntity
 import com.fitifiti.tv.data.local.ProgressEntity
 import com.fitifiti.tv.data.local.RecentChannelEntity
 import com.fitifiti.tv.data.local.RecentSearchEntity
+import com.fitifiti.tv.data.local.ChannelConfigEntity
 import com.fitifiti.tv.data.xtream.Episode
 import com.fitifiti.tv.data.xtream.Movie
 import com.fitifiti.tv.data.xtream.Series
@@ -30,6 +31,8 @@ class UserData(private val db: AppDb) {
     val progress: StateFlow<List<ProgressEntity>> = profileId.flatMapLatest { if (it < 0) flowOf(emptyList()) else db.progress().observeAll(it) }
         .stateIn(scope, SharingStarted.Eagerly, emptyList())
     val progressMap: StateFlow<Map<String, ProgressEntity>> = progress.map { l -> l.associateBy { it.key } }.stateIn(scope, SharingStarted.Eagerly, emptyMap())
+    val channelConfigs: StateFlow<List<ChannelConfigEntity>> = profileId.flatMapLatest { if (it < 0) flowOf(emptyList()) else db.channelConfigs().observe(it) }.stateIn(scope, SharingStarted.Eagerly, emptyList())
+
     val favorites: StateFlow<List<FavoriteEntity>> = profileId.flatMapLatest { if (it < 0) flowOf(emptyList()) else db.favorites().observe(it) }
         .stateIn(scope, SharingStarted.Eagerly, emptyList())
     val recentChannels = profileId.flatMapLatest { if (it < 0) flowOf(emptyList()) else db.recent().channels(it) }

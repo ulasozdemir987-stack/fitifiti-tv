@@ -118,7 +118,7 @@ fun LivePlayerScreen(channelId: Int, list: List<Int>, onClose: () -> Unit) {
 
     BackHandler { if (panel) panel = false else if (banner) banner = false else onClose() }
 
-    val epg = rememberEpg(channel.id, 6)
+    val epg = rememberEpg(channel)
     val now = epg.now(); val next = epg.next()
     DisposableEffect(Unit) {
         com.fitifiti.tv.data.remote.RemoteBus.screen.value = "player"
@@ -211,7 +211,7 @@ fun LivePlayerScreen(channelId: Int, list: List<Int>, onClose: () -> Unit) {
 
 @Composable
 private fun ChannelListRow(c: com.fitifiti.tv.data.xtream.Channel, i: Int, current: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    val epg = rememberEpg(c.id)
+    val epg = rememberEpg(c)
     val now = epg.now()
     Surface(
         onClick = onClick, modifier = modifier.fillMaxWidth(),
