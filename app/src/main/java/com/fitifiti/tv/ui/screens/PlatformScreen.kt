@@ -125,12 +125,14 @@ fun PlatformScreen(brand: String) {
 
         if (animState == 2) {
             Box(Modifier.fillMaxSize().alpha(contentAlpha)) {
-                HeroRowsLayout(first, heroItems = heroItems, requestInitialFocus = true) { onFocus ->
-                    item {
-                        Row(Modifier.fillMaxWidth().padding(start = 48.dp, bottom = 24.dp), verticalAlignment = Alignment.CenterVertically) {
-                            AsyncImage(model = brandLogoRes, contentDescription = brandName, modifier = Modifier.height(48.dp).widthIn(max = 200.dp), contentScale = ContentScale.Fit, colorFilter = tint)
-                        }
+                HeroRowsLayout(
+                    first, 
+                    heroItems = heroItems, 
+                    requestInitialFocus = true,
+                    header = {
+                        AsyncImage(model = brandLogoRes, contentDescription = brandName, modifier = Modifier.height(36.dp).widthIn(max = 180.dp), contentScale = ContentScale.Fit, colorFilter = tint)
                     }
+                ) { onFocus ->
                     posterRow("fs", "$brandName Orijinal Dizileri", rows.fs, onFocus)
                     posterRow("fm", "$brandName Orijinal Filmleri", rows.fm, onFocus)
                     posterRow("ts", "En Beğenilen Diziler", rows.ts, onFocus, ranked = true)

@@ -65,6 +65,7 @@ fun HeroRowsLayout(
     heroItems: List<Item> = listOfNotNull(initial),
     heroLabel: (Item) -> String? = { null },
     requestInitialFocus: Boolean = false,
+    header: (@Composable () -> Unit)? = null,
     rows: LazyListScope.(onFocusItem: (Item) -> Unit) -> Unit,
 ) {
     val items = remember(heroItems) { heroItems.distinctBy { it.key } }
@@ -127,6 +128,9 @@ fun HeroRowsLayout(
                         }
                         .focusGroup()) {
                         HeroBillboardBackdrop(art, Modifier.fillMaxSize())
+                        if (header != null) {
+                            Box(Modifier.align(Alignment.TopStart).padding(start = 48.dp, top = 24.dp)) { header() }
+                        }
                         HeroInfo(shown, art, shown?.let(heroLabel), Modifier.align(Alignment.BottomStart).padding(start = 48.dp, end = 48.dp, bottom = 40.dp), primary) { hero.buttonsTop = it }
                         if (items.size > 1) HeroDots(items.size, index % items.size, Modifier.align(Alignment.BottomEnd).padding(end = 48.dp, bottom = 56.dp))
                     }
@@ -199,8 +203,8 @@ fun HeroInfo(item: Item?, art: HeroArt, label: String?, modifier: Modifier, prim
             if (art.vote > 0 && art.votes >= 25) "TMDB ${"%.1f".format(art.vote)}" else null))
         Spacer(Modifier.height(6.dp))
         val overview = art.overview ?: when (item) { is Item.M -> item.m.plot; is Item.S -> item.s.plot }
-        if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.45f))
-        Spacer(Modifier.height(12.dp))
+        if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyLarge, color = C.muted, maxLines = 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.55f))
+        Spacer(Modifier.height(16.dp))
         HeroButtons(item, progress, favorites.any { it.key == item.key }, primary, onButtonsPositioned)
     }
 }
