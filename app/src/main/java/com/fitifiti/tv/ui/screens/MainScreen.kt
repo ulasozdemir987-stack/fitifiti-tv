@@ -48,9 +48,9 @@ val LocalTopBar = compositionLocalOf { TopBarState() }
 
 @OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
-fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAccount: () -> Unit) {
+fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAccount: () -> Unit, startTab: Tab = Tab.Home) {
     val app = App.instance
-    var tab by rememberSaveableTab()
+    var tab by rememberSaveableTab(startTab)
     val bar = remember { TopBarState() }
     val holder = rememberSaveableStateHolder()
     val status by app.catalog.status.collectAsStateWithLifecycle()
@@ -129,7 +129,7 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
 }
 
 @Composable
-private fun rememberSaveableTab() = androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(Tab.Home) }
+private fun rememberSaveableTab(start: Tab) = androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(start) }
 
 @Composable
 private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data.local.ProfileEntity?, onProfiles: () -> Unit, tabFocus: FocusRequester, contentFocus: FocusRequester, contentMem: com.fitifiti.tv.ui.FocusMemory, onSearch: () -> Unit, solid: Boolean = false) {

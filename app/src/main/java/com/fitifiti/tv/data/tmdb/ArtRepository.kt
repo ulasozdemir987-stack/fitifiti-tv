@@ -30,12 +30,20 @@ class ArtRepository(private val http: OkHttpClient, private val key: () -> Strin
     private fun clean(s: String) = s.replace(Regex("\\[[^\\]]*\\]|\\([^)]*\\)"), " ").replace(Regex("\\s+-\\s+.+$"), "").replace(Regex("\\s+"), " ").trim()
 
     fun cached(kind: String, title: String, year: String?, tmdbId: String?) = cache[cacheKey(kind, title, year, tmdbId)]
+
+    /** Ekran önizleme testleri: ağa çıkılmaz, önbellek elle doldurulur */
+    @Volatile var offline = false
+    fun seed(kind: String, title: String, year: String?, tmdbId: String?, art: Art) { cache[cacheKey(kind, title, year, tmdbId)] = art }
+    fun seedCast(kind: String, tmdbId: Int, list: List<CastMember>) { castCache["$kind-$tmdbId"] = list }
+    fun seedSeason(tmdbId: Int, season: Int, map: Map<Int, EpisodeArt>) { epCache["$tmdbId-$season"] = map }
+    fun seedCritics(kind: String, tmdbId: Int, c: Critics) { criticsCache["$kind-$tmdbId"] = c }
     private fun cacheKey(kind: String, title: String, year: String?, tmdbId: String?) = "$kind|${tmdbId ?: ""}|${clean(title).lowercase()}|${year ?: ""}"
 
     suspend fun art(kind: String, title: String, year: String?, tmdbId: String? = null): Art {
         val k = key().trim()
         val ck = cacheKey(kind, title, year, tmdbId)
         cache[ck]?.let { return it }
+        if (offline) return Art()
         val result = withContext(Dispatchers.IO) {
             runCatching {
                 val type = if (kind == "series") "tv" else "movie"
@@ -64,6 +72,7 @@ class ArtRepository(private val http: OkHttpClient, private val key: () -> Strin
     }
 
     private fun get(key: String, path: String, params: Map<String, String>): JsonObject? {
+        if (offline) return null
         val url = if (key.isNotEmpty()) "https://api.themoviedb.org/3$path".toHttpUrl().newBuilder().apply {
             addQueryParameter("api_key", key); params.forEach { (a, b) -> addQueryParameter(a, b) }
         }.build() else "$REMOTE_BASE/api/tv-tmdb".toHttpUrl().newBuilder().apply {
@@ -129,6 +138,7 @@ class ArtRepository(private val http: OkHttpClient, private val key: () -> Strin
     suspend fun critics(kind: String, tmdbId: Int): Critics? {
         val ck = "$kind-$tmdbId"
         criticsCache[ck]?.let { return it }
+        if (offline) return null
         val c = withContext(Dispatchers.IO) {
             runCatching {
                 val url = "$REMOTE_BASE/api/reviews".toHttpUrl().newBuilder()

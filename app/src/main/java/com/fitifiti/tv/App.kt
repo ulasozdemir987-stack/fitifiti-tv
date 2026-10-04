@@ -30,7 +30,9 @@ class App : Application(), ImageLoaderFactory {
     lateinit var trailers: com.fitifiti.tv.data.trailer.TrailerRepository
     lateinit var remote: com.fitifiti.tv.data.remote.RemoteLink
 
-    fun client(a: Account = accounts.active!!) = XtreamClient(http, a)
+    fun client(a: Account? = null) = testClient ?: XtreamClient(http, a ?: accounts.active!!)
+    /** Ekran önizleme testleri: ağ yerine örnek veri veren istemci */
+    @androidx.annotation.VisibleForTesting var testClient: XtreamClient? = null
     fun crashFile() = java.io.File(filesDir, "last-crash.txt")
 
     override fun onCreate() {
@@ -47,7 +49,8 @@ class App : Application(), ImageLoaderFactory {
             .followRedirects(true).followSslRedirects(true)
             .addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("User-Agent", BROWSER_UA).build()) }
             .build()
-        com.fitifiti.tv.data.diag.FreezeWatchdog().start()
+        // testlerde (Robolectric) ana iş parçacığı bilerek bekletilir: donma raporu gönderilmesin
+        if (android.os.Build.FINGERPRINT != "robolectric") com.fitifiti.tv.data.diag.FreezeWatchdog().start()
         com.fitifiti.tv.data.diag.Diag.log("açılış · ${com.fitifiti.tv.data.diag.Diag.device(this)}")
         // Önceki açılışın çökme raporu gönderilmediyse gönder (ekranda da gösterilir)
         crashFile().takeIf { it.exists() && !java.io.File(filesDir, "last-crash.sent").exists() }?.let { f ->

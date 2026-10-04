@@ -91,6 +91,8 @@ class CatalogRepository(private val ctx: Context, private val clientFor: (Accoun
     fun clear() { job?.cancel(); accountId = null; set(Catalog()); _status.value = CatalogStatus.Idle }
 
     // Şerit hesapları (sıralama, türler) yayımlamadan ÖNCE arka planda yapılır; ekranlar hazır sonucu alır
+    /** Ekran önizleme testleri: örnek katalog */
+    @androidx.annotation.VisibleForTesting fun setForPreview(c: Catalog) { set(c); _status.value = CatalogStatus.Ready }
     private fun set(c: Catalog) { if (!c.isEmpty) com.fitifiti.tv.domain.Ranking.of(c); _catalog.value = c; index = null }
 
     private suspend fun fetch(api: XtreamClient, quiet: Boolean): Catalog = coroutineScope {

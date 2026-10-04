@@ -22,7 +22,10 @@ class TrailerRepository(private val http: OkHttpClient) {
     private val ids = ConcurrentHashMap<String, String>() // "" = fragman yok
     private val ready = ConcurrentHashMap.newKeySet<String>()
 
+    /** Ekran önizleme testleri: ağa çıkılmaz */
+    @Volatile var offline = false
     suspend fun find(kind: String, title: String, year: String?, provider: String?): String? {
+        if (offline) return null
         val key = "$kind|$title|${year ?: ""}"
         ids[key]?.let { return it.ifEmpty { null } }
         val id = withContext(Dispatchers.IO) {

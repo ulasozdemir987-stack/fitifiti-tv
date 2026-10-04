@@ -18,7 +18,7 @@ const val BROWSER_UA = "Mozilla/5.0 (Linux; Android 11; Android TV) AppleWebKit/
 
 class XtreamException(message: String) : IOException(message)
 
-class XtreamClient(private val http: OkHttpClient, val account: Account) {
+open class XtreamClient(private val http: OkHttpClient, val account: Account) {
 
     val base: String = normalizeServer(account.server)
 
@@ -76,7 +76,7 @@ class XtreamClient(private val http: OkHttpClient, val account: Account) {
         Channel(id, o.str("name") ?: "Kanal $id", o.str("stream_icon"), o.str("category_id"), o.int("num") ?: 0, o.str("epg_channel_id"))
     }
 
-    suspend fun vodInfo(id: Int): VodInfo {
+    open suspend fun vodInfo(id: Int): VodInfo {
         val root = call("get_vod_info", "vod_id" to id.toString()) as? JsonObject ?: return VodInfo()
         val i = root.obj("info") ?: return VodInfo()
         return VodInfo(
@@ -95,7 +95,7 @@ class XtreamClient(private val http: OkHttpClient, val account: Account) {
         )
     }
 
-    suspend fun seriesInfo(id: Int): SeriesInfo {
+    open suspend fun seriesInfo(id: Int): SeriesInfo {
         val root = call("get_series_info", "series_id" to id.toString()) as? JsonObject ?: throw XtreamException("Bölüm listesi alınamadı")
         val info = root.obj("info")
         val seasons = sortedMapOf<Int, List<Episode>>()
@@ -132,7 +132,7 @@ class XtreamClient(private val http: OkHttpClient, val account: Account) {
         )
     }
 
-    suspend fun shortEpg(streamId: Int, limit: Int = 4): List<EpgItem> {
+    open suspend fun shortEpg(streamId: Int, limit: Int = 4): List<EpgItem> {
         val root = call("get_short_epg", "stream_id" to streamId.toString(), "limit" to limit.toString()) as? JsonObject ?: return emptyList()
         val now = System.currentTimeMillis()
         return (root["epg_listings"] ?: return emptyList()).objects().mapNotNull { o ->
