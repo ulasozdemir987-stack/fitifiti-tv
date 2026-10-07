@@ -149,8 +149,8 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                     Btn(if (resumeEp) "Devam et (S${ep?.season}B${ep?.num})" else (if (ep != null) "S${ep.season}B${ep.num} Oynat" else "Oynat"),
-                        { ep?.let { actions.playSeries(s, it.season, it.num, fromStart = !resumeEp) } },
-                        Modifier.focusRequester(playFocus), icon = Icons.Default.PlayArrow, enabled = ep != null)
+                        { t?.let { actions.playEpisode(s, it.first, seasons, variant?.id) } },
+                        Modifier.focusRequester(playFocus), icon = Icons.Default.PlayArrow, enabled = t != null)
                     IconAction(if (fav) Icons.Default.Check else Icons.Default.Add, if (fav) "Listemden çıkar" else "Listeme ekle", { app.user.toggleFavorite(s) }, active = fav)
                     TrailerMuteButton()
                 }
