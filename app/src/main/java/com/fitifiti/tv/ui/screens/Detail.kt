@@ -42,13 +42,21 @@ import com.fitifiti.tv.ui.theme.Display
 fun DetailScaffold(art: HeroArt, trailer: TrailerSpec? = null, content: LazyListScope.() -> Unit) {
     val list = rememberLazyListState()
     val density = androidx.compose.ui.platform.LocalDensity.current
-    val half = with(density) { (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * 0.45f).dp.roundToPx() }
-    // fragman yalnız başlık bloğu ekrandayken oynar (bölümlere / oyunculara inince durur)
-    val atTop by remember { derivedStateOf { list.firstVisibleItemIndex == 0 && list.firstVisibleItemScrollOffset < half } }
+    // Fragman yalnız başlık tam görünürken oynar; oyunculara/bölümlere kaydırınca hemen durur ve kararır
+    val atTop by remember { derivedStateOf { list.firstVisibleItemIndex == 0 && list.firstVisibleItemScrollOffset < 60 } }
     val trailerState = remember { TrailerState() }
     Box(Modifier.fillMaxSize().background(C.bg)) {
         CompositionLocalProvider(LocalTrailerState provides trailerState) {
-        HeroBackdrop(art, modifier = Modifier.graphicsLayer { translationY = if (list.firstVisibleItemIndex == 0) -list.firstVisibleItemScrollOffset.toFloat() else -size.height }, video = trailer?.let { t -> { TrailerVideo(t, atTop) } })
+        // Arka plan sahnesi: aşağı kaydırırken alttan kesilip havada kalmaz, yumuşakça siyah zemine kararır (alpha fade)
+        HeroBackdrop(
+            art,
+            modifier = Modifier.fillMaxSize().graphicsLayer {
+                alpha = if (list.firstVisibleItemIndex == 0) {
+                    (1f - (list.firstVisibleItemScrollOffset.toFloat() / (density.density * 220f))).coerceIn(0f, 1f)
+                } else 0f
+            },
+            video = trailer?.let { t -> { TrailerVideo(t, atTop) } }
+        )
         // TV'de varsayılan kaydırma odaktaki öğeyi ekranın üst %30'una çeker: "Oynat"a odaklanınca sayfa ~300 px
         // aşağı kayıyor, başlığın üstü kesiliyordu. Yalnız gerektiği kadar kaydır (öğe zaten görünüyorsa hiç kaydırma).
         CompositionLocalProvider(LocalDetailList provides list, LocalBringIntoViewSpec provides rememberRowSpec(24.dp)) {
@@ -69,11 +77,15 @@ private val LocalDetailList = staticCompositionLocalOf<androidx.compose.foundati
 fun Modifier.detailHead(): Modifier {
     val list = LocalDetailList.current ?: return this
     val scope = rememberCoroutineScope()
-    // onFocusEvent: başlık içindeki HER odak değişiminde (yalnız ilk girişte değil) yeniden dener. Bir kare beklenir:
-    // odak hareketinin kendi kaydırması (bringIntoView) önce bitsin, yoksa animasyonu yarıda kesiyordu (gerçek kutuda görüldü).
-    return this.onFocusEvent {
-        if (it.hasFocus && (list.firstVisibleItemIndex != 0 || list.firstVisibleItemScrollOffset != 0))
+    var hadFocus by remember { mutableStateOf(false) }
+    // Yalnızca odak dışarıdan (oyuncular/bölümler) başlık alanına İLK girdiğinde en üste kaydır.
+    // Düğmeler arasında gezinirken her seferinde kaydırma animasyonu tetiklenmez; kumanda takılmaz.
+    return this.onFocusEvent { state ->
+        val gained = !hadFocus && state.hasFocus
+        hadFocus = state.hasFocus
+        if (gained && (list.firstVisibleItemIndex != 0 || list.firstVisibleItemScrollOffset != 0)) {
             scope.launch { androidx.compose.runtime.withFrameNanos { }; list.animateScrollToItem(0) }
+        }
     }
 }
 

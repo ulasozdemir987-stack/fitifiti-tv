@@ -62,8 +62,8 @@ fun MovieDetailScreen(m: Movie) {
             Column(
                 Modifier
                     .detailHead()
-                    .fillParentMaxHeight()
-                    .padding(start = 54.dp, end = 54.dp, top = 80.dp, bottom = 28.dp),
+                    .wrapContentHeight()
+                    .padding(start = 54.dp, end = 54.dp, top = 64.dp, bottom = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 HeroTitle(title, art.logo, maxWidthFraction = 0.36f, maxLogoHeight = 78.dp)

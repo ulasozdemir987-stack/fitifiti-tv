@@ -52,16 +52,10 @@ class MainActivity : ComponentActivity() {
         // Doğrudan geri dağıtıcısına (BackHandler'lar) gider. Açılır pencereler kendi penceresinde, etkilenmez.
         if (event.keyCode == KeyEvent.KEYCODE_BACK) {
             BackProbe.key(event)
-            // Geri'ye uzun basış (≥ 1 sn) = "Sorun bildir": o anki ekranın görüntüsü alınır, geri işlenmez
-            val now = SystemClock.uptimeMillis()
-            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) { backDownAt = now; backLong = false }
-            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount > 0 && !backLong && backDownAt > 0 && now - backDownAt >= 1000) {
-                backLong = true; com.fitifiti.tv.data.diag.Feedback.capture(this, com.fitifiti.tv.data.diag.Diag.lastScreen)
-            }
+            // Geri tuşu anında ve takılmadan çalışmalı: gereksiz UI thread freeze ve ekran görüntüsü kaldırıldı
             if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) {
-                if (!backLong && backDownAt > 0 && now - backDownAt >= 1000) { backLong = true; com.fitifiti.tv.data.diag.Feedback.capture(this, com.fitifiti.tv.data.diag.Diag.lastScreen) }
-                if (!backLong) { BackProbe.handled(); onBackPressedDispatcher.onBackPressed() }
-                backDownAt = 0L
+                BackProbe.handled()
+                onBackPressedDispatcher.onBackPressed()
             }
             return true
         }
