@@ -58,35 +58,44 @@ fun MovieDetailScreen(m: Movie) {
         item(key = "head") {
             // Başlık bloğu sol üstten başlar (alta yaslıyken logo ekranın ortasına iniyor, özet kesiliyordu): logo ≤72 dp, özet 4 satır,
             // ikincil eylemler yazısız yuvarlak düğmeler; bilgi listesi ayrı öğede
-            Column(Modifier.detailHead().fillParentMaxHeight().padding(start = 48.dp, end = 48.dp, top = 160.dp, bottom = 20.dp), verticalArrangement = Arrangement.Bottom) {
-                HeroTitle(title, art.logo, maxWidthFraction = 0.28f, maxLogoHeight = 72.dp)
-                if (alt.isNotBlank() && art.logo == null) { Spacer(Modifier.height(4.dp)); Text(alt, style = MaterialTheme.typography.titleMedium, color = C.muted) }
-                Spacer(Modifier.height(12.dp))
-                MetaRow(listOf(m.year ?: info.releaseDate?.take(4),
+            // JetStream tasarım dili: ferah sol üst başlangıç, nefes alan tipografi ve hiyerarşi
+            Column(
+                Modifier
+                    .detailHead()
+                    .fillParentMaxHeight()
+                    .padding(start = 54.dp, end = 54.dp, top = 80.dp, bottom = 28.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                HeroTitle(title, art.logo, maxWidthFraction = 0.36f, maxLogoHeight = 78.dp)
+                if (alt.isNotBlank() && art.logo == null) {
+                    Text(alt, style = MaterialTheme.typography.titleMedium, color = C.muted)
+                }
+                MetaRow(listOf(
+                    m.year ?: info.releaseDate?.take(4),
                     formatDuration(info.durationSecs ?: m.runtimeMin?.times(60)).ifBlank { null },
                     (info.genre ?: m.genre)?.split(',', '/', '&')?.take(3)?.joinToString(", ") { it.trim() },
                     info.age?.takeIf { it.isNotBlank() && it != "0" }?.let { "$it+" }?.replace("++", "+"),
-                    // IMDb puanı varsa TMDB puanı tekrarlanmaz (aşağıdaki puan satırında)
-                    if (art.vote > 0 && art.votes >= 25 && critics?.imdb == null) "TMDB ${"%.1f".format(art.vote)}" else null))
+                    if (art.vote > 0 && art.votes >= 25 && critics?.imdb == null) "TMDB ${"%.1f".format(art.vote)}" else null
+                ))
                 val wikiAwards by produceState(emptyList<com.fitifiti.tv.data.tmdb.AwardCount>(), critics?.imdbId) { critics?.imdbId?.let { value = app.art.awards(it) } }
                 val laurels = remember(critics, wikiAwards) { laurelBadges(critics, wikiAwards) }
-                CriticsRow(critics?.copy(awards = awardsRemainder(critics?.awards, laurels)), Modifier.padding(top = 8.dp))
-                AwardLaurels(laurels, Modifier.padding(top = 12.dp))
-                Spacer(Modifier.height(8.dp))
+                CriticsRow(critics)
+                AwardLaurels(laurels)
                 val overview = art.overview?.takeIf { it.isNotBlank() } ?: info.plot ?: m.plot
-                if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.5f))
-                Spacer(Modifier.height(16.dp))
-                VariantPicker(m.variants, variant) { v -> app.settings.chooseVariant(item.key, v.label); variantTick++ }
-                if (m.variants.size >= 2) Spacer(Modifier.height(14.dp))
+                if (!overview.isNullOrBlank()) {
+                    Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.52f))
+                }
+                if (m.variants.size >= 2) {
+                    VariantPicker(m.variants, variant) { v -> app.settings.chooseVariant(item.key, v.label); variantTick++ }
+                }
                 if (resume) {
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         Box(Modifier.width(260.dp)) { ProgressLine(p!!.fraction, Modifier.fillMaxWidth(), track = C.fill3) }
                         Spacer(Modifier.width(12.dp))
                         Text(formatDuration((p!!.durationMs - p.positionMs) / 1000) + " kaldı", style = MaterialTheme.typography.bodySmall, color = C.muted)
                     }
-                    Spacer(Modifier.height(14.dp))
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                     Btn(if (resume) "Devam et" else "Oynat", { actions.playMovie(m) }, Modifier.focusRequester(playFocus), icon = Icons.Default.PlayArrow)
                     if (resume || watched) IconAction(Icons.Default.Replay, "Baştan oynat", { actions.playMovie(m, fromStart = true) })
                     IconAction(if (fav) Icons.Default.Check else Icons.Default.Add, if (fav) "Listemden çıkar" else "Listeme ekle", { app.user.toggleFavorite(m) }, active = fav)

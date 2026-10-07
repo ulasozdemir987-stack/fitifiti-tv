@@ -108,34 +108,49 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
 
     DetailScaffold(art.copy(backdrop = art.backdrop ?: info?.backdrop ?: s.backdrop), TrailerSpec("series", s.name, s.year, info?.trailer)) {
         item(key = "head") {
-            Column(Modifier.detailHead().fillParentMaxHeight().padding(start = 48.dp, end = 48.dp, top = 160.dp, bottom = 20.dp), verticalArrangement = Arrangement.Bottom) {
-                HeroTitle(title, art.logo, maxWidthFraction = 0.28f, maxLogoHeight = 72.dp)
-                if (alt.isNotBlank() && art.logo == null) { Spacer(Modifier.height(4.dp)); Text(alt, style = MaterialTheme.typography.titleMedium, color = C.muted) }
-                Spacer(Modifier.height(12.dp))
-                MetaRow(listOf(s.year ?: info?.releaseDate?.take(4),
+            // JetStream tasarım dili: ferah sol üst başlangıç, nefes alan tipografi ve hiyerarşi
+            Column(
+                Modifier
+                    .detailHead()
+                    .fillParentMaxHeight()
+                    .padding(start = 54.dp, end = 54.dp, top = 80.dp, bottom = 28.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                HeroTitle(title, art.logo, maxWidthFraction = 0.36f, maxLogoHeight = 78.dp)
+                if (alt.isNotBlank() && art.logo == null) {
+                    Text(alt, style = MaterialTheme.typography.titleMedium, color = C.muted)
+                }
+                MetaRow(listOf(
+                    s.year ?: info?.releaseDate?.take(4),
                     (info?.genre ?: s.genre)?.split(',', '/', '&')?.take(3)?.joinToString(", ") { it.trim() },
                     if (seasons.isNotEmpty()) (if (seasons.size == 1) "${seasons.values.first().size} bölüm" else "${seasons.size} sezon") else null,
-                    // IMDb puanı varsa TMDB puanı tekrarlanmaz (aşağıdaki puan satırında)
-                    if (art.vote > 0 && art.votes >= 25 && critics?.imdb == null) "TMDB ${"%.1f".format(art.vote)}" else null))
+                    if (art.vote > 0 && art.votes >= 25 && critics?.imdb == null) "TMDB ${"%.1f".format(art.vote)}" else null
+                ))
                 val wikiAwards by produceState(emptyList<com.fitifiti.tv.data.tmdb.AwardCount>(), critics?.imdbId) { critics?.imdbId?.let { value = app.art.awards(it) } }
                 val laurels = remember(critics, wikiAwards) { laurelBadges(critics, wikiAwards) }
-                CriticsRow(critics?.copy(awards = awardsRemainder(critics?.awards, laurels)), Modifier.padding(top = 8.dp))
-                AwardLaurels(laurels, Modifier.padding(top = 12.dp))
-                Spacer(Modifier.height(8.dp))
+                CriticsRow(critics)
+                AwardLaurels(laurels)
                 val overview = art.overview?.takeIf { it.isNotBlank() } ?: info?.plot ?: s.plot
-                if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.5f))
-                Spacer(Modifier.height(16.dp))
-                VariantPicker(s.variants, variant) { v -> app.settings.chooseVariant(item.key, v.label); variantTick++; season = -1 }
-                if (s.variants.size >= 2) Spacer(Modifier.height(14.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    val t = target
-                    val label = when {
-                        t == null -> if (load is Load.Loading) "Yükleniyor…" else "Oynat"
-                        t.second != null -> "Devam et · ${t.first.num}. bölüm"
-                        seriesProgress != null -> "Oynat · ${t.first.num}. bölüm"
-                        else -> "Oynat"
+                if (!overview.isNullOrBlank()) {
+                    Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.52f))
+                }
+                if (s.variants.size >= 2) {
+                    VariantPicker(s.variants, variant) { v -> app.settings.chooseVariant(item.key, v.label); variantTick++ }
+                }
+                val ep = target?.first
+                val epProg = target?.second
+                val resumeEp = epProg != null && !epProg.finished && epProg.positionMs > 15_000
+                if (resumeEp) {
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Box(Modifier.width(260.dp)) { ProgressLine(epProg!!.fraction, Modifier.fillMaxWidth(), track = C.fill3) }
+                        Spacer(Modifier.width(12.dp))
+                        Text(formatDuration((epProg!!.durationMs - epProg.positionMs) / 1000) + " kaldı", style = MaterialTheme.typography.bodySmall, color = C.muted)
                     }
-                    Btn(label, { t?.let { actions.playEpisode(s, it.first, seasons, variant?.id) } }, Modifier.focusRequester(playFocus), icon = Icons.Default.PlayArrow)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Btn(if (resumeEp) "Devam et (S${ep?.season}B${ep?.num})" else (if (ep != null) "S${ep.season}B${ep.num} Oynat" else "Oynat"),
+                        { ep?.let { actions.playSeries(s, it.season, it.num, fromStart = !resumeEp) } },
+                        Modifier.focusRequester(playFocus), icon = Icons.Default.PlayArrow, enabled = ep != null)
                     IconAction(if (fav) Icons.Default.Check else Icons.Default.Add, if (fav) "Listemden çıkar" else "Listeme ekle", { app.user.toggleFavorite(s) }, active = fav)
                     TrailerMuteButton()
                 }
