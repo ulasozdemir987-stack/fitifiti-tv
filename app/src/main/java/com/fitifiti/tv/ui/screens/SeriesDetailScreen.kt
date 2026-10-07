@@ -137,6 +137,7 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
                 if (s.variants.size >= 2) {
                     VariantPicker(s.variants, variant) { v -> app.settings.chooseVariant(item.key, v.label); variantTick++ }
                 }
+                val t = target
                 val ep = target?.first
                 val epProg = target?.second
                 val resumeEp = epProg != null && !epProg.finished && epProg.positionMs > 15_000
