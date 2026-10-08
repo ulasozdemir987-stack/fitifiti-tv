@@ -62,7 +62,7 @@ fun MovieDetailScreen(m: Movie) {
             Column(
                 Modifier
                     .detailHead()
-                    .fillParentMinHeight()
+                    .height(h.dp)
                     .padding(start = 54.dp, end = 54.dp, top = 46.dp, bottom = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
