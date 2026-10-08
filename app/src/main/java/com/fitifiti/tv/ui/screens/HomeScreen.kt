@@ -66,19 +66,12 @@ fun HomeScreen() {
     HeroRowsLayout(first, heroItems = heroItems, requestInitialFocus = doFocus) { onFocus ->
         item(key = "platforms") {
             val actions = LocalActions.current
-            Column(Modifier.padding(bottom = 22.dp)) {
+            Column(Modifier.padding(bottom = 16.dp)) {
                 SectionTitle("Platformlar")
                 CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
-                    LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         items(platforms) { key ->
-                            CategoryCard(
-                                rawName = key,
-                                onClick = { 
-                                    val brandId = categoryStyle(key).logo ?: key
-                                    actions.openPlatform(brandId) 
-                                },
-                                modifier = Modifier.width(200.dp)
-                            )
+                            CategoryCard(rawName = key, onClick = { val brandId = categoryStyle(key).logo ?: key; actions.openPlatform(brandId) }, width = 170.dp)
                         }
                     }
                 }
@@ -106,7 +99,7 @@ fun LazyListScope.channelRow(key: String, title: String, channels: List<Channel>
         Column(Modifier.padding(bottom = 22.dp)) {
             SectionTitle(title)
             CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
-                LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     items(channels.distinctBy { it.id }, key = { it.id }) { ch ->
                         ChannelCard(ch, { actions.playChannel(ch.id, ids) }, width = 220.dp, label = if (ch.id in recent) "son izlenen" else null)
                     }

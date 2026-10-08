@@ -71,7 +71,7 @@ fun HeroBackdrop(art: HeroArt, modifier: Modifier = Modifier, video: (@Composabl
             }
         }
         video?.invoke(this)
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to C.bg, 0.3f to C.bg.copy(alpha = 0.92f), 0.62f to C.bg.copy(alpha = 0.25f), 1f to Color.Transparent)))
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to C.bg, 0.38f to C.bg.copy(alpha = 0.96f), 0.58f to C.bg.copy(alpha = 0.65f), 0.78f to C.bg.copy(alpha = 0.15f), 1f to Color.Transparent)))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to C.bg.copy(alpha = 0.55f), 0.18f to Color.Transparent, 0.62f to Color.Transparent, 1f to C.bg)))
     }
 }

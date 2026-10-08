@@ -89,7 +89,7 @@ fun WideCard(
             }
             if (showText) {
                 Spacer(Modifier.height(8.dp))
-                MetaRow(listOf(item.year, item.genre?.split(',', '/', '&')?.firstOrNull()?.trim()), color = C.faint)
+                MetaRow(listOf(item.year, com.fitifiti.tv.domain.formatGenres(item.genre, 1)), color = C.faint)
             }
         }
     }

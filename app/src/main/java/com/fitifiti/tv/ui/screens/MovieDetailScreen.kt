@@ -63,7 +63,7 @@ fun MovieDetailScreen(m: Movie) {
                 Modifier
                     .detailHead()
                     .wrapContentHeight()
-                    .padding(start = 54.dp, end = 54.dp, top = 64.dp, bottom = 20.dp),
+                    .padding(start = 54.dp, end = 54.dp, top = 46.dp, bottom = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 HeroTitle(title, art.logo, maxWidthFraction = 0.36f, maxLogoHeight = 78.dp)
@@ -73,7 +73,7 @@ fun MovieDetailScreen(m: Movie) {
                 MetaRow(listOf(
                     m.year ?: info.releaseDate?.take(4),
                     formatDuration(info.durationSecs ?: m.runtimeMin?.times(60)).ifBlank { null },
-                    (info.genre ?: m.genre)?.split(',', '/', '&')?.take(3)?.joinToString(", ") { it.trim() },
+                    com.fitifiti.tv.domain.formatGenres(info.genre ?: m.genre, 3),
                     info.age?.takeIf { it.isNotBlank() && it != "0" }?.let { "$it+" }?.replace("++", "+"),
                     if (art.vote > 0 && art.votes >= 25 && critics?.imdb == null) "TMDB ${"%.1f".format(art.vote)}" else null
                 ))
@@ -85,9 +85,7 @@ fun MovieDetailScreen(m: Movie) {
                 if (!overview.isNullOrBlank()) {
                     Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.52f))
                 }
-                if (m.variants.size >= 2) {
-                    VariantPicker(m.variants, variant) { v -> app.settings.chooseVariant(item.key, v.label); variantTick++ }
-                }
+
                 if (resume) {
                     Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                         Box(Modifier.width(260.dp)) { ProgressLine(p!!.fraction, Modifier.fillMaxWidth(), track = C.fill3) }
@@ -95,11 +93,14 @@ fun MovieDetailScreen(m: Movie) {
                         Text(formatDuration((p!!.durationMs - p.positionMs) / 1000) + " kaldı", style = MaterialTheme.typography.bodySmall, color = C.muted)
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                     Btn(if (resume) "Devam et" else "Oynat", { actions.playMovie(m) }, Modifier.focusRequester(playFocus), icon = Icons.Default.PlayArrow)
                     if (resume || watched) IconAction(Icons.Default.Replay, "Baştan oynat", { actions.playMovie(m, fromStart = true) })
                     IconAction(if (fav) Icons.Default.Check else Icons.Default.Add, if (fav) "Listemden çıkar" else "Listeme ekle", { app.user.toggleFavorite(m) }, active = fav)
                     IconAction(Icons.Default.DoneAll, if (watched) "İzlenmedi yap" else "İzlendi olarak işaretle", { app.user.markMovieWatched(m, !watched) }, active = watched)
+                    if (m.variants.size >= 2) {
+                        VariantPicker(m.variants, variant) { v -> app.settings.chooseVariant(item.key, v.label); variantTick++ }
+                    }
                     TrailerMuteButton()
                 }
             }

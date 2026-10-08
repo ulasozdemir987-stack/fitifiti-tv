@@ -79,7 +79,7 @@ fun HeroRowsLayout(
     val topBar = LocalTopBar.current
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
-    val heroHeight = (LocalConfiguration.current.screenHeightDp * 0.82f).dp
+    val heroHeight = (LocalConfiguration.current.screenHeightDp * 0.64f).dp
     val hero = remember { HeroState() }
 
     // en tepedeyken üst çubuk görünür, şeritlere inince çekilir
@@ -199,7 +199,7 @@ fun HeroInfo(item: Item?, art: HeroArt, label: String?, modifier: Modifier, prim
         HeroTitle(cardTitle(item.title), art.logo, maxWidthFraction = 0.38f, maxLogoHeight = 96.dp)
         Spacer(Modifier.height(8.dp))
         val runtime = (item as? Item.M)?.m?.runtimeMin?.takeIf { it > 0 }?.let { com.fitifiti.tv.domain.formatDuration(it, "minutes") }
-        MetaRow(listOf(item.year, runtime, item.genre?.split(',', '/', '&')?.take(2)?.joinToString(", ") { it.trim() },
+        MetaRow(listOf(item.year, runtime, com.fitifiti.tv.domain.formatGenres(item.genre, 2),
             if (art.vote > 0 && art.votes >= 25) "TMDB ${"%.1f".format(art.vote)}" else null))
         Spacer(Modifier.height(6.dp))
         val overview = art.overview ?: when (item) { is Item.M -> item.m.plot; is Item.S -> item.s.plot }

@@ -137,11 +137,13 @@ private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data
     // çubuktaki her öğeden ↓ = içerikte en son odaklanan öğe, yoksa içeriğin ilk öğesi
     // (FocusProperties en yakın odak hedefine kadar üstteki düğümlerden, her aramada yeniden okunur)
     Box(Modifier.focusProperties { down = contentMem.last ?: contentFocus }.fillMaxWidth().background(if (solid) Brush.verticalGradient(0f to C.bg, 0.82f to C.bg, 1f to C.bg.copy(alpha = 0f)) else Brush.verticalGradient(listOf(C.bg.copy(alpha = 0.85f), Color.Transparent))).padding(horizontal = 48.dp, vertical = 12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             AnimatedBrandLogo(width = 110.dp, compact = true, live = true, waveKey = tab, modifier = Modifier.padding(bottom = 6.dp))
-            Spacer(Modifier.width(40.dp))
-            listOf(Tab.Home, Tab.Movies, Tab.Series, Tab.Live, Tab.Listem).forEach { t ->
-                NavText(t.label, t == tab, { onTab(t) }, if (t == tab) Modifier.focusRequester(tabFocus) else Modifier)
+            Spacer(Modifier.weight(1f))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                listOf(Tab.Home, Tab.Movies, Tab.Series, Tab.Live, Tab.Listem).forEach { t ->
+                    NavText(t.label, t == tab, { onTab(t) }, if (t == tab) Modifier.focusRequester(tabFocus) else Modifier)
+                }
             }
             Spacer(Modifier.weight(1f))
             NavIcon(Icons.Default.Search, "Ara", tab == Tab.Search, onFocusOpen = { onTab(Tab.Search) }, onClick = onSearch)

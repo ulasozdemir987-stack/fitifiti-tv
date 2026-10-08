@@ -131,3 +131,34 @@ fun episodeName(title: Any?, seriesName: Any?, episodeNum: String? = null): Stri
     if (series.isNotEmpty() && foldTr(t) == foldTr(series)) return ""
     return t
 }
+
+
+private val TR_GENRES = mapOf(
+    "action" to "Aksiyon", "adventure" to "Macera", "animation" to "Animasyon",
+    "comedy" to "Komedi", "crime" to "Suç", "documentary" to "Belgesel",
+    "drama" to "Dram", "family" to "Aile", "fantasy" to "Fantastik",
+    "history" to "Tarih", "horror" to "Korku", "music" to "Müzik",
+    "musical" to "Müzikal", "mystery" to "Gizem", "romance" to "Romantik",
+    "romantic" to "Romantik", "sci-fi" to "Bilim Kurgu", "science fiction" to "Bilim Kurgu",
+    "scifi" to "Bilim Kurgu", "thriller" to "Gerilim", "war" to "Savaş",
+    "western" to "Vahşi Batı", "biography" to "Biyografi", "sport" to "Spor",
+    "sports" to "Spor", "news" to "Haber", "reality" to "Reality",
+    "talk" to "Sohbet", "short" to "Kısa Film"
+)
+
+fun trGenre(raw: String): String {
+    val clean = raw.trim()
+    val lower = clean.lowercase(Locale.ENGLISH)
+    return TR_GENRES[lower] ?: fixShouting(clean)
+}
+
+fun formatGenres(genre: String?, limit: Int = 3): String? {
+    if (genre.isNullOrBlank()) return null
+    val list = genre.split(',', '/', '&', '|', ';')
+        .map { it.trim() }
+        .filter { it.length > 1 }
+        .map { trGenre(it) }
+        .distinct()
+        .take(limit)
+    return if (list.isEmpty()) null else list.joinToString(", ")
+}

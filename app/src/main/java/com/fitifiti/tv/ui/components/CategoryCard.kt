@@ -29,10 +29,10 @@ fun brandTint(key: String?): ColorFilter? = if (key in setOf("marvel", "tod", "e
 
 /** Keşfet kartı: platform logosu ya da okunur kategori adı; sol alttan sitenin mor → turkuaz geçişinin çok hafif tonu */
 @Composable
-fun CategoryCard(rawName: String, onClick: () -> Unit, modifier: Modifier = Modifier, width: Dp = 240.dp, posters: List<String> = emptyList()) {
+fun CategoryCard(rawName: String, onClick: () -> Unit, modifier: Modifier = Modifier, width: Dp = 170.dp, posters: List<String> = emptyList()) {
     val st = categoryStyle(rawName)
     Surface(
-        onClick = onClick, modifier = modifier.width(width).height(width * 0.5f).rememberFocus(),
+        onClick = onClick, modifier = modifier.width(width).height(width * 0.44f).rememberFocus(),
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(14.dp)),
         colors = ClickableSurfaceDefaults.colors(containerColor = C.panel, focusedContainerColor = C.panel),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),
@@ -50,8 +50,8 @@ fun CategoryCard(rawName: String, onClick: () -> Unit, modifier: Modifier = Modi
             }
             Box(Modifier.fillMaxHeight().fillMaxWidth(if (posters.isEmpty()) 1f else 0.58f).padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
                 if (st.logo != null) AsyncImage(model = brandLogo(st.logo), contentDescription = st.label, contentScale = ContentScale.Fit, colorFilter = brandTint(st.logo),
-                    modifier = Modifier.fillMaxWidth(0.82f).heightIn(max = 40.dp))
-                else Text(st.label, style = Display.copy(fontSize = 19.sp), textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    modifier = Modifier.fillMaxWidth(0.82f).heightIn(max = 34.dp))
+                else Text(st.label, style = Display.copy(fontSize = 17.sp), textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
     }

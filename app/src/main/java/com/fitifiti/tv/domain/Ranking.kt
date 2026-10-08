@@ -48,7 +48,7 @@ class Ranking(c: Catalog) {
         /** "Aksiyon, Dram / Gerilim" → türler. Aynı tür metni binlerce içerikte tekrarlandığı için önbellekli. */
         fun splitGenres(g: String?): List<String> {
             if (g.isNullOrBlank()) return emptyList()
-            return genreMemo.getOrPut(g) { g.split(',', '/', '&', '|').map { titleCaseTr(it.trim()) }.filter { it.length > 1 } }
+            return genreMemo.getOrPut(g) { g.split(',', '/', '&', '|').map { trGenre(it) }.filter { it.length > 1 } }
         }
 
         @Volatile private var memo: Pair<Long, Ranking>? = null

@@ -78,7 +78,7 @@ fun PosterCard(item: Item, onClick: () -> Unit, modifier: Modifier = Modifier, w
             if (showText) {
                 Spacer(Modifier.height(8.dp))
                 Text(cardTitle(item.title), style = MaterialTheme.typography.bodyMedium, color = Color(0xE6FFFFFF), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                MetaRow(listOf(item.year, item.genre?.split(',', '/', '&')?.firstOrNull()?.trim()), color = C.faint)
+                MetaRow(listOf(item.year, com.fitifiti.tv.domain.formatGenres(item.genre, 1)), color = C.faint)
             }
         }
     }
