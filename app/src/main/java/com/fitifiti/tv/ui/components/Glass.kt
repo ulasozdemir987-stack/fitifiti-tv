@@ -25,16 +25,16 @@ import com.fitifiti.tv.ui.theme.C
  *  - kenar ışığı: sol üstte beyaz, sağa doğru mor, sağ altta turkuaz.
  * Çocukları kırpmaz (odaktaki büyüme / parıltı kesilmez); yalnız arkasına çizer.
  */
-fun Modifier.glass(shape: Shape, strength: Float = 1f, tint: Color = Color(0x2E0B0B12)): Modifier = this.drawWithCache {
+fun Modifier.glass(shape: Shape, strength: Float = 1f, tint: Color = Color(0x140B0B12)): Modifier = this.drawWithCache {
     val outline: Outline = shape.createOutline(size, layoutDirection, this)
     val path = Path().apply { addOutline(outline) }
-    val fill = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.11f * strength), Color.White.copy(alpha = 0.025f * strength)))
-    val wash = Brush.linearGradient(listOf(C.primary.copy(alpha = 0.16f * strength), Color.Transparent, C.teal.copy(alpha = 0.10f * strength)),
+    val fill = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.06f * strength), Color.White.copy(alpha = 0.01f * strength)))
+    val wash = Brush.linearGradient(listOf(C.primary.copy(alpha = 0.09f * strength), Color.Transparent, C.teal.copy(alpha = 0.10f * strength)),
         start = Offset.Zero, end = Offset(size.width, size.height))
-    val sheen = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.16f * strength), Color.Transparent), endY = size.height * 0.5f)
-    val glow = Brush.verticalGradient(listOf(Color.Transparent, C.teal.copy(alpha = 0.10f * strength)), startY = size.height * 0.68f, endY = size.height)
+    val sheen = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.10f * strength), Color.Transparent), endY = size.height * 0.5f)
+    val glow = Brush.verticalGradient(listOf(Color.Transparent, C.teal.copy(alpha = 0.06f * strength)), startY = size.height * 0.68f, endY = size.height)
     val rim = Brush.linearGradient(
-        0f to Color.White.copy(alpha = 0.70f * strength), 0.3f to Color.White.copy(alpha = 0.16f * strength),
+        0f to Color.White.copy(alpha = 0.55f * strength), 0.3f to Color.White.copy(alpha = 0.16f * strength),
         0.62f to C.primary.copy(alpha = 0.38f * strength), 1f to C.teal.copy(alpha = 0.55f * strength),
         start = Offset.Zero, end = Offset(size.width, size.height),
     )

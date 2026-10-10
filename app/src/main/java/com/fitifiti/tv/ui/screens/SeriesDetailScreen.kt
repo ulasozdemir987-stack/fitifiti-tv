@@ -115,10 +115,11 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
             Column(
                 Modifier
                     .detailHead()
-                    .padding(start = 48.dp, end = 54.dp, top = 40.dp, bottom = 18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .heightIn(min = h.dp) // ilk ekranda yalnız başlık bloğu; sezonlar/bölümler aşağı kaydırınca
+                    .padding(start = 48.dp, end = 54.dp, top = 40.dp, bottom = 36.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp, androidx.compose.ui.Alignment.Bottom)
             ) {
-                HeroTitle(title, art.logo, maxWidthFraction = 0.4f, maxLogoHeight = 120.dp)
+                HeroTitle(title, art.logo, maxWidthFraction = 0.42f, maxLogoHeight = 150.dp)
                 if (alt.isNotBlank() && art.logo == null) {
                     Text(alt, style = MaterialTheme.typography.titleMedium, color = C.muted)
                 }
@@ -133,7 +134,7 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
                 AwardLaurels(laurels)
                 val overview = art.overview?.takeIf { it.isNotBlank() } ?: info?.plot ?: s.plot
                 if (!overview.isNullOrBlank()) {
-                    Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.52f))
+                    Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.42f))
                 }
 
                 val t = target
