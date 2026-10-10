@@ -62,6 +62,8 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
     val screenMem = com.fitifiti.tv.ui.LocalFocusMemory.current
     // sekme içeriğinin son odaklanan öğesi (ekran katmanının hafızasına da yazar)
     val contentMem = remember(screenMem) { com.fitifiti.tv.ui.FocusMemory(screenMem) }
+    // odak kurtarmada son çare: sol menüdeki seçili sekme (her zaman yerleşik ve görünür)
+    DisposableEffect(screenMem) { screenMem?.fallback = tabFocus; onDispose { if (screenMem?.fallback === tabFocus) screenMem.fallback = null } }
     val profileId by app.user.profileId.collectAsStateWithLifecycle()
     val profile by produceState<com.fitifiti.tv.data.local.ProfileEntity?>(null, profileId) { value = app.db.profiles().get(profileId) }
     // Ara simgesine OK: arama sayfası + yazı kutusunda klavye açılır

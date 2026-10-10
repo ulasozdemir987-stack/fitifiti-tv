@@ -23,6 +23,8 @@ class FocusMemory(private val parent: FocusMemory? = null) {
     /** şu an odakta olan öğe (yoksa null) */
     var current: FocusRequester? = null
         private set
+    /** Kurtarmada son çare: her zaman yerleşik ve görünür bir öğe (ana ekranda sol menüdeki seçili sekme) */
+    var fallback: FocusRequester? = null
 
     fun focused(fr: FocusRequester) { last = fr; current = fr; parent?.focused(fr) }
     fun blurred(fr: FocusRequester) { if (current === fr) current = null; parent?.blurred(fr) }
@@ -54,5 +56,6 @@ fun Modifier.rememberFocus(): Modifier {
  * (ör. fragmanlı detaydan geri dönüş) tuşların hepsi boşa gidiyor, uygulama "donmuş" sanılıyordu.
  */
 object FocusRescue {
-    val requests = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    /** true = üst üste işlenmeyen tuş (odak gerçekten takılmış): katmanda "odak var" görünse bile zorla kurtar */
+    val requests = kotlinx.coroutines.flow.MutableSharedFlow<Boolean>(extraBufferCapacity = 4)
 }

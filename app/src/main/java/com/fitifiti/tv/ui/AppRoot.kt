@@ -17,6 +17,7 @@ import androidx.tv.material3.Text
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.focus.FocusRequester
+import com.fitifiti.tv.data.diag.Diag
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -152,12 +153,25 @@ internal fun ScreenLayer(active: Boolean, content: @Composable () -> Unit) {
     val mem = remember { FocusMemory() }
     var wasInactive by remember { mutableStateOf(false) }
     var layerHasFocus by remember { mutableStateOf(false) }
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     if (active) LaunchedEffect(Unit) {
-        FocusRescue.requests.collect {
-            if (layerHasFocus) return@collect // bir öğe odakta (ör. listenin kenarı): dokunma
-            val ok = mem.restore()
-            if (!ok) runCatching { fr.requestFocus() }
-            com.fitifiti.tv.data.diag.Diag.log("odak kurtarıldı (${if (ok) "son öğe" else "ilk öğe"})")
+        var attempt = 0
+        FocusRescue.requests.collect { force ->
+            val state = "katmanda odak=$layerHasFocus · hafızada odak=${mem.current != null} · son=${mem.last != null}"
+            // Tek işlenmeyen tuş listenin kenarı olabilir; öğe odaktaysa dokunma. Üst üste ise odak takılmıştır
+            // (ör. yerleşmemiş bir katmandaki öğede kalmış): katmanda "odak var" görünse de zorla kurtar.
+            if (!force && (layerHasFocus || mem.current != null)) { Diag.log("kurtarma yok (tek tuş) · $state"); return@collect }
+            if (force) attempt++ else attempt = 0
+            val stuck = force && mem.current != null // öğe odakta ama hiçbir yöne geçilemiyor: o öğeye geri dönmek işe yaramaz
+            if (force) runCatching { focusManager.clearFocus(force = true) }
+            var how = "hiçbiri"
+            val fb = mem.fallback
+            // Takılmışsa önce sol menü (her zaman yerleşik ve görünür); denemeler sürerse hedefler sırayla değişir.
+            if (stuck && fb != null && attempt % 2 == 1 && runCatching { fb.requestFocus(); true }.getOrDefault(false)) how = "menü"
+            if (how == "hiçbiri" && (!stuck || attempt % 2 == 0) && mem.restore()) how = "son öğe"
+            if (how == "hiçbiri" && fb != null && runCatching { fb.requestFocus(); true }.getOrDefault(false)) how = "menü"
+            if (how == "hiçbiri") { runCatching { fr.requestFocus() }; how = "ilk öğe" }
+            Diag.log("odak kurtarıldı ($how${if (force) ", zorla #$attempt" else ""}) · önce: $state")
         }
     }
     LaunchedEffect(active) {

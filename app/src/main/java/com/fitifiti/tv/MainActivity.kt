@@ -74,11 +74,19 @@ class MainActivity : ComponentActivity() {
         // hiçbir öğe işlemediyse odak kaybolmuştur → geri ver (yoksa tuşlar boşa gider, uygulama donmuş görünür)
         if (!handled && event.action == KeyEvent.ACTION_DOWN && (event.keyCode in DPAD || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER || event.keyCode == KeyEvent.KEYCODE_ENTER)) {
             val v = window.decorView.findFocus()
-            com.fitifiti.tv.data.diag.Diag.log("tuş işlenmedi (${KeyEvent.keyCodeToString(event.keyCode)}) · odak: ${v?.javaClass?.simpleName ?: "yok"}")
-            com.fitifiti.tv.ui.FocusRescue.requests.tryEmit(Unit)
-        }
+            val now = SystemClock.uptimeMillis()
+            if (now - lastUnhandledAt >= 3000) { unhandledStreak = 0; unhandledKeys.clear() }
+            unhandledStreak++; unhandledKeys += event.keyCode
+            lastUnhandledAt = now
+            com.fitifiti.tv.data.diag.Diag.log("tuş işlenmedi (${KeyEvent.keyCodeToString(event.keyCode)}) · odak: ${v?.javaClass?.simpleName ?: "yok"} · seri $unhandledStreak")
+            // Listenin kenarında aynı yöne basmak normaldir; iki farklı yön de boşa gidiyorsa (ya da 4 kez) odak takılmıştır
+            com.fitifiti.tv.ui.FocusRescue.requests.tryEmit(unhandledKeys.size >= 2 || unhandledStreak >= 4)
+        } else if (handled && event.action == KeyEvent.ACTION_DOWN) { unhandledStreak = 0; unhandledKeys.clear() }
         return handled
     }
+    private var unhandledStreak = 0
+    private val unhandledKeys = HashSet<Int>()
+    private var lastUnhandledAt = 0L
     private val DPAD = setOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT)
 
     override fun onStart() {
