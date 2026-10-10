@@ -144,3 +144,10 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 * **Düzeltmeler:** `FullBleedBackdrop` görsel + TEK `drawWithCache` katmanı (karartmalar yalnız gereken bantlara, ışımalar yalnız kendi çevrelerine); aşağı kayınca saydamlık katmanı yerine üstüne zemin rengi, tamamen gizlenince görsel hiç çizilmez; vitrin görseli 1280×720 istenir; pencere zemini kaldırıldı (`window.setBackgroundDrawable(null)`, zemini AppRoot çiziyor); WideCard ve vitrin yedeğindeki `blur()` kaldırıldı; şeritler `graphicsLayer()` içinde; Canlı TV/Yayın akışı köşe ışıması `cornerGlow()` (sınırlı). Sonuç: GPU ~9 ms, gecikme ~39 ms, karelerin çoğu 16 ms aralıkla (atlanan ~%7-15).
 * **Kumanda tepkisi:** odak kaydırma animasyonu varsayılan yay (~0,5 sn) yerine `SnappyScroll` (220 ms); AppRoot'ta tüm listeler için `LocalBringIntoViewSpec` (kenardan 24 dp). Ana sayfa vitrin/şerit konumlandırmaları kendi spec'lerinde aynı animasyonu kullanır.
 * **KURAL:** zayıf TV'lerde tam ekran katmanları ve `blur()` en büyük maliyet; yeni tam ekran efekt eklerken boyanan alanı sınırla, `graphicsLayer { alpha }` ile tam ekran solma yapma (hem pahalı hem video yüzeyini kesiyor).
+
+
+## Güncelleme — 2026-10-10 (Claude): arayüz ölçeği (3.1.0, dal `yeni-duzen`)
+
+* **Neden sıkışık görünüyordu:** OwnTV ekran görüntüleriyle piksel karşılaştırması (1920×1080): bizde her öğe ~1,35-1,5 kat büyüktü (kanal satırı 124 px ↔ 82, gövde yazısı 30 px ↔ 22, kart 440 px ↔ 340, düğme 80 px ↔ 56). Aynı ekrana iri öğeler → kalabalık.
+* **Çözüm:** `FitifitiTheme` `LocalDensity`'yi `uiScale` ile çarpar (tüm yazı/kart/boşluk tek oranla). Ayar `AppSettings.uiScale` (varsayılan 0,75; Ayarlar → Görünüm → Arayüz boyutu: Kompakt 0,7 · Ferah 0,75 · Orta 0,85 · Büyük 1). Diyaloglar da aynı yoğunluğu alır.
+* **Dikkat:** `LocalConfiguration.screenHeightDp/screenWidthDp` ölçeği BİLMEZ → ekran boyutuna göre hesapta `ui.theme.screenHeightDp()` kullan. Video yüzeyi (PlayerView) piksel bazlı, etkilenmez.

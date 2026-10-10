@@ -47,6 +47,14 @@ fun SettingsScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAd
 
         item { Section("Canlı TV") }
         item { SettingRow("Kanalları düzenle", hint = "Sıralama, gizleme ve gruplama", onClick = onEditChannels, icon = Icons.Default.Tv, modifier = Modifier.fillMaxWidth(0.7f)) }
+        item { Section("Görünüm") }
+        item {
+            val scales = listOf(0.7f to "Kompakt", 0.75f to "Ferah", 0.85f to "Orta", 1f to "Büyük")
+            SettingRow("Arayüz boyutu", scales.minByOrNull { kotlin.math.abs(it.first - s.uiScale) }?.second, hint = "Yazılar, kartlar ve boşluklar birlikte küçülür / büyür", onClick = {
+                val i = scales.indexOfFirst { kotlin.math.abs(it.first - s.uiScale) < 0.01f }
+                app.settings.update { it.copy(uiScale = scales[(i + 1) % scales.size].first) }
+            }, icon = Icons.Default.AspectRatio, modifier = Modifier.fillMaxWidth(0.7f))
+        }
         item { Section("Oynatma") }
         item { SettingRow("Fragmanı otomatik oynat", if (s.trailerAutoplay) "Açık" else "Kapalı", hint = "Film ve dizi sayfasında", onClick = { app.settings.update { it.copy(trailerAutoplay = !it.trailerAutoplay) } }, icon = Icons.Default.Movie, modifier = Modifier.fillMaxWidth(0.7f)) }
         item { SettingRow("Fragman sesi", if (s.trailerSound) "Açık" else "Kapalı", onClick = { app.settings.update { it.copy(trailerSound = !it.trailerSound) } }, icon = Icons.Default.VolumeUp, modifier = Modifier.fillMaxWidth(0.7f)) }

@@ -13,6 +13,8 @@ data class AppSettings(
     val lastProfileId: Long = -1,
     val trailerAutoplay: Boolean = true,
     val trailerSound: Boolean = true,
+    /** Arayüz boyutu: tüm ekranın ölçeği (1 = eski boyut; 0,75 ≈ OwnTV gibi ferah) */
+    val uiScale: Float = 0.75f,
 )
 
 /** Cihaza özel ayarlar (sitedeki lib/settings.ts karşılığı) */
@@ -31,13 +33,14 @@ class SettingsStore(ctx: Context) {
         lastProfileId = p.getLong("lastProfileId", -1),
         trailerAutoplay = p.getBoolean("trailerAutoplay", true),
         trailerSound = p.getBoolean("trailerSound", true),
+        uiScale = p.getFloat("uiScale", 0.75f),
     )
 
     fun update(f: (AppSettings) -> AppSettings) {
         val n = f(_s.value)
         p.edit().putString("tmdbKey", n.tmdbKey).putBoolean("autoNext", n.autoNext).putBoolean("skipIntro", n.skipIntro)
             .putString("subtitleLang", n.subtitleLang).putFloat("subtitleScale", n.subtitleScale).putLong("lastProfileId", n.lastProfileId)
-            .putBoolean("trailerAutoplay", n.trailerAutoplay).putBoolean("trailerSound", n.trailerSound).apply()
+            .putBoolean("trailerAutoplay", n.trailerAutoplay).putBoolean("trailerSound", n.trailerSound).putFloat("uiScale", n.uiScale).apply()
         _s.value = n
     }
 

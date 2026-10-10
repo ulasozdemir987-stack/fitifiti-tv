@@ -83,7 +83,7 @@ fun HeroRowsLayout(
     val topBar = LocalTopBar.current
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
-    val heroHeight = (LocalConfiguration.current.screenHeightDp * 0.64f).dp
+    val heroHeight = (com.fitifiti.tv.ui.theme.screenHeightDp() * 0.64f).dp
     val hero = remember { HeroState() }
 
     // en tepedeyken üst çubuk görünür, şeritlere inince çekilir

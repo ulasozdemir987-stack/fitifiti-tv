@@ -107,7 +107,7 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
     val epFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { delay(150); runCatching { playFocus.requestFocus() } }
     LaunchedEffect(load is Load.Ready, season) { if (focusEpisodeId != null && load is Load.Ready) { delay(250); runCatching { epFocus.requestFocus() } } }
-    val h = LocalConfiguration.current.screenHeightDp
+    val h = com.fitifiti.tv.ui.theme.screenHeightDp().toInt()
 
     DetailScaffold(art.copy(backdrop = art.backdrop ?: info?.backdrop ?: s.backdrop), TrailerSpec("series", s.name, s.year, info?.trailer)) {
         item(key = "head") {

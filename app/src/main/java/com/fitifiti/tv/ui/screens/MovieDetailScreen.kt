@@ -52,7 +52,7 @@ fun MovieDetailScreen(m: Movie) {
     val (title, alt) = splitTitle(m.name)
     val playFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { delay(120); runCatching { playFocus.requestFocus() } }
-    val h = LocalConfiguration.current.screenHeightDp
+    val h = com.fitifiti.tv.ui.theme.screenHeightDp().toInt()
 
     DetailScaffold(art.copy(backdrop = art.backdrop ?: info.backdrop), TrailerSpec("movie", m.name, m.year, info.trailer)) {
         item(key = "head") {

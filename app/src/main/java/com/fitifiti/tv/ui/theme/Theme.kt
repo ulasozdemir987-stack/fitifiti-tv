@@ -1,6 +1,7 @@
 package com.fitifiti.tv.ui.theme
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -55,8 +56,29 @@ private val typography = Typography(
     labelLarge = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
 )
 
+/** Ekranın gerçek yüksekliği / genişliği (dp, arayüz ölçeği uygulanmış) — LocalConfiguration ölçeği bilmez */
+@Composable
+fun screenHeightDp(): Float {
+    val c = androidx.compose.ui.platform.LocalConfiguration.current
+    val d = androidx.compose.ui.platform.LocalDensity.current
+    return c.screenHeightDp * (c.densityDpi / 160f) / d.density
+}
+
+/**
+ * Arayüz ölçeği: tüm uygulama (yazılar, kartlar, boşluklar) tek oranla küçülür (Ayarlar → Arayüz boyutu). OwnTV ile
+ * piksel karşılaştırmasında bizim öğeler ~1,35 kat büyüktü; varsayılan 0,75 ile aynı ferahlık.
+ */
 @Composable
 fun FitifitiTheme(content: @Composable () -> Unit) {
+    val scale = com.fitifiti.tv.App.instance.settings.settings.collectAsState().value.uiScale
+    val base = androidx.compose.ui.platform.LocalDensity.current
+    androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(base.density * scale, base.fontScale)) {
+        ThemeInner(content)
+    }
+}
+
+@Composable
+private fun ThemeInner(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = darkColorScheme(
             primary = C.primary, onPrimary = Color.White, background = C.bg, onBackground = Color.White,
