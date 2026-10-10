@@ -98,7 +98,8 @@ fun AppRoot() {
                         colors = androidx.tv.material3.ClickableSurfaceDefaults.colors(containerColor = com.fitifiti.tv.ui.theme.C.primary)
                     ) {
                         Row(Modifier.padding(horizontal = 24.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(" başlıyor ·  kanalına geç?", color = Color.White, fontWeight = FontWeight.Bold)
+                            val chName = app.catalog.catalog.value.channelById[rem.channelId]?.let { com.fitifiti.tv.domain.cleanChannelName(it.name) } ?: "kanal"
+                            Text("${rem.title} başlıyor · $chName kanalına geç?", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

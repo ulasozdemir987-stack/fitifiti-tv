@@ -42,6 +42,22 @@ fun Series.item() = Item.S(this)
 
 private val CardShape = RoundedCornerShape(10.dp)
 
+val RingBrush = Brush.linearGradient(listOf(C.primary, C.teal))
+
+/** Odak çerçevesi: sitenin mor → turkuaz geçişi (OwnTV'deki renkli odak çizgisinin bizim tonu) */
+val FocusRing: ClickableSurfaceBorder
+    @Composable get() = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, RingBrush), shape = CardShape))
+
+/** Afişin sol üstündeki puan: "★ 7.5" */
+@Composable
+fun RatingPill(rating: Double, modifier: Modifier = Modifier) {
+    Row(modifier.clip(RoundedCornerShape(7.dp)).background(Color(0xCC0B0B12)).padding(horizontal = 6.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text("★", fontSize = 10.sp, color = Color(0xFFF5C451))
+        Spacer(Modifier.width(3.dp))
+        Text("%.1f".format(rating), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+    }
+}
+
 /** Odağa gelince bir süre sonra bildirir (vitrin arka planı bunu dinler) */
 @Composable
 fun Modifier.focusReport(delayMs: Long = 600, onFocus: () -> Unit): Modifier {
@@ -53,17 +69,20 @@ fun Modifier.focusReport(delayMs: Long = 600, onFocus: () -> Unit): Modifier {
 /** Afiş kartı: 2:3 görsel; odakta büyür + beyaz çerçeve (TV'de odak görünmek zorunda), altta ad + yıl · tür */
 @Composable
 fun PosterCard(item: Item, onClick: () -> Unit, modifier: Modifier = Modifier, width: androidx.compose.ui.unit.Dp = 150.dp,
-               progress: Float? = null, watched: Boolean = false, badge: String? = null, rank: Int? = null, onFocus: (() -> Unit)? = null, showText: Boolean = true) {
+               progress: Float? = null, watched: Boolean = false, badge: String? = null, rank: Int? = null, onFocus: (() -> Unit)? = null, showText: Boolean = true,
+               rating: Double? = null, onLongClick: (() -> Unit)? = null, focusDelayMs: Long = 600, showYear: Boolean = true) {
     Row(modifier, verticalAlignment = Alignment.Bottom) {
         if (rank != null) Text("$rank", style = Display.copy(fontSize = 84.sp, color = Color(0x26FFFFFF)), modifier = Modifier.padding(end = 2.dp))
-        Column(Modifier.width(width)) {
+        Column(if (width == androidx.compose.ui.unit.Dp.Unspecified) Modifier.fillMaxWidth() else Modifier.width(width)) {
             Surface(
                 onClick = onClick,
-                modifier = Modifier.fillMaxWidth().aspectRatio(2f / 3f).rememberFocus().then(if (onFocus != null) Modifier.focusReport(onFocus = onFocus) else Modifier),
+                modifier = Modifier.fillMaxWidth().aspectRatio(2f / 3f).rememberFocus()
+                    .then(if (onLongClick != null) Modifier.okClicks(onClick, onLongClick) else Modifier)
+                    .then(if (onFocus != null) Modifier.focusReport(focusDelayMs, onFocus) else Modifier),
                 shape = ClickableSurfaceDefaults.shape(CardShape),
                 colors = ClickableSurfaceDefaults.colors(containerColor = C.panel, focusedContainerColor = C.panel),
                 scale = ClickableSurfaceDefaults.scale(focusedScale = 1.08f),
-                border = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, Color.White), shape = CardShape)),
+                border = FocusRing,
             ) {
                 Box(Modifier.fillMaxSize()) {
                     PosterImage(item.image, item.title, Modifier.fillMaxSize())
@@ -71,6 +90,7 @@ fun PosterCard(item: Item, onClick: () -> Unit, modifier: Modifier = Modifier, w
                         Icon(Icons.Default.Check, null, Modifier.size(12.dp), tint = Color(0xFF6EE7B7)); Spacer(Modifier.width(3.dp))
                         Text("İzlendi", fontSize = 10.sp, color = Color(0xFF6EE7B7), fontWeight = FontWeight.SemiBold)
                     }
+                    if (rating != null && rating > 0 && rating < 9.3) RatingPill(rating, Modifier.padding(6.dp))
                     if (badge != null) Text(badge, Modifier.align(Alignment.TopEnd).padding(8.dp).clip(RoundedCornerShape(6.dp)).background(C.primary).padding(horizontal = 6.dp, vertical = 2.dp), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
                     if (progress != null && progress > 0.01f && !watched) ProgressLine(progress, Modifier.align(Alignment.BottomCenter).fillMaxWidth(), height = 4.dp, track = Color(0x99000000))
                 }
@@ -78,7 +98,7 @@ fun PosterCard(item: Item, onClick: () -> Unit, modifier: Modifier = Modifier, w
             if (showText) {
                 Spacer(Modifier.height(8.dp))
                 Text(cardTitle(item.title), style = MaterialTheme.typography.bodyMedium, color = Color(0xE6FFFFFF), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                MetaRow(listOf(item.year, com.fitifiti.tv.domain.formatGenres(item.genre, 1)), color = C.faint)
+                if (showYear) MetaRow(listOf(item.year, com.fitifiti.tv.domain.formatGenres(item.genre, 1)), color = C.faint)
             }
         }
     }
@@ -110,7 +130,7 @@ fun LandscapeCard(title: String, subtitle: String?, image: String?, onClick: () 
             shape = ClickableSurfaceDefaults.shape(CardShape),
             colors = ClickableSurfaceDefaults.colors(containerColor = C.panel, focusedContainerColor = C.panel),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),
-            border = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, Color.White), shape = CardShape)),
+            border = FocusRing,
         ) {
             Box(Modifier.fillMaxSize()) {
                 if (!image.isNullOrBlank()) AsyncImage(model = image, contentDescription = null, contentScale = imageFit, modifier = Modifier.fillMaxSize().then(if (imageFit == ContentScale.Fit) Modifier.padding(18.dp) else Modifier))

@@ -82,7 +82,15 @@ object PreviewData {
         app.testClient = object : XtreamClient(OkHttpClient(), Account("preview", "http://preview.invalid", "u", "p")) {
             override suspend fun vodInfo(id: Int) = movies.first { it.id == id }.let { VodInfo(plot = it.plot, director = "Örnek Yönetmen", genre = it.genre, durationSecs = (it.runtimeMin ?: 100) * 60, country = "Türkiye", age = "13") }
             override suspend fun seriesInfo(id: Int) = series.first { it.id == id }.let { SeriesInfo(episodes(it), plot = it.plot, genre = it.genre) }
-            override suspend fun shortEpg(streamId: Int, limit: Int) = emptyList<EpgItem>()
+            override suspend fun shortEpg(streamId: Int, limit: Int): List<EpgItem> {
+                val names = listOf("Akşam Haberleri", "SUPER LIG 7. HAFTA TRABZONSPOR - FENERBAHCE", "Kızılcık Şerbeti", "Gece Sineması: Yolda", "Belgesel Kuşağı", "Survivor", "Müzik Saati", "Hafta Sonu Magazin")
+                val now = System.currentTimeMillis()
+                var t = now - (10 + streamId % 5 * 9) * 60_000L
+                return (0 until maxOf(limit, 6)).map { i ->
+                    val len = (40 + (streamId + i) % 4 * 25) * 60_000L
+                    EpgItem(names[(streamId + i) % names.size], if (i == 0) "Günün öne çıkan gelişmeleri, konuklar ve canlı bağlantılarla." else "", t, t + len).also { t += len }
+                }
+            }
         }
         app.catalog.setForPreview(catalog)
         runBlocking {

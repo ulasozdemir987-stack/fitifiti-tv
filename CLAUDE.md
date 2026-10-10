@@ -107,3 +107,16 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 - **Aşama 3**: LivePlayerScreen uydu alıcısı mantığıyla güncellendi (numara girişi, zap bilgi şeridi, yan panel ve EPG grid eklendi).
 - **Aşama 4**: LiveFormat.kt taşındı, takvim ekranı (LiveCalendarScreen) ve hatırlatıcı altyapısı (ReminderManager) kuruldu.
 - **Aşama 5**: LiveScreen keşfet ekranı baştan tasarlandı; anlık maçlar, filmler, diziler yatay şeritler halinde eklendi.
+
+
+## Güncelleme — 2026-10-10 (Claude): OwnTV düzeni (dal `yeni-duzen`, 3.0.0)
+
+* Düzen OwnTV'den (GPLv3) esinlenildi ama KOD KOPYALANMADI: tamamen bizim kodumuz, lisans yükümlülüğü yok. Renk/logo/kedi bizim.
+* **Kabuk:** üst çubuk yerine sol dikey menü (`components/NavRail.kt`: kedi, Ara, Ana sayfa, Canlı TV, Yayın akışı, Filmler, Diziler, Listem, Ayarlar, profil). Odakta beyaz + sağa açılan ad etiketi, seçili = mor zemin + turkuaz nokta; üzerinde 320 ms durunca sekme açılır. Sağ üstte `CornerClock` (mor → turkuaz saat + tarih). İçerik `RailInset` (38dp) kadar sağdan başlar; vitrin görselleri `Modifier.bleedStart()` ile menünün arkasına taşar. İçerikte solda öğe kalmayınca ← = menü.
+* **Ana sayfa vitrini:** görsel tüm ekranın arkasında (`FullBleedBackdrop`, HeroRows.kt), şeritlere inildikçe söner; vitrin noktaları düğmelerin altında çizgi.
+* **Filmler/Diziler (`MediaScreen`):** sinematik düzen — odaktaki afişin sahne görseli arkada, üstte logo/meta/özet/oyuncular, araç çubuğu (Sırala, Kategori → `OptionsDialog`), 8 sütun afiş ızgarası (★ puan rozeti, basılı OK = seçenekler).
+* **Canlı TV (`LiveScreen`):** solda numaralı kanal listesi (logo, şimdiki program, kalan dk, ilerleme), sağda canlı önizleme (`PreviewPlayer`, ~1,1 sn durunca; tek bağlantı yüzünden kanal açılırken / ekran arkadayken `stopNow()`), program + sıradaki. `NowNextMemo` satır EPG önbelleği (2 dk).
+* **Yayın akışı (`GuideScreen`, yeni sekme):** üstte önizleme + program bilgisi, altta 3 saatlik kanal × saat çizelgesi, "şimdi" çizgisi; kenarda ←/→ saati 1 saat kaydırır; OK = yayındaysa izle, ileride ise hatırlatıcı (`eventId = kanal-başlangıç`).
+* **Dizi detayı:** başlık artık tam ekran değil; sezon sekmeleri (`SeasonTab`) + 5 sütun bölüm ızgarası (numara rozeti). Film detayında da baş kısım kısaldı (oyuncular hemen altta).
+* Kartların odak çerçevesi her yerde mor → turkuaz (`RingBrush` / `FocusRing`).
+* Robolectric önizlemelerinde canlı önizleme oynatıcısı kurulmaz (FINGERPRINT kontrolü); PreviewData sahte EPG döndürür (`live`, `guide` önizlemeleri).

@@ -25,6 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.focusRequester
@@ -112,9 +114,14 @@ fun HeroRowsLayout(
         }
     }
 
-    Box(Modifier.fillMaxSize().cinematicBackground().onPreviewKeyEvent { hero.lastKey = SystemClock.uptimeMillis(); false }) {
+    val heroPx = with(density) { heroHeight.toPx() }
+    // tam ekran vitrin görseli: sayfanın arkasında sabit durur, şeritlere inildikçe söner (OwnTV düzeni)
+    val heroAlpha by remember { derivedStateOf { if (listState.firstVisibleItemIndex > 0) 0f else 1f - (listState.firstVisibleItemScrollOffset / (heroPx * 0.8f)).coerceIn(0f, 1f) } }
+
+    Box(Modifier.fillMaxSize().bleedStart().cinematicBackground().onPreviewKeyEvent { hero.lastKey = SystemClock.uptimeMillis(); false }) {
+        Box(Modifier.fillMaxSize().graphicsLayer { alpha = heroAlpha }) { FullBleedBackdrop(art) }
         CompositionLocalProvider(LocalBringIntoViewSpec provides spec) {
-            LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 120.dp)) {
+            LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(start = RailInset), contentPadding = PaddingValues(bottom = 120.dp)) {
                 item(key = "hero") {
                     Box(Modifier.fillMaxWidth().height(heroHeight)
                         .onGloballyPositioned { hero.heroTop = it.positionInRoot().y }
@@ -127,17 +134,44 @@ fun HeroRowsLayout(
                             }
                         }
                         .focusGroup()) {
-                        HeroBillboardBackdrop(art, Modifier.fillMaxSize())
                         if (header != null) {
                             Box(Modifier.align(Alignment.TopStart).padding(start = 48.dp, top = 24.dp)) { header() }
                         }
-                        HeroInfo(shown, art, shown?.let(heroLabel), Modifier.align(Alignment.BottomStart).padding(start = 48.dp, end = 48.dp, bottom = 40.dp), primary) { hero.buttonsTop = it }
-                        if (items.size > 1) HeroDots(items.size, index % items.size, Modifier.align(Alignment.BottomEnd).padding(end = 48.dp, bottom = 56.dp))
+                        HeroInfo(shown, art, shown?.let(heroLabel), Modifier.align(Alignment.BottomStart).padding(start = 48.dp, end = 48.dp, bottom = 22.dp), primary,
+                            dots = if (items.size > 1) ({ HeroDots(items.size, index % items.size, Modifier) }) else null) { hero.buttonsTop = it }
                     }
                 }
                 rows { }
             }
         }
+    }
+}
+
+/**
+ * Tam ekran vitrin görseli (OwnTV): sahne görseli tüm ekranı kaplar, sağ üste yaslı; soldan yazı okunsun diye koyulaşır,
+ * alttan zemine karışır. Görsel yoksa afişin bulanık rengi + sağda afiş.
+ */
+@Composable
+fun FullBleedBackdrop(art: HeroArt, modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxSize()) {
+        androidx.compose.animation.Crossfade(targetState = art.backdrop to art.poster, animationSpec = tween(700), label = "bleed") { (bd, poster) ->
+            Box(Modifier.fillMaxSize()) {
+                if (bd != null) coil.compose.AsyncImage(model = bd, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    alignment = Alignment.TopEnd, modifier = Modifier.fillMaxSize())
+                else if (poster != null) {
+                    coil.compose.AsyncImage(model = poster, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().blur(60.dp).graphicsLayer { alpha = 0.3f; scaleX = 1.25f; scaleY = 1.25f })
+                    coil.compose.AsyncImage(model = poster, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.align(Alignment.TopEnd).padding(top = 80.dp, end = 110.dp).fillMaxHeight(0.55f).aspectRatio(2f / 3f).clip(RoundedCornerShape(14.dp)))
+                }
+            }
+        }
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to C.bg.copy(alpha = 0.94f), 0.30f to C.bg.copy(alpha = 0.72f), 0.52f to C.bg.copy(alpha = 0.2f), 0.7f to Color.Transparent)))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to C.bg.copy(alpha = 0.45f), 0.14f to Color.Transparent, 0.5f to Color.Transparent, 0.82f to C.bg.copy(alpha = 0.85f), 1f to C.bg)))
+        // sol üstte sitenin mor ışıması (OwnTV'deki yeşil ışımanın yerine)
+        Box(Modifier.fillMaxSize().drawBehind {
+            drawRect(Brush.radialGradient(listOf(C.primary.copy(alpha = 0.22f), Color.Transparent), center = Offset(0f, 0f), radius = size.width * 0.38f))
+        })
     }
 }
 
@@ -163,8 +197,8 @@ private fun Modifier.cinematicBackground() = drawBehind {
 private fun HeroDots(count: Int, active: Int, modifier: Modifier) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         repeat(count) { i ->
-            val w by animateDpAsState(if (i == active) 22.dp else 6.dp, tween(500), label = "dot")
-            Box(Modifier.width(w).height(3.dp).clip(RoundedCornerShape(2.dp)).background(if (i == active) Color.White else Color.White.copy(alpha = 0.3f)))
+            val w by animateDpAsState(if (i == active) 30.dp else 16.dp, tween(500), label = "dot")
+            Box(Modifier.width(w).height(3.dp).clip(RoundedCornerShape(2.dp)).background(if (i == active) C.progress else Brush.linearGradient(listOf(Color.White.copy(alpha = 0.25f), Color.White.copy(alpha = 0.25f)))))
         }
     }
 }
@@ -188,15 +222,15 @@ fun rememberRowSpec(pad: Dp = 48.dp): BringIntoViewSpec {
 
 /** Vitrin bilgisi + eylem düğmeleri (odaktaki içerik için) */
 @Composable
-fun HeroInfo(item: Item?, art: HeroArt, label: String?, modifier: Modifier, primary: FocusRequester? = null, onButtonsPositioned: (Float) -> Unit = {}) {
+fun HeroInfo(item: Item?, art: HeroArt, label: String?, modifier: Modifier, primary: FocusRequester? = null, dots: (@Composable () -> Unit)? = null, onButtonsPositioned: (Float) -> Unit = {}) {
     val app = App.instance
     val actions = LocalActions.current
     val progress by app.user.progressMap.collectAsStateWithLifecycle()
     val favorites by app.user.favorites.collectAsStateWithLifecycle()
-    Column(modifier.padding(start = 48.dp, top = 64.dp, end = 48.dp), verticalArrangement = Arrangement.Top) {
+    Column(modifier, verticalArrangement = Arrangement.Top) {
         if (item == null) return@Column
-        if (label != null) { Text(label, style = MaterialTheme.typography.labelLarge, color = C.muted); Spacer(Modifier.height(8.dp)) }
-        HeroTitle(cardTitle(item.title), art.logo, maxWidthFraction = 0.38f, maxLogoHeight = 96.dp)
+        if (label != null) { Text(label, style = MaterialTheme.typography.labelLarge, color = C.teal); Spacer(Modifier.height(10.dp)) }
+        HeroTitle(cardTitle(item.title), art.logo, maxWidthFraction = 0.42f, maxLogoHeight = 110.dp)
         Spacer(Modifier.height(8.dp))
         val runtime = (item as? Item.M)?.m?.runtimeMin?.takeIf { it > 0 }?.let { com.fitifiti.tv.domain.formatDuration(it, "minutes") }
         MetaRow(listOf(item.year, runtime, com.fitifiti.tv.domain.formatGenres(item.genre, 2),
@@ -206,6 +240,7 @@ fun HeroInfo(item: Item?, art: HeroArt, label: String?, modifier: Modifier, prim
         if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyLarge, color = C.muted, maxLines = 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.55f))
         Spacer(Modifier.height(16.dp))
         HeroButtons(item, progress, favorites.any { it.key == item.key }, primary, onButtonsPositioned)
+        if (dots != null) { Spacer(Modifier.height(18.dp)); dots() }
     }
 }
 

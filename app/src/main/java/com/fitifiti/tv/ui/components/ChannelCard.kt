@@ -40,7 +40,14 @@ fun channelMonogram(name: String): String {
 
 @Composable
 fun ChannelLogo(channel: Channel, modifier: Modifier) {
-    val fallback: @Composable () -> Unit = { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(channelMonogram(channel.name), style = Display.copy(fontSize = 26.sp, color = Color(0xB3FFFFFF))) } }
+    // kısaltma kutuya göre ölçeklenir (küçük satır logolarında taşmasın)
+    val fallback: @Composable () -> Unit = {
+        BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            val mono = channelMonogram(channel.name)
+            val byH = maxHeight.value * 0.5f; val byW = maxWidth.value / (mono.length.coerceAtLeast(2) * 0.68f)
+            Text(mono, style = Display.copy(fontSize = minOf(26f, byH, byW).sp, color = Color(0xB3FFFFFF)), maxLines = 1)
+        }
+    }
     if (channel.icon.isNullOrBlank()) Box(modifier) { fallback() }
     else SubcomposeAsyncImage(model = channel.icon, contentDescription = null, contentScale = ContentScale.Fit, modifier = modifier, error = { fallback() }, loading = { fallback() })
 }
@@ -66,7 +73,7 @@ fun ChannelCard(channel: Channel, onClick: () -> Unit, modifier: Modifier = Modi
             shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
             colors = ClickableSurfaceDefaults.colors(containerColor = C.fill2, focusedContainerColor = C.fill3),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),
-            border = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, Color.White), shape = RoundedCornerShape(10.dp))),
+            border = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, com.fitifiti.tv.ui.components.RingBrush), shape = RoundedCornerShape(10.dp))),
         ) {
             Box(Modifier.fillMaxSize()) {
                 ChannelLogo(channel, Modifier.fillMaxSize().padding(horizontal = 36.dp, vertical = 24.dp))

@@ -63,7 +63,10 @@ fun HomeScreen() {
         list.distinctBy { it.key }.take(8)
     }
 
-    HeroRowsLayout(first, heroItems = heroItems, requestInitialFocus = doFocus) { onFocus ->
+    val firstIsContinue = cont.isNotEmpty() && first != null
+    HeroRowsLayout(first, heroItems = heroItems, requestInitialFocus = doFocus,
+        heroLabel = { if (firstIsContinue && it.key == first?.key) "Kaldığın yerden" else if (it is Item.M) "Öne çıkan · Filmler" else "Öne çıkan · Diziler" }) { onFocus ->
+        continueRow(cont, onFocus)
         item(key = "platforms") {
             val actions = LocalActions.current
             Column(Modifier.padding(bottom = 16.dp)) {
@@ -77,7 +80,6 @@ fun HomeScreen() {
                 }
             }
         }
-        continueRow(cont, onFocus)
         posterRow("listem", "Listem", listem, onFocus)
         posterRow("fm", "Öne çıkan filmler", rows.fm, onFocus)
         posterRow("fs", "Öne çıkan diziler", rows.fs, onFocus)

@@ -139,7 +139,7 @@ private fun CastCard(c: CastMember) {
             shape = ClickableSurfaceDefaults.shape(CircleShape),
             colors = ClickableSurfaceDefaults.colors(containerColor = C.fill2, focusedContainerColor = C.fill3),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.08f),
-            border = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, Color.White), shape = CircleShape)),
+            border = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, com.fitifiti.tv.ui.components.RingBrush), shape = CircleShape)),
         ) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 val initials = c.name.split(' ').filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1) }

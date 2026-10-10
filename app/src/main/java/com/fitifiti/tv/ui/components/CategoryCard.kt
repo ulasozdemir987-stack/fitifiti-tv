@@ -38,7 +38,7 @@ fun CategoryCard(rawName: String, onClick: () -> Unit, modifier: Modifier = Modi
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),
         border = ClickableSurfaceDefaults.border(
             border = Border(androidx.compose.foundation.BorderStroke(1.dp, C.line), shape = RoundedCornerShape(14.dp)),
-            focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, Color.White), shape = RoundedCornerShape(14.dp)),
+            focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, com.fitifiti.tv.ui.components.RingBrush), shape = RoundedCornerShape(14.dp)),
         ),
     ) {
         Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(C.primary.copy(alpha = 0.16f), C.teal.copy(alpha = 0.05f), Color.Transparent), start = androidx.compose.ui.geometry.Offset(0f, Float.POSITIVE_INFINITY), end = androidx.compose.ui.geometry.Offset(Float.POSITIVE_INFINITY, 0f)))) {

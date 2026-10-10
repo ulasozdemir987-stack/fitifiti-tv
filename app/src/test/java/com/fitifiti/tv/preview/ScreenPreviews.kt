@@ -94,6 +94,8 @@ class ScreenPreviews {
     @Test fun home() = shoot("home") { MainScreen({}, {}, {}) }
     @Test fun homeRows() = shoot("home-rows", listOf(Key.DirectionDown, Key.DirectionDown, Key.DirectionRight)) { MainScreen({}, {}, {}) }
     @Test fun movies() = shoot("movies") { MainScreen({}, {}, {}, startTab = Tab.Movies) }
+    @Test fun live() = shoot("live", listOf(Key.DirectionDown, Key.DirectionDown)) { MainScreen({}, {}, {}, startTab = Tab.Live) }
+    @Test fun guide() = shoot("guide") { MainScreen({}, {}, {}, startTab = Tab.Guide) }
     @Test fun search() = shoot("search") { MainScreen({}, {}, {}, startTab = Tab.Search) }
     @Test fun listem() = shoot("listem") { MainScreen({}, {}, {}, startTab = Tab.Listem) }
     @Test fun settings() = shoot("settings") { MainScreen({}, {}, {}, startTab = Tab.Settings) }

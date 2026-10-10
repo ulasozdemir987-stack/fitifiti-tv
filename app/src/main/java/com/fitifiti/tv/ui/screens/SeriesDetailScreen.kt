@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -103,7 +104,9 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
     }
     val (title, alt) = splitTitle(s.name)
     val playFocus = remember { FocusRequester() }
+    val epFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { delay(150); runCatching { playFocus.requestFocus() } }
+    LaunchedEffect(load is Load.Ready, season) { if (focusEpisodeId != null && load is Load.Ready) { delay(250); runCatching { epFocus.requestFocus() } } }
     val h = LocalConfiguration.current.screenHeightDp
 
     DetailScaffold(art.copy(backdrop = art.backdrop ?: info?.backdrop ?: s.backdrop), TrailerSpec("series", s.name, s.year, info?.trailer)) {
@@ -112,8 +115,7 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
             Column(
                 Modifier
                     .detailHead()
-                    .height(h.dp)
-                    .padding(start = 54.dp, end = 54.dp, top = 46.dp, bottom = 14.dp),
+                    .padding(start = 48.dp, end = 54.dp, top = 40.dp, bottom = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 HeroTitle(title, art.logo, maxWidthFraction = 0.36f, maxLogoHeight = 78.dp)
@@ -158,50 +160,37 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
                 }
             }
         }
-        item(key = "episodes") {
-            Column(Modifier.padding(bottom = 26.dp)) {
+        item(key = "seasons") {
+            Column(Modifier.padding(bottom = 14.dp)) {
                 when (val l = load) {
-                    is Load.Loading -> Row(Modifier.padding(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) { repeat(4) { Skeleton(Modifier.width(300.dp).aspectRatio(16f / 9f)) } }
+                    is Load.Loading -> Row(Modifier.padding(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) { repeat(5) { Skeleton(Modifier.weight(1f).aspectRatio(16f / 9f)) } }
                     is Load.Error -> Column(Modifier.padding(horizontal = 48.dp)) {
                         Text("Bölüm listesi yüklenemedi", style = MaterialTheme.typography.titleMedium)
                         Text(l.msg, style = MaterialTheme.typography.bodySmall, color = C.muted)
                         Spacer(Modifier.height(10.dp))
                         Btn("Tekrar dene", { retry++ }, kind = BtnKind.Secondary)
                     }
-                    is Load.Ready -> {
-                        CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(start = 48.dp, end = 48.dp, bottom = 12.dp),
-                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                Text("Bölümler", style = MaterialTheme.typography.titleLarge, color = androidx.compose.ui.graphics.Color.White)
-                                if (seasons.size > 1) {
-                                    LazyRow(
-                                        modifier = Modifier.weight(1f),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        items(seasons.keys.toList()) { n -> Chip("$n. Sezon", n == season, { season = n }) }
-                                    }
-                                }
+                    is Load.Ready -> CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
+                        // OwnTV: metin sekmeler "1. Sezon 10", seçili = beyaz + altında mor → turkuaz çizgi
+                        LazyRow(contentPadding = PaddingValues(horizontal = 40.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            items(seasons.keys.toList()) { n -> SeasonTab("$n. Sezon", seasons[n]?.size ?: 0, n == season) { season = n } }
+                        }
+                    }
+                }
+            }
+        }
+        if (load is Load.Ready) {
+            val eps = seasons[season].orEmpty().distinctBy { it.id }
+            eps.chunked(5).forEachIndexed { r, row ->
+                item(key = "eps-$season-$r") {
+                    Row(Modifier.fillMaxWidth().padding(start = 48.dp, end = 48.dp, bottom = 18.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        row.forEach { ep ->
+                            Box(Modifier.weight(1f)) {
+                                EpisodeCard(s, ep, tmdbEps[ep.num], progress["episode-${ep.id}"], art.backdrop ?: s.backdrop ?: s.cover,
+                                    focus = if (ep.id == (focusEpisodeId ?: "")) epFocus else null) { actions.playEpisode(s, ep, seasons, variant?.id) }
                             }
                         }
-                        val eps = seasons[season].orEmpty()
-                        val rowState = rememberLazyListState()
-                        LaunchedEffect(season, eps.size) {
-                            val focusId = focusEpisodeId ?: target?.first?.id
-                            val i = eps.indexOfFirst { it.id == focusId }
-                            if (i > 0) rowState.scrollToItem(i)
-                        }
-                        CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
-                            LazyRow(state = rowState, contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                                items(eps.distinctBy { it.id }, key = { it.id }) { ep ->
-                                    EpisodeCard(s, ep, tmdbEps[ep.num], progress["episode-${ep.id}"], art.backdrop ?: s.backdrop ?: s.cover) {
-                                        actions.playEpisode(s, ep, seasons, variant?.id)
-                                    }
-                                }
-                            }
-                        }
+                        repeat(5 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
             }
@@ -213,18 +202,18 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
 
 /** Bölüm kartı: 16:9 sahne (TMDB still → sağlayıcı görseli → dizi görseli karartılmış + numara), "7 · Ad", süre, özet */
 @Composable
-private fun EpisodeCard(s: Series, ep: Episode, tmdb: EpisodeArt?, p: ProgressEntity?, fallback: String?, onClick: () -> Unit) {
+private fun EpisodeCard(s: Series, ep: Episode, tmdb: EpisodeArt?, p: ProgressEntity?, fallback: String?, focus: FocusRequester? = null, onClick: () -> Unit) {
     val name = tmdb?.name ?: episodeName(ep.title, s.name).takeIf { it.isNotBlank() && !it.matches(Regex("(?i).*bölüm\\s*\\d+.*|episode \\d+")) }
     val still = tmdb?.still ?: ep.image
     val dur = formatDuration(ep.durationSecs ?: tmdb?.runtime?.times(60)).ifBlank { null }
     val watched = p?.finished == true
-    Column(Modifier.width(300.dp)) {
+    Column(Modifier.fillMaxWidth()) {
         Surface(
-            onClick = onClick, modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).rememberFocus(),
+            onClick = onClick, modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f).rememberFocus().then(if (focus != null) Modifier.focusRequester(focus) else Modifier),
             shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
             colors = ClickableSurfaceDefaults.colors(containerColor = C.panel, focusedContainerColor = C.panel),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),
-            border = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, Color.White), shape = RoundedCornerShape(10.dp))),
+            border = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, com.fitifiti.tv.ui.components.RingBrush), shape = RoundedCornerShape(10.dp))),
         ) {
             Box(Modifier.fillMaxSize()) {
                 val numberFallback: @Composable () -> Unit = {
@@ -235,13 +224,35 @@ private fun EpisodeCard(s: Series, ep: Episode, tmdb: EpisodeArt?, p: ProgressEn
                 }
                 if (still != null) SubcomposeAsyncImage(model = still, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize(), error = { numberFallback() }, loading = { Skeleton(Modifier.fillMaxSize(), 0.dp) })
                 else numberFallback()
-                if (watched) Text("✓ İzlendi", Modifier.align(Alignment.TopStart).padding(8.dp).clip(RoundedCornerShape(50)).background(Color(0xBF000000)).padding(horizontal = 8.dp, vertical = 3.dp), fontSize = 11.sp, color = Color(0xFF6EE7B7), fontWeight = FontWeight.SemiBold)
+                Text("${ep.num}", Modifier.align(Alignment.TopStart).padding(8.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xCC0B0B12)).padding(horizontal = 7.dp, vertical = 2.dp),
+                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                if (watched) Text("✓ İzlendi", Modifier.align(Alignment.TopEnd).padding(8.dp).clip(RoundedCornerShape(50)).background(Color(0xBF000000)).padding(horizontal = 8.dp, vertical = 3.dp), fontSize = 11.sp, color = Color(0xFF6EE7B7), fontWeight = FontWeight.SemiBold)
                 if (p != null && !watched && p.fraction > 0.01f) ProgressLine(p.fraction, Modifier.align(Alignment.BottomCenter).fillMaxWidth(), track = Color(0x99000000))
             }
         }
         Spacer(Modifier.height(8.dp))
-        Text(listOfNotNull("${ep.num}", name).joinToString(" · "), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(name ?: "${ep.num}. Bölüm", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
         val overview = tmdb?.overview ?: ep.plot
-        Text(listOfNotNull(dur, overview).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = C.muted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text(listOfNotNull(dur, overview).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = C.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** Sezon sekmesi (OwnTV): "1. Sezon 10" — seçili beyaz + altında mor → turkuaz çizgi, odakta hafif zemin */
+@Composable
+private fun SeasonTab(label: String, count: Int, selected: Boolean, onClick: () -> Unit) {
+    var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(focused, selected) { if (focused && !selected) { delay(280); onClick() } }
+    Surface(onClick = onClick, modifier = Modifier.onFocusChanged { focused = it.isFocused },
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
+        colors = ClickableSurfaceDefaults.colors(containerColor = Color.Transparent, focusedContainerColor = C.fill3, contentColor = if (selected) Color.White else C.muted, focusedContentColor = Color.White),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.03f)) {
+        Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(label, fontSize = 17.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold)
+                if (count > 0) { Spacer(Modifier.width(5.dp)); Text("$count", fontSize = 12.sp, color = C.muted, modifier = Modifier.padding(bottom = 2.dp)) }
+            }
+            Spacer(Modifier.height(5.dp))
+            Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(if (selected) Brush.horizontalGradient(listOf(C.primary, C.teal)) else Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))))
+        }
     }
 }

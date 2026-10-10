@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
@@ -40,7 +41,7 @@ import com.fitifiti.tv.ui.LocalScreenActive
 import com.fitifiti.tv.ui.components.*
 import com.fitifiti.tv.ui.theme.C
 
-enum class Tab(val label: String) { Home("Keşfet"), Movies("Filmler"), Series("Diziler"), Live("Canlı TV"), Listem("Listem"), Search("Ara"), Settings("Ayarlar") }
+enum class Tab(val label: String) { Home("Ana sayfa"), Movies("Filmler"), Series("Diziler"), Live("Canlı TV"), Guide("Yayın akışı"), Listem("Listem"), Search("Ara"), Settings("Ayarlar") }
 
 /** Üst çubuk görünürlüğü: sekme içeriği aşağı kaydırınca gizlenir */
 class TopBarState { var hidden by mutableStateOf(false) }
@@ -96,14 +97,12 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
 
     CompositionLocalProvider(LocalTopBar provides bar) {
         Box(Modifier.fillMaxSize()) {
-            // Üst çubuktan ↓: odak doğrudan içeriğe (son odaklanan öğeye) iner. Yön araması yalnız alt alta hizalı öğe
-            // arar; sağdaki Ara/Ayarlar simgelerinin altında öğe olmayınca (Ayarlar satırları solda) hiç inmiyordu.
-            // İçerikte yukarıda gidilecek öğe kalmayınca (ilk şerit) ↑ = üst çubuktaki seçili sekme. Vitrin alanında
-            // odaklanabilir öğe olmadığından yön araması üst çubuğu bulamıyordu (gerçek kutuda görüldü: Ayarlar'a çıkılamıyordu).
+            // İçerikte solda gidilecek öğe kalmayınca ← = sol menüdeki seçili sekme; menüden → = içerikte en son
+            // odaklanan öğe (yön araması menünün sağında hizalı öğe bulamayabiliyor).
             val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
-            Box(Modifier.fillMaxSize().mainContentFocus(contentFocus).onPreviewKeyEvent { e ->
-                if (e.type == androidx.compose.ui.input.key.KeyEventType.KeyDown && e.key == androidx.compose.ui.input.key.Key.DirectionUp) {
-                    if (!focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Up)) { bar.hidden = false; runCatching { tabFocus.requestFocus() } }
+            Box(Modifier.fillMaxSize().padding(start = RailInset).mainContentFocus(contentFocus).onPreviewKeyEvent { e ->
+                if (e.type == androidx.compose.ui.input.key.KeyEventType.KeyDown && e.key == androidx.compose.ui.input.key.Key.DirectionLeft) {
+                    if (!focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Left)) runCatching { tabFocus.requestFocus() }
                     true
                 } else false
             }) {
@@ -114,6 +113,7 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
                     Tab.Movies -> MediaScreen("movie")
                     Tab.Series -> MediaScreen("series")
                     Tab.Live -> LiveScreen()
+                    Tab.Guide -> GuideScreen()
                     Tab.Listem -> ListemScreen()
                     Tab.Search -> SearchScreen(searchKick) { searchKick = 0 }
                     Tab.Settings -> SettingsScreen(onProfiles, onEditAccount, onAddAccount, onEditChannels)
@@ -121,78 +121,36 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
             }
             }
             }
-            AnimatedVisibility(!bar.hidden, enter = fadeIn() + slideInVertically { -it }, exit = fadeOut() + slideOutVertically { -it }) {
-                TopBar(tab, { if (it != tab) { tab = it; bar.hidden = false } }, profile, onProfiles, tabFocus, contentFocus, contentMem, onSearch = { tab = Tab.Search; bar.hidden = false; searchKick++ },
-                    solid = tab == Tab.Settings || tab == Tab.Listem || tab == Tab.Search || tab == Tab.Live)
+            AnimatedVisibility(!bar.hidden, modifier = Modifier.align(Alignment.TopEnd), enter = fadeIn(), exit = fadeOut()) {
+                CornerClock(Modifier.padding(top = 18.dp, end = 40.dp))
             }
+            val railItems = remember {
+                listOf(
+                    RailItem(Tab.Search.name, Icons.Default.Search, "Ara"),
+                    RailItem(Tab.Home.name, Icons.Outlined.Home, "Ana sayfa"),
+                    RailItem(Tab.Live.name, Icons.Outlined.LiveTv, "Canlı TV"),
+                    RailItem(Tab.Guide.name, Icons.Outlined.CalendarMonth, "Yayın akışı"),
+                    RailItem(Tab.Movies.name, Icons.Outlined.Movie, "Filmler"),
+                    RailItem(Tab.Series.name, Icons.Outlined.VideoLibrary, "Diziler"),
+                    RailItem(Tab.Listem.name, Icons.Outlined.BookmarkBorder, "Listem"),
+                    RailItem(Tab.Settings.name, Icons.Default.Settings, "Ayarlar"),
+                )
+            }
+            NavRail(
+                railItems, tab.name,
+                onSelect = { k -> val t = Tab.valueOf(k); if (t != tab) { tab = t; bar.hidden = false }; if (t == Tab.Search) searchKick++ },
+                selectedFocus = tabFocus,
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = 14.dp)
+                    .focusProperties { right = contentMem.last ?: contentFocus }.focusGroup(),
+                profile = profile?.let { p -> { Avatar(p.name, p.avatar, 34.dp) } },
+                onProfile = onProfiles,
+            )
         }
     }
 }
 
 @Composable
 private fun rememberSaveableTab(start: Tab) = androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(start) }
-
-@Composable
-private fun TopBar(tab: Tab, onTab: (Tab) -> Unit, profile: com.fitifiti.tv.data.local.ProfileEntity?, onProfiles: () -> Unit, tabFocus: FocusRequester, contentFocus: FocusRequester, contentMem: com.fitifiti.tv.ui.FocusMemory, onSearch: () -> Unit, solid: Boolean = false) {
-    // çubuktaki her öğeden ↓ = içerikte en son odaklanan öğe, yoksa içeriğin ilk öğesi
-    // (FocusProperties en yakın odak hedefine kadar üstteki düğümlerden, her aramada yeniden okunur)
-    Box(Modifier.focusProperties { down = contentMem.last ?: contentFocus }.fillMaxWidth().background(if (solid) Brush.verticalGradient(0f to C.bg, 0.82f to C.bg, 1f to C.bg.copy(alpha = 0f)) else Brush.verticalGradient(listOf(C.bg.copy(alpha = 0.85f), Color.Transparent))).padding(horizontal = 48.dp, vertical = 12.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            AnimatedBrandLogo(width = 110.dp, compact = true, live = true, waveKey = tab, modifier = Modifier.padding(bottom = 6.dp))
-            Spacer(Modifier.weight(1f))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                listOf(Tab.Home, Tab.Movies, Tab.Series, Tab.Live, Tab.Listem).forEach { t ->
-                    NavText(t.label, t == tab, { onTab(t) }, if (t == tab) Modifier.focusRequester(tabFocus) else Modifier)
-                }
-            }
-            Spacer(Modifier.weight(1f))
-            NavIcon(Icons.Default.Search, "Ara", tab == Tab.Search, onFocusOpen = { onTab(Tab.Search) }, onClick = onSearch)
-            NavIcon(Icons.Default.Settings, "Ayarlar", tab == Tab.Settings, onFocusOpen = { onTab(Tab.Settings) }) { onTab(Tab.Settings) }
-            Spacer(Modifier.width(10.dp))
-            if (profile != null) Surface(
-                onClick = onProfiles, modifier = Modifier.size(34.dp),
-                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
-                colors = ClickableSurfaceDefaults.colors(containerColor = Color.Transparent, focusedContainerColor = Color.Transparent),
-                border = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.dp, Color.White), shape = RoundedCornerShape(8.dp))),
-                scale = ClickableSurfaceDefaults.scale(focusedScale = 1.12f),
-            ) { Avatar(profile.name, profile.avatar, 34.dp) }
-        }
-    }
-}
-
-/** Sitedeki sekme: ikonsuz metin; seçili = beyaz + altında mor çizgi, odak = hafif zemin */
-@Composable
-private fun NavText(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier) {
-    var focused by remember { mutableStateOf(false) }
-    // Sekmeler arasında hızla gezerken her birinin ağır sayfası çizilmesin: sekme üzerinde kısa süre durunca açılır
-    LaunchedEffect(focused, selected) { if (focused && !selected) { kotlinx.coroutines.delay(320); onClick() } }
-    Surface(
-        onClick = onClick, modifier = modifier.padding(horizontal = 2.dp).onFocusChanged { focused = it.isFocused },
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
-        colors = ClickableSurfaceDefaults.colors(containerColor = Color.Transparent, focusedContainerColor = C.fill3, contentColor = if (selected) Color.White else C.muted, focusedContentColor = Color.White),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.04f),
-    ) {
-        Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(label, fontSize = 15.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium)
-            Spacer(Modifier.height(5.dp))
-            Box(Modifier.width(22.dp).height(2.dp).clip(RoundedCornerShape(2.dp)).background(if (selected) C.primary else Color.Transparent))
-        }
-    }
-}
-
-@Composable
-private fun NavIcon(icon: ImageVector, label: String, selected: Boolean, onFocusOpen: () -> Unit, onClick: () -> Unit) {
-    // Sekmeler gibi: üzerinde kısa süre durunca sayfası açılır (eskiden yalnız OK ile açılıyordu; Ara simgesinde
-    // hiçbir şey olmayınca uygulama donmuş sanılıyordu)
-    var focused by remember { mutableStateOf(false) }
-    LaunchedEffect(focused, selected) { if (focused && !selected) { kotlinx.coroutines.delay(320); onFocusOpen() } }
-    Surface(
-        onClick = onClick, modifier = Modifier.padding(horizontal = 4.dp).size(38.dp).onFocusChanged { focused = it.isFocused },
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(50)),
-        colors = ClickableSurfaceDefaults.colors(containerColor = if (selected) C.fill3 else Color.Transparent, focusedContainerColor = Color.White, contentColor = Color.White, focusedContentColor = Color.Black),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),
-    ) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(icon, label, Modifier.size(19.dp)) } }
-}
 
 /** İlk açılış: gerçek adım + ilerleme çizgisi (sonraki açılışlarda önbellek anında gelir) */
 @Composable

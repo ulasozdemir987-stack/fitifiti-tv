@@ -62,7 +62,7 @@ fun WideCard(
                 shape = ClickableSurfaceDefaults.shape(WideShape),
                 colors = ClickableSurfaceDefaults.colors(containerColor = C.panel, focusedContainerColor = C.panel),
                 scale = ClickableSurfaceDefaults.scale(focusedScale = 1.07f),
-                border = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, Color.White), shape = WideShape)),
+                border = ClickableSurfaceDefaults.border(focusedBorder = Border(androidx.compose.foundation.BorderStroke(2.5.dp, com.fitifiti.tv.ui.components.RingBrush), shape = WideShape)),
             ) {
                 Box(Modifier.fillMaxSize()) {
                     val bd = backdrop
