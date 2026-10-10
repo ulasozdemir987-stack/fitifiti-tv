@@ -158,3 +158,11 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 * **Fragman çıkmıyordu:** `TrailerRepository.find` sağlayıcının ham adını gönderiyordu ("Konferans - The Conference (2023)"); site `/api/trailer` bu adla `null` dönüyor, sade adla buluyor. Artık sırayla `splitTitle` Türkçe adı → özgün ad → ham ad denenir (ilk bulunan; ağ hatası önbelleğe yazılmaz). İlk açılışta MP4 sitede hazırlanırken ~25 sn sürebilir, sonra anında.
 * **`Diag.log` artık logcat'e de yazar** (`FitiDiag`): kutu ajanıyla `{"logcat":"FitiDiag"}` (fragman, ekran geçişleri, oynatıcı olayları).
 * **Cam görünümü (`components/Glass.kt`, `Modifier.glass(shape, strength, tint)`):** gerçek arka plan bulanıklaştırması YOK (zayıf GPU'da her karede pahalı); koyu yarı saydam renk + azalan beyaz dolgu + üst parlama + alt yansıma + sol üstten parlayan kenar. Çocukları kırpmaz (odak büyümesi/parıltı kesilmez). Kullananlar: `Btn` (Primary/Secondary), `IconAction`, seçili olmayan `Chip`, sol menü (açılınca koyu tonu artar), Filmler/Canlı TV araç çubuğu çipleri. Odakta hâlâ düz beyaz (TV'de odak net görünsün). Kaydırma ölçümü değişmedi.
+
+
+## Güncelleme — 2026-10-10 (Claude): vitrin tipografisi ve düğmeler (3.2.1, dal `yeni-duzen`)
+
+* **Font:** tüm uygulama Manrope (variable font; 450/500/600/700/800 ağırlıkları `Manrope` ailesinde). `Typography` stillerinin hepsi Manrope; `FitifitiTheme` stil verilmeyen `Text`'ler için `ProvideTextStyle(bodyMedium)`.
+* **Ana sayfa vitrini (`HeroInfo` / `HeroText`):** sabit yuvalar — etiket 20dp, başlık 96dp (logo da yazı da alta hizalı, logo gelince çapraz geçiş), meta 24dp, özet her zaman 3 satır yer (`minLines = 3`). Vitrin dönerken yazı katmanı `AnimatedContent` ile solar; düğmeler ve noktalar yerinden oynamaz. Başlık/özet hafif gölgeli.
+* **Puan:** "TMDB 7.1" düz yazısı yerine `StarRating` rozeti (★ 7.1); `MetaRow(..., rating = …)` en başa koyar. Vitrin, Filmler sinematik bilgi ve detay sayfaları bunu kullanır.
+* **Düğmeler:** odakta altta beliren yazılı yuvarlak ikonlar kaldırıldı (kayıyor gibi görünüyordu). Vitrinde: Oynat/Devam et + "Detaylar"/"Bölümler" (cam) + yazısız +/✓. Film detayında "Baştan · Listem/Listemde · İzledim/İzlendi" yazılı cam düğmeler; dizide "Oynat · S1 B1" / "Devam et · S1 B3". `IconAction(showLabel = false)` ile alt yazı kapatılır (fragman ses düğmesi).

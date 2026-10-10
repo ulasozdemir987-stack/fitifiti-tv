@@ -73,9 +73,8 @@ fun MovieDetailScreen(m: Movie) {
                     m.year ?: info.releaseDate?.take(4),
                     formatDuration(info.durationSecs ?: m.runtimeMin?.times(60)).ifBlank { null },
                     com.fitifiti.tv.domain.formatGenres(info.genre ?: m.genre, 3),
-                    info.age?.takeIf { it.isNotBlank() && it != "0" }?.let { "$it+" }?.replace("++", "+"),
-                    if (art.vote > 0 && art.votes >= 25 && critics?.imdb == null) "TMDB ${"%.1f".format(art.vote)}" else null
-                ))
+                    info.age?.takeIf { it.isNotBlank() && it != "0" }?.let { "$it+" }?.replace("++", "+")
+                ), rating = if (art.vote > 0 && art.votes >= 25 && critics?.imdb == null) art.vote else null)
                 val wikiAwards by produceState(emptyList<com.fitifiti.tv.data.tmdb.AwardCount>(), critics?.imdbId) { critics?.imdbId?.let { value = app.art.awards(it) } }
                 val laurels = remember(critics, wikiAwards) { laurelBadges(critics, wikiAwards) }
                 CriticsRow(critics)
@@ -94,9 +93,10 @@ fun MovieDetailScreen(m: Movie) {
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                     Btn(if (resume) "Devam et" else "Oynat", { actions.playMovie(m) }, Modifier.focusRequester(playFocus), icon = Icons.Default.PlayArrow)
-                    if (resume || watched) IconAction(Icons.Default.Replay, "Baştan oynat", { actions.playMovie(m, fromStart = true) })
-                    IconAction(if (fav) Icons.Default.Check else Icons.Default.Add, if (fav) "Listemden çıkar" else "Listeme ekle", { app.user.toggleFavorite(m) }, active = fav)
-                    IconAction(Icons.Default.DoneAll, if (watched) "İzlenmedi yap" else "İzlendi olarak işaretle", { app.user.markMovieWatched(m, !watched) }, active = watched)
+                    // ikincil eylemler yazılı cam düğmeler (eskiden yuvarlak ikon + odakta altta beliren yazı: kayıyor gibiydi)
+                    if (resume || watched) Btn("Baştan", { actions.playMovie(m, fromStart = true) }, kind = BtnKind.Secondary, icon = Icons.Default.Replay)
+                    Btn(if (fav) "Listemde" else "Listem", { app.user.toggleFavorite(m) }, kind = BtnKind.Secondary, icon = if (fav) Icons.Default.Check else Icons.Default.Add)
+                    Btn(if (watched) "İzlendi" else "İzledim", { app.user.markMovieWatched(m, !watched) }, kind = BtnKind.Secondary, icon = Icons.Default.DoneAll)
                     if (m.variants.size >= 2) {
                         VariantPicker(m.variants, variant) { v -> app.settings.chooseVariant(item.key, v.label); variantTick++ }
                     }

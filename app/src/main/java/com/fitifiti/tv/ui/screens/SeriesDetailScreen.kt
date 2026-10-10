@@ -125,9 +125,8 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
                 MetaRow(listOf(
                     s.year ?: info?.releaseDate?.take(4),
                     com.fitifiti.tv.domain.formatGenres(info?.genre ?: s.genre, 3),
-                    if (seasons.isNotEmpty()) (if (seasons.size == 1) "${seasons.values.first().size} bölüm" else "${seasons.size} sezon") else null,
-                    if (art.vote > 0 && art.votes >= 25 && critics?.imdb == null) "TMDB ${"%.1f".format(art.vote)}" else null
-                ))
+                    if (seasons.isNotEmpty()) (if (seasons.size == 1) "${seasons.values.first().size} bölüm" else "${seasons.size} sezon") else null
+                ), rating = if (art.vote > 0 && art.votes >= 25 && critics?.imdb == null) art.vote else null)
                 val wikiAwards by produceState(emptyList<com.fitifiti.tv.data.tmdb.AwardCount>(), critics?.imdbId) { critics?.imdbId?.let { value = app.art.awards(it) } }
                 val laurels = remember(critics, wikiAwards) { laurelBadges(critics, wikiAwards) }
                 CriticsRow(critics)
@@ -149,10 +148,10 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    Btn(if (resumeEp) "Devam et (S${ep?.season}B${ep?.num})" else (if (ep != null) "S${ep.season}B${ep.num} Oynat" else "Oynat"),
+                    Btn(if (resumeEp) "Devam et · S${ep?.season} B${ep?.num}" else (if (ep != null) "Oynat · S${ep.season} B${ep.num}" else "Oynat"),
                         { t?.let { actions.playEpisode(s, it.first, seasons, variant?.id) } },
                         Modifier.focusRequester(playFocus), icon = Icons.Default.PlayArrow, enabled = t != null)
-                    IconAction(if (fav) Icons.Default.Check else Icons.Default.Add, if (fav) "Listemden çıkar" else "Listeme ekle", { app.user.toggleFavorite(s) }, active = fav)
+                    Btn(if (fav) "Listemde" else "Listem", { app.user.toggleFavorite(s) }, kind = BtnKind.Secondary, icon = if (fav) Icons.Default.Check else Icons.Default.Add)
                     if (s.variants.size >= 2) {
                         VariantPicker(s.variants, variant) { v -> app.settings.chooseVariant(item.key, v.label); variantTick++ }
                     }

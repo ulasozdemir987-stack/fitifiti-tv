@@ -50,7 +50,7 @@ fun TrailerMuteButton(modifier: Modifier = Modifier) {
     IconAction(if (st.muted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp, if (st.muted) "Sesi aç" else "Sesi kapat", {
         st.muted = !st.muted
         App.instance.settings.update { it.copy(trailerSound = !st.muted) }
-    }, modifier)
+    }, modifier, showLabel = false)
 }
 
 /**

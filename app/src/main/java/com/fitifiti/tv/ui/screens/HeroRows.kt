@@ -44,6 +44,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.fitifiti.tv.ui.theme.Display
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.em
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -250,25 +256,52 @@ fun rememberRowSpec(pad: Dp = 48.dp): BringIntoViewSpec {
 @Composable
 fun HeroInfo(item: Item?, art: HeroArt, label: String?, modifier: Modifier, primary: FocusRequester? = null, dots: (@Composable () -> Unit)? = null, onButtonsPositioned: (Float) -> Unit = {}) {
     val app = App.instance
-    val actions = LocalActions.current
     val progress by app.user.progressMap.collectAsStateWithLifecycle()
     val favorites by app.user.favorites.collectAsStateWithLifecycle()
-    Column(modifier, verticalArrangement = Arrangement.Top) {
+    Column(modifier) {
         if (item == null) return@Column
-        if (label != null) { Text(label, style = MaterialTheme.typography.labelLarge, color = C.teal); Spacer(Modifier.height(10.dp)) }
-        HeroTitle(cardTitle(item.title), art.logo, maxWidthFraction = 0.42f, maxLogoHeight = 110.dp)
-        Spacer(Modifier.height(8.dp))
-        val runtime = (item as? Item.M)?.m?.runtimeMin?.takeIf { it > 0 }?.let { com.fitifiti.tv.domain.formatDuration(it, "minutes") }
-        MetaRow(listOf(item.year, runtime, com.fitifiti.tv.domain.formatGenres(item.genre, 2),
-            if (art.vote > 0 && art.votes >= 25) "TMDB ${"%.1f".format(art.vote)}" else null))
-        Spacer(Modifier.height(6.dp))
-        val overview = art.overview ?: when (item) { is Item.M -> item.m.plot; is Item.S -> item.s.plot }
-        if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyLarge, color = C.muted, maxLines = 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.55f))
-        Spacer(Modifier.height(16.dp))
+        // Vitrin dönerken hiçbir şey kaymaz: etiket, başlık, meta ve özet SABİT yükseklikte yuvalarda; yazı katmanı
+        // yumuşakça değişir (eskiden logo/ad yüksekliği ve özet satır sayısı değiştikçe düğmeler zıplıyordu)
+        androidx.compose.animation.AnimatedContent(
+            targetState = Triple(item, art, label), contentKey = { it.first.key },
+            transitionSpec = { (fadeIn(tween(450, delayMillis = 120)) togetherWith fadeOut(tween(200))) },
+            label = "heroText",
+        ) { (it, a, lb) -> HeroText(it, a, lb) }
+        Spacer(Modifier.height(18.dp))
         HeroButtons(item, progress, favorites.any { it.key == item.key }, primary, onButtonsPositioned)
         if (dots != null) { Spacer(Modifier.height(18.dp)); dots() }
     }
 }
+
+@Composable
+private fun HeroText(item: Item, art: HeroArt, label: String?) {
+    Column(Modifier.fillMaxWidth(0.5f)) {
+        Box(Modifier.height(20.dp)) { if (label != null) Text(label, style = MaterialTheme.typography.labelLarge, color = C.teal, letterSpacing = 0.02.em) }
+        Spacer(Modifier.height(6.dp))
+        // başlık yuvası: logo da yazı da alta hizalı, sabit yükseklik
+        Box(Modifier.height(96.dp).fillMaxWidth(), contentAlignment = Alignment.BottomStart) {
+            androidx.compose.animation.Crossfade(art.logo, animationSpec = tween(350), label = "logo") { logo ->
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomStart) {
+                    if (logo != null) coil.compose.AsyncImage(model = logo, contentDescription = item.title, contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                        alignment = Alignment.BottomStart, modifier = Modifier.fillMaxWidth(0.82f).heightIn(max = 92.dp))
+                    else Text(cardTitle(item.title), style = Display.copy(fontSize = 44.sp, lineHeight = 46.sp, shadow = TitleShadow), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        val runtime = (item as? Item.M)?.m?.runtimeMin?.takeIf { it > 0 }?.let { com.fitifiti.tv.domain.formatDuration(it, "minutes") }
+        MetaRow(listOf(item.year, runtime, com.fitifiti.tv.domain.formatGenres(item.genre, 2)), color = Color(0xE6FFFFFF),
+            rating = if (art.vote > 0 && art.votes >= 25) art.vote else null, modifier = Modifier.height(24.dp))
+        Spacer(Modifier.height(10.dp))
+        val overview = art.overview ?: when (item) { is Item.M -> item.m.plot; is Item.S -> item.s.plot }
+        // özet her zaman 3 satırlık yer kaplar (kısa özet düğmeleri yukarı çekmesin)
+        Text(overview?.takeIf { it.isNotBlank() } ?: "", style = MaterialTheme.typography.bodyLarge.copy(shadow = TextShadow), color = Color(0xC7FFFFFF),
+            minLines = 3, maxLines = 3, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+private val TitleShadow = androidx.compose.ui.graphics.Shadow(Color(0x99000000), androidx.compose.ui.geometry.Offset(0f, 2f), 12f)
+private val TextShadow = androidx.compose.ui.graphics.Shadow(Color(0x80000000), androidx.compose.ui.geometry.Offset(0f, 1f), 6f)
 
 @Composable
 fun HeroButtons(item: Item, progress: Map<String, ProgressEntity>, fav: Boolean, primaryFocus: FocusRequester? = null, onPositioned: (Float) -> Unit = {}) {
@@ -280,15 +313,15 @@ fun HeroButtons(item: Item, progress: Map<String, ProgressEntity>, fav: Boolean,
                 val p = progress[item.key]
                 val resume = p != null && !p.finished && p.positionMs > 15_000
                 Btn(if (resume) "Devam et" else "Oynat", { actions.playMovie(item.m) }, Modifier.then(primaryFocus?.let { Modifier.focusRequester(it) } ?: Modifier), icon = Icons.Default.PlayArrow)
-                IconAction(Icons.Default.Info, "Detaylar", { actions.openMovie(item.m) })
-                IconAction(if (fav) Icons.Default.Check else Icons.Default.Add, if (fav) "Listemden çıkar" else "Listeme ekle", { app.user.toggleFavorite(item.m) }, active = fav)
+                Btn("Detaylar", { actions.openMovie(item.m) }, kind = BtnKind.Secondary, icon = Icons.Default.Info)
+                IconAction(if (fav) Icons.Default.Check else Icons.Default.Add, if (fav) "Listemden çıkar" else "Listeme ekle", { app.user.toggleFavorite(item.m) }, active = fav, showLabel = false)
             }
             is Item.S -> {
                 val last = progress.values.filter { it.seriesId == item.s.id }.maxByOrNull { it.updatedAt }
                 if (last != null && !last.finished) Btn("Devam et · ${last.episodeNum ?: ""}. bölüm", { actions.playContinue(last) }, Modifier.then(primaryFocus?.let { Modifier.focusRequester(it) } ?: Modifier), icon = Icons.Default.PlayArrow)
                 if (last == null || last.finished) Btn("Bölümler", { actions.openSeries(item.s) }, Modifier.then(primaryFocus?.let { Modifier.focusRequester(it) } ?: Modifier), icon = Icons.Default.PlayArrow)
-                else IconAction(Icons.Default.Info, "Bölümler", { actions.openSeries(item.s) })
-                IconAction(if (fav) Icons.Default.Check else Icons.Default.Add, if (fav) "Listemden çıkar" else "Listeme ekle", { app.user.toggleFavorite(item.s) }, active = fav)
+                else Btn("Bölümler", { actions.openSeries(item.s) }, kind = BtnKind.Secondary, icon = Icons.Default.Info)
+                IconAction(if (fav) Icons.Default.Check else Icons.Default.Add, if (fav) "Listemden çıkar" else "Listeme ekle", { app.user.toggleFavorite(item.s) }, active = fav, showLabel = false)
             }
         }
     }

@@ -38,22 +38,32 @@ object C {
 val Manrope = FontFamily(
     Font(R.font.manrope, FontWeight.ExtraBold, variationSettings = FontVariation.Settings(FontVariation.weight(800))),
     Font(R.font.manrope, FontWeight.Bold, variationSettings = FontVariation.Settings(FontVariation.weight(700))),
+    Font(R.font.manrope, FontWeight.SemiBold, variationSettings = FontVariation.Settings(FontVariation.weight(600))),
+    Font(R.font.manrope, FontWeight.Medium, variationSettings = FontVariation.Settings(FontVariation.weight(500))),
+    Font(R.font.manrope, FontWeight.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(450))),
 )
 
 /** Büyük başlıklar: Manrope ExtraBold, sıkı harf aralığı (sitedeki font-display) */
 val Display = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.03).em, color = Color.White)
 
+/** Tüm uygulama Manrope (eskiden gövde yazıları sistem fontuydu, başlıklarla uyumsuzdu) */
+private val Body = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.Normal, letterSpacing = 0.005.em)
+
 private val typography = Typography(
     displayLarge = Display.copy(fontSize = 42.sp, lineHeight = 46.sp),
     displayMedium = Display.copy(fontSize = 40.sp, lineHeight = 44.sp),
     displaySmall = Display.copy(fontSize = 28.sp, lineHeight = 34.sp),
-    headlineSmall = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
-    titleLarge = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
-    titleMedium = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
-    bodyLarge = TextStyle(fontSize = 15.sp, lineHeight = 22.sp),
-    bodyMedium = TextStyle(fontSize = 15.sp, lineHeight = 22.sp),
-    bodySmall = TextStyle(fontSize = 13.sp, lineHeight = 18.sp),
-    labelLarge = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+    headlineMedium = Body.copy(fontSize = 22.sp, fontWeight = FontWeight.Bold),
+    headlineSmall = Body.copy(fontSize = 18.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.01).em),
+    titleLarge = Body.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+    titleMedium = Body.copy(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+    titleSmall = Body.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+    bodyLarge = Body.copy(fontSize = 15.sp, lineHeight = 23.sp),
+    bodyMedium = Body.copy(fontSize = 14.sp, lineHeight = 21.sp),
+    bodySmall = Body.copy(fontSize = 12.sp, lineHeight = 17.sp),
+    labelLarge = Body.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+    labelMedium = Body.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
+    labelSmall = Body.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
 )
 
 /** Ekranın gerçek yüksekliği / genişliği (dp, arayüz ölçeği uygulanmış) — LocalConfiguration ölçeği bilmez */
@@ -88,6 +98,9 @@ private fun ThemeInner(content: @Composable () -> Unit) {
         typography = typography,
     ) {
         // tv-material'da Surface dışındaki Text'in varsayılan rengi SİYAH (LocalContentColor = Black) → bölüm adları vb. siyah görünüyordu
-        androidx.compose.runtime.CompositionLocalProvider(androidx.tv.material3.LocalContentColor provides Color.White) { content() }
+        androidx.compose.runtime.CompositionLocalProvider(androidx.tv.material3.LocalContentColor provides Color.White) {
+            // stil verilmeyen Text'ler de Manrope olsun
+            androidx.tv.material3.ProvideTextStyle(typography.bodyMedium) { content() }
+        }
     }
 }

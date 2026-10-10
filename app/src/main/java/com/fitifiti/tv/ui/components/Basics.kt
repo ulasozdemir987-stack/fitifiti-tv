@@ -60,10 +60,21 @@ fun Dot() = Text("·", color = C.faint, modifier = Modifier.padding(horizontal =
 
 /** Yıl · süre · tür gibi meta satırı */
 @Composable
-fun MetaRow(parts: List<String?>, modifier: Modifier = Modifier, color: Color = C.muted) {
+fun MetaRow(parts: List<String?>, modifier: Modifier = Modifier, color: Color = C.muted, rating: Double? = null) {
     val list = parts.filterNot { it.isNullOrBlank() }
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        list.forEachIndexed { i, p -> if (i > 0) Dot(); Text(p!!, color = color, style = MaterialTheme.typography.bodyMedium, maxLines = 1) }
+        if (rating != null && rating > 0) { StarRating(rating); if (list.isNotEmpty()) Spacer(Modifier.width(12.dp)) }
+        list.forEachIndexed { i, p -> if (i > 0) Dot(); Text(p!!, color = color, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1) }
+    }
+}
+
+/** Puan rozeti: "★ 7.1" (eskiden düz "TMDB 7.1" yazısı) */
+@Composable
+fun StarRating(value: Double, modifier: Modifier = Modifier) {
+    Row(modifier.clip(RoundedCornerShape(7.dp)).background(Color(0x24FFFFFF)).padding(horizontal = 7.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text("★", fontSize = 12.sp, color = Color(0xFFF5C451))
+        Spacer(Modifier.width(4.dp))
+        Text("%.1f".format(value), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
     }
 }
 
@@ -99,7 +110,7 @@ fun Btn(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, kind: 
  * altında belirir. active = durum açık (listede / izlendi) → ikon mor tonlu.
  */
 @Composable
-fun IconAction(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier, active: Boolean = false, size: Dp = 40.dp) {
+fun IconAction(icon: ImageVector, label: String, onClick: () -> Unit, modifier: Modifier = Modifier, active: Boolean = false, size: Dp = 40.dp, showLabel: Boolean = true) {
     val src = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val focused by src.collectIsFocusedAsState()
     Box(contentAlignment = Alignment.TopCenter) {
@@ -110,7 +121,7 @@ fun IconAction(icon: ImageVector, label: String, onClick: () -> Unit, modifier: 
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),
             glow = ClickableSurfaceDefaults.glow(focusedGlow = Glow(Color.White.copy(alpha = 0.25f), 10.dp)),
         ) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(icon, label, Modifier.size(size * 0.48f)) } }
-        if (focused) Text(label, Modifier.offset(y = size + 7.dp).wrapContentWidth(unbounded = true), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1, softWrap = false)
+        if (focused && showLabel) Text(label, Modifier.offset(y = size + 7.dp).wrapContentWidth(unbounded = true), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White, maxLines = 1, softWrap = false)
     }
 }
 

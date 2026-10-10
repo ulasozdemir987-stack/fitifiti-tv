@@ -152,8 +152,8 @@ private fun CinematicInfo(item: Item?, art: HeroArt, kind: String) {
         Spacer(Modifier.height(8.dp))
         val rating = when (item) { is Item.M -> item.m.rating; is Item.S -> item.s.rating }
         val runtime = (item as? Item.M)?.m?.runtimeMin?.takeIf { it > 0 }?.let { com.fitifiti.tv.domain.formatDuration(it, "minutes") }
-        MetaRow(listOf(item.year, com.fitifiti.tv.domain.formatGenres(item.genre, 2),
-            if (art.vote > 0 && art.votes >= 25) "★ ${"%.1f".format(art.vote)}" else if (rating > 0 && rating < 9.3) "★ ${"%.1f".format(rating)}" else null, runtime), color = Color(0xD9FFFFFF))
+        MetaRow(listOf(item.year, com.fitifiti.tv.domain.formatGenres(item.genre, 2), runtime), color = Color(0xD9FFFFFF),
+            rating = if (art.vote > 0 && art.votes >= 25) art.vote else rating.takeIf { it > 0 && it < 9.3 })
         Spacer(Modifier.height(6.dp))
         val overview = art.overview ?: when (item) { is Item.M -> item.m.plot; is Item.S -> item.s.plot }
         if (!overview.isNullOrBlank()) Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.6f))
