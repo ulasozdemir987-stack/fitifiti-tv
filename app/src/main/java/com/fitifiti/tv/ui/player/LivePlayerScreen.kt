@@ -42,8 +42,8 @@ fun LivePlayerScreen(startChannelId: Int, onClose: () -> Unit) {
     val app = App.instance
     val ctx = LocalContext.current
     
-    val allChannels by LiveManager.getVisibleChannels().collectAsStateWithLifecycle(emptyList())
-    val lists by LiveManager.getVisibleLists().collectAsStateWithLifecycle(listOf("Tüm kanallar"))
+    val allChannels by LiveManager.getVisibleChannels().collectAsStateWithLifecycle()
+    val lists by LiveManager.getVisibleLists().collectAsStateWithLifecycle()
     
     var currentListName by remember { mutableStateOf("Tüm kanallar") }
     var activeListChannels by remember { mutableStateOf(emptyList<LiveChannel>()) }
@@ -56,7 +56,22 @@ fun LivePlayerScreen(startChannelId: Int, onClose: () -> Unit) {
     var banner by remember { mutableStateOf(true) }
     var digits by remember { mutableStateOf("") }
     
-    val player = remember { buildPlayer(ctx, live = true) }
+    // önizlemede zaten oynayan kanal → aynı oynatıcı devralınır (anında açılır)
+    val player = remember { com.fitifiti.tv.ui.screens.LiveHandoff.take(startChannelId) ?: buildPlayer(ctx, live = true) }
+    var buffering by remember { mutableStateOf(player.playbackState != androidx.media3.common.Player.STATE_READY) }
+    DisposableEffect(player) {
+        val l = object : androidx.media3.common.Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) { buffering = state == androidx.media3.common.Player.STATE_BUFFERING || state == androidx.media3.common.Player.STATE_IDLE }
+            override fun onPlayerError(e: androidx.media3.common.PlaybackException) {
+                error = when (e.errorCode) {
+                    androidx.media3.common.PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS -> "Sağlayıcı yayını vermedi. Hesabın aynı anda tek bağlantıya izin veriyor olabilir; başka cihazda açıksa kapatıp tekrar dene."
+                    androidx.media3.common.PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED, androidx.media3.common.PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT -> "Bağlantı kurulamadı. İnternetini kontrol edip yeniden dene."
+                    else -> "Yayın açılamadı (${e.errorCodeName.removePrefix("ERROR_CODE_").lowercase().replace('_', ' ')})"
+                }
+            }
+        }
+        player.addListener(l); onDispose { player.removeListener(l) }
+    }
     val scope = rememberCoroutineScope()
     val rootFocus = remember { FocusRequester() }
 
@@ -135,8 +150,11 @@ fun LivePlayerScreen(startChannelId: Int, onClose: () -> Unit) {
         try {
             app.user.touchChannel(channel.id)
             val url = app.client().liveUrl(channel.id, true)
-            player.setMediaItem(androidx.media3.common.MediaItem.fromUri(url))
-            player.prepare()
+            val same = player.currentMediaItem?.localConfiguration?.uri?.toString() == url && player.playbackState != androidx.media3.common.Player.STATE_IDLE
+            if (!same) {
+                player.setMediaItem(androidx.media3.common.MediaItem.fromUri(url))
+                player.prepare()
+            }
             player.play()
         } catch (e: Exception) {
             error = e.message ?: "Oynatma hatası"
@@ -193,8 +211,9 @@ fun LivePlayerScreen(startChannelId: Int, onClose: () -> Unit) {
     ) {
         VideoSurface(player, Modifier.fillMaxSize(), app.settings.value.subtitleScale)
 
-        // Loading
-        if (channel != null && error == null) { // We can't track loading easily without more listener boilerplate, omitting animated logo for brevity
+        // Yükleniyor: ortada dönen halka (kanal değişiminde de)
+        if (channel != null && error == null && buffering) {
+            Box(Modifier.align(Alignment.Center)) { Spinner(44.dp) }
         }
 
                 // Digits
@@ -228,7 +247,7 @@ fun LivePlayerScreen(startChannelId: Int, onClose: () -> Unit) {
                                 Text(hhmm(now.end), style = MaterialTheme.typography.bodySmall, color = C.muted)
                             }
                         }
-                        if (next != null) Text("Sonra —  ", style = MaterialTheme.typography.bodySmall, color = C.muted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
+                        if (next != null) Text("Sonra — ${hhmm(next.start)} ${programmeHeadline(next.title)}", style = MaterialTheme.typography.bodySmall, color = C.muted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
                     }
                 }
             }

@@ -45,6 +45,7 @@ val Display = TextStyle(fontFamily = Manrope, fontWeight = FontWeight.ExtraBold,
 private val typography = Typography(
     displayLarge = Display.copy(fontSize = 42.sp, lineHeight = 46.sp),
     displayMedium = Display.copy(fontSize = 40.sp, lineHeight = 44.sp),
+    displaySmall = Display.copy(fontSize = 28.sp, lineHeight = 34.sp),
     headlineSmall = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
     titleLarge = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
     titleMedium = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),

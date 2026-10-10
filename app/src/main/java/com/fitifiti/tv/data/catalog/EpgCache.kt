@@ -1,4 +1,4 @@
-﻿package com.fitifiti.tv.data.catalog
+package com.fitifiti.tv.data.catalog
 
 import android.util.Xml
 import com.fitifiti.tv.App
@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 import okhttp3.Request
 import org.xmlpull.v1.XmlPullParser
 import java.io.InputStream
@@ -19,20 +20,30 @@ import android.util.Log
 
 object EpgCache {
     private val mutex = Mutex()
-    private var lastSync = 0L
+    private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.IO)
+    @Volatile private var syncing = false
 
-    suspend fun syncIfNeeded(client: XtreamClient) {
+    /**
+     * XMLTV'yi ARKA PLANDA indirir (en fazla 12 saatte bir; başarısızsa 30 dk bekler). Eskiden çağıran bekliyordu:
+     * büyük sağlayıcılarda dosya dakikalar sürebildiğinden o sırada tüm kanal satırlarının program bilgisi takılıyordu.
+     * Son indirme zamanı kalıcı (eskiden bellekteydi → her açılışta dosya yeniden iniyordu).
+     */
+    fun syncIfNeeded(client: XtreamClient) {
+        if (syncing) return
+        val prefs = App.instance.getSharedPreferences("epg-sync", 0)
+        val key = "${client.base}|${client.account.username}"
         val now = System.currentTimeMillis()
-        if (now - lastSync < 12 * 3600_000L) return
-        mutex.withLock {
-            if (now - lastSync < 12 * 3600_000L) return
+        if (now - prefs.getLong("ok:$key", 0) < 12 * 3600_000L || now - prefs.getLong("try:$key", 0) < 30 * 60_000L) return
+        syncing = true
+        prefs.edit().putLong("try:$key", now).apply()
+        scope.launch {
             try {
-                syncXmltv(client)
-                lastSync = System.currentTimeMillis()
+                mutex.withLock { syncXmltv(client) }
+                prefs.edit().putLong("ok:$key", System.currentTimeMillis()).apply()
                 App.instance.db.epg().deleteOld()
             } catch (e: Exception) {
                 Log.e("EpgCache", "XMLTV sync failed: " + e.message)
-            }
+            } finally { syncing = false }
         }
     }
 

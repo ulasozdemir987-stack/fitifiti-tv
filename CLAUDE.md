@@ -120,3 +120,18 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 * **Dizi detayı:** başlık artık tam ekran değil; sezon sekmeleri (`SeasonTab`) + 5 sütun bölüm ızgarası (numara rozeti). Film detayında da baş kısım kısaldı (oyuncular hemen altta).
 * Kartların odak çerçevesi her yerde mor → turkuaz (`RingBrush` / `FocusRing`).
 * Robolectric önizlemelerinde canlı önizleme oynatıcısı kurulmaz (FINGERPRINT kontrolü); PreviewData sahte EPG döndürür (`live`, `guide` önizlemeleri).
+
+
+## Güncelleme — 2026-10-10 (Claude): akıcılık + arayüz turu (3.0.1, dal `yeni-duzen`)
+
+* **`LiveManager` akışları paylaşılan `StateFlow`** (arka planda bir kez hesaplanır, App örneğine bağlı). Eskiden `getVisibleChannels()` her çağrıda yeni Flow kuruyordu; ekranlar bunu her çizimde çağırdığı için 15 bin kanal her yeniden çizimde baştan işleniyordu. Çağrı yerlerinde `collectAsStateWithLifecycle()` (başlangıç değeri vermeden).
+* **`EpgCache.syncIfNeeded` artık beklemez:** XMLTV arka planda iner (12 saatte bir, hata olursa 30 dk sonra tekrar); son indirme zamanı `SharedPreferences("epg-sync")`'te kalıcı. Eskiden indirme sürerken tüm kanal satırları kilitte bekliyordu, ayrıca her açılışta dosya yeniden iniyordu.
+* Odak değişimi yalnız ilgili katmanı yeniden çizer: `MediaScreen` → `FocusedArtEffect` + `BackdropLayer`; `LiveScreen` → `LiveSide`.
+* Coil `respectCacheHeaders(false)`: "no-cache" diyen afiş sunucularında da disk önbelleği kullanılır.
+* **Anında kanal açma:** önizlemede oynayan kanala OK → aynı ExoPlayer tam ekrana devredilir (`PreviewPlayer.handOff` → `LiveHandoff.take` in `LivePlayerScreen`); yeniden bağlanma yok, kutuda 0,6 sn'de görüntü. Canlı oynatıcıda tamponlama halkası + anlaşılır hata mesajları (bağlantı sınırı / ağ).
+* **Sol menü genişler:** odak menüdeyken adlar ve profil adıyla 196 dp'ye açılır, içerik soldan kararır. İçerikten ◀ = her zaman SEÇİLİ sekme (`focusProperties { enter = { tabFocus } }` menünün focusGroup'unda; menünün içindeki ayrı bir `enter` çalışmıyordu → aynı hizadaki sekmeye gidip sayfayı değiştiriyordu).
+* **Ortam rengi (`components/Ambient.kt`, `rememberAmbient`):** vitrin ışıması görselin baskın canlı renginden (48 px kopya, %18 sitenin moruna yaklaştırılmış).
+* **Canlı TV'de rakamla kanal:** rakamları yaz → sağ üstte büyük numara + kanal adı, 1,6 sn sonra o kanala (yoksa sonraki numaraya) odaklanır.
+* `displaySmall` = Manrope 28 sp (Ayarlar/Listem başlıkları); Ayarlar/Listem/Ara üst boşlukları üst çubuk kalktığı için küçüldü.
+* **TUZAK:** video içeren ekranları (`PlayerView` = SurfaceView) `graphicsLayer { alpha }` içine KOYMA — kutuda görüntü siyah kalıyor (ses geliyor). Sekme geçişindeki solma efekti bu yüzden kaldırıldı.
+* Kutuda test notu: yarıda kesilen bir testin açtığı yayın sağlayıcıda bir süre "açık bağlantı" sayılabiliyor (tek bağlantılı hesap) → sonraki deneme veri almaz; ~1 dk bekle.

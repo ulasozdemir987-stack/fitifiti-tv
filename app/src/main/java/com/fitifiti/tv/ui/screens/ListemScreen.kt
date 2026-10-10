@@ -46,7 +46,7 @@ fun ListemScreen() {
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(196.dp), modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 48.dp, end = 48.dp, top = 100.dp, bottom = 80.dp),
+        contentPadding = PaddingValues(start = 48.dp, end = 48.dp, top = 22.dp, bottom = 80.dp),
         horizontalArrangement = Arrangement.spacedBy(20.dp), verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {

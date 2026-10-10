@@ -35,7 +35,7 @@ fun SettingsScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAd
     var pair by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 48.dp, end = 48.dp, top = 100.dp, bottom = 80.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 48.dp, end = 48.dp, top = 22.dp, bottom = 80.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { Text("Ayarlar", style = MaterialTheme.typography.displaySmall, modifier = Modifier.padding(bottom = 12.dp)) }
 
         item { Section("Profil") }

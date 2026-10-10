@@ -42,7 +42,7 @@ data class CalendarEvent(
 
 @Composable
 fun LiveCalendarScreen(onBack: () -> Unit = {}) {
-    val allChannels by LiveManager.getVisibleChannels().collectAsStateWithLifecycle(emptyList())
+    val allChannels by LiveManager.getVisibleChannels().collectAsStateWithLifecycle()
     var tab by remember { mutableIntStateOf(0) }
     
     val focusTabs = remember { FocusRequester() }

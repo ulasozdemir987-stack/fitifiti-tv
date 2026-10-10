@@ -1,11 +1,17 @@
-﻿package com.fitifiti.tv.domain
+package com.fitifiti.tv.domain
 
 import com.fitifiti.tv.App
 import com.fitifiti.tv.data.local.ChannelConfigEntity
 import com.fitifiti.tv.data.xtream.Channel
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 data class LiveChannel(
     val channel: Channel,
@@ -16,12 +22,17 @@ data class LiveChannel(
 )
 
 object LiveManager {
-    fun getChannels(): Flow<List<LiveChannel>> {
-        val catFlow = App.instance.catalog.catalog
-        val configFlow = App.instance.user.channelConfigs
-        return combine(catFlow, configFlow) { cat, configs ->
+    /**
+     * Kanal listesi bir kez hesaplanır ve paylaşılır. Eskiden her `getChannels()` çağrısı yeni bir Flow kuruyordu;
+     * ekranlar bunu her çizimde çağırdığı için 15 bin kanal (ad temizleme regex'iyle) her yeniden çizimde baştan
+     * hesaplanıyor, toplama da yeniden başlıyordu → Canlı TV gezinirken takılma.
+     */
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    private class Flows(app: App, scope: CoroutineScope) {
+        val all: StateFlow<List<LiveChannel>> = combine(app.catalog.catalog, app.user.channelConfigs) { cat, configs ->
             val confMap = configs.associateBy { it.channelId }
-            var list = cat.channels.map { ch ->
+            cat.channels.map { ch ->
                 val conf = confMap[ch.id]
                 val lists = if (conf?.customList != null) listOf("Tüm kanallar", conf.customList) else listOf("Tüm kanallar")
                 LiveChannel(
@@ -31,19 +42,26 @@ object LiveManager {
                     isHidden = conf?.isHidden ?: false,
                     lists = lists
                 )
-            }
-            // Sort by user num, then by original num
-            list.sortedBy { it.num }
-        }
+            }.sortedBy { it.num }
+        }.flowOn(Dispatchers.Default).stateIn(scope, SharingStarted.Eagerly, emptyList())
+        val visible: StateFlow<List<LiveChannel>> = all.map { l -> l.filter { !it.isHidden } }.flowOn(Dispatchers.Default).stateIn(scope, SharingStarted.Eagerly, emptyList())
+        val lists: StateFlow<List<String>> = visible.map { list ->
+            val names = list.flatMapTo(LinkedHashSet()) { it.lists }.toMutableList()
+            if (names.remove("Tüm kanallar")) names.add(0, "Tüm kanallar")
+            names
+        }.flowOn(Dispatchers.Default).stateIn(scope, SharingStarted.Eagerly, listOf("Tüm kanallar"))
     }
-    
-    fun getVisibleChannels(): Flow<List<LiveChannel>> = getChannels().map { list -> list.filter { !it.isHidden } }
+    @Volatile private var flows: Pair<App, Flows>? = null
+    /** Uygulama örneğine bağlı (testlerde her önizleme yeni App kurar) */
+    private fun f(): Flows {
+        val app = App.instance
+        flows?.let { (a, fl) -> if (a === app) return fl }
+        return synchronized(this) { flows?.takeIf { it.first === app }?.second ?: Flows(app, scope).also { flows = app to it } }
+    }
 
-    fun getVisibleLists(): Flow<List<String>> = getVisibleChannels().map { list ->
-        val names = list.flatMap { it.lists }.distinct().toMutableList()
-        if (names.remove("Tüm kanallar")) names.add(0, "Tüm kanallar")
-        names
-    }
+    fun getChannels(): StateFlow<List<LiveChannel>> = f().all
+    fun getVisibleChannels(): StateFlow<List<LiveChannel>> = f().visible
+    fun getVisibleLists(): StateFlow<List<String>> = f().lists
 
     suspend fun applyTurkishSort() {
         val trList = listOf("TRT 1", "KANAL D", "SHOW", "ATV", "STAR", "NOW", "TV8", "KANAL 7", "BEYAZ", "TV100", "HALK", "SÖZCÜ")

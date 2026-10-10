@@ -92,6 +92,8 @@ class ScreenPreviews {
     private fun noop() {}
 
     @Test fun home() = shoot("home") { MainScreen({}, {}, {}) }
+    @Test fun homeRail() = shoot("home-rail", listOf(Key.DirectionLeft)) { MainScreen({}, {}, {}) }
+    @Test fun liveDigits() = shoot("live-digits", listOf(Key.DirectionRight, Key.DirectionRight, Key.Three, Key.One), settle = 1200) { MainScreen({}, {}, {}, startTab = Tab.Live) }
     @Test fun homeRows() = shoot("home-rows", listOf(Key.DirectionDown, Key.DirectionDown, Key.DirectionRight)) { MainScreen({}, {}, {}) }
     @Test fun movies() = shoot("movies") { MainScreen({}, {}, {}, startTab = Tab.Movies) }
     @Test fun live() = shoot("live", listOf(Key.DirectionDown, Key.DirectionDown)) { MainScreen({}, {}, {}, startTab = Tab.Live) }

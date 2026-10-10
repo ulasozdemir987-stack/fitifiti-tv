@@ -45,7 +45,7 @@ fun SearchScreen(startEditing: Int = 0, onEditStarted: () -> Unit = {}) {
     LaunchedEffect(q) { if (q.trim().length >= 3) { delay(2500); app.user.addSearch(q) } }
     val rank = remember(cat) { Ranking.of(cat) }
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 100.dp, bottom = 80.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 28.dp, bottom = 80.dp)) {
         item(key = "field") {
             Column(Modifier.padding(horizontal = 48.dp).padding(bottom = 22.dp)) {
                 TvTextField(q, { q = it }, "", Modifier.fillMaxWidth(0.6f), placeholder = "Film, dizi, kanal ara", icon = Icons.Default.Search, imeAction = ImeAction.Search, onDone = { app.user.addSearch(q) }, startEditing = startEditing)

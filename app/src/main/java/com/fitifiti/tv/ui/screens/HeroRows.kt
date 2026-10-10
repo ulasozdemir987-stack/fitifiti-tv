@@ -168,9 +168,11 @@ fun FullBleedBackdrop(art: HeroArt, modifier: Modifier = Modifier) {
         }
         Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to C.bg.copy(alpha = 0.94f), 0.30f to C.bg.copy(alpha = 0.72f), 0.52f to C.bg.copy(alpha = 0.2f), 0.7f to Color.Transparent)))
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to C.bg.copy(alpha = 0.45f), 0.14f to Color.Transparent, 0.5f to Color.Transparent, 0.82f to C.bg.copy(alpha = 0.85f), 1f to C.bg)))
-        // sol üstte sitenin mor ışıması (OwnTV'deki yeşil ışımanın yerine)
+        // sol üstte ortam ışıması: görselin baskın renginde (yoksa sitenin moru) — OwnTV'deki yeşil ışımanın bizim hali
+        val glow = rememberAmbient(art.backdrop ?: art.poster)
         Box(Modifier.fillMaxSize().drawBehind {
-            drawRect(Brush.radialGradient(listOf(C.primary.copy(alpha = 0.22f), Color.Transparent), center = Offset(0f, 0f), radius = size.width * 0.38f))
+            drawRect(Brush.radialGradient(listOf(glow.copy(alpha = 0.30f), Color.Transparent), center = Offset(0f, 0f), radius = size.width * 0.42f))
+            drawRect(Brush.radialGradient(listOf(glow.copy(alpha = 0.10f), Color.Transparent), center = Offset(size.width, size.height), radius = size.width * 0.5f))
         })
     }
 }

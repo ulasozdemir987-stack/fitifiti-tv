@@ -65,16 +65,17 @@ fun MediaScreen(kind: String) {
             MediaSort.Az -> base.sortedBy { cardTitle(it.title).lowercase(java.util.Locale("tr", "TR")) }
         }.distinctBy { it.key }
     }
-    var focused by remember(kind) { mutableStateOf<Item?>(null) }
-    val shown = focused?.takeIf { f -> list.any { it.key == f.key } } ?: list.firstOrNull()
-    val art = rememberArt(shown)
+    // Odak değişimi yalnız arka plan + başlık katmanlarını yeniden çizer (ızgara ve araç çubuğu etkilenmez)
+    val focused = remember(kind) { mutableStateOf<Item?>(null) }
+    val shownArt = remember(kind) { mutableStateOf<Pair<Item?, HeroArt>>(null to HeroArt(null, null, null, null)) }
+    FocusedArtEffect(list, focused, shownArt)
     var dialog by remember { mutableStateOf<String?>(null) }
     var menu by remember { mutableStateOf<Item?>(null) }
     val gridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
     LaunchedEffect(catId, sort) { runCatching { gridState.scrollToItem(0) } }
 
     Box(Modifier.fillMaxSize().bleedStart()) {
-        FullBleedBackdrop(art)
+        BackdropLayer(shownArt)
         Column(Modifier.fillMaxSize().padding(start = RailInset + 48.dp, end = 40.dp, top = 22.dp)) {
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(if (movie) "Filmler" else "Diziler", style = Display.copy(fontSize = 28.sp))
@@ -83,7 +84,7 @@ fun MediaScreen(kind: String) {
                 Text(" · ${"%,d".format(list.size).replace(',', '.')} içerik", color = C.muted, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(bottom = 4.dp))
             }
             Spacer(Modifier.height(10.dp))
-            Box(Modifier.fillMaxWidth().height(206.dp)) { CinematicInfo(shown, art, kind) }
+            Box(Modifier.fillMaxWidth().height(206.dp)) { val (it, a) = shownArt.value; CinematicInfo(it, a, kind) }
             Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ToolChip(Icons.AutoMirrored.Filled.Sort, "Sırala", sort.label) { dialog = "sort" }
                 ToolChip(Icons.AutoMirrored.Filled.List, "Kategori", catName?.let { categoryLabel(it) } ?: "Tümü") { dialog = "cat" }
@@ -103,7 +104,7 @@ fun MediaScreen(kind: String) {
                     PosterCard(it, onClick = { open(actions, it) }, width = androidx.compose.ui.unit.Dp.Unspecified, modifier = Modifier.fillMaxWidth(),
                         progress = p?.fraction, watched = it is Item.M && p?.finished == true,
                         rating = when (it) { is Item.M -> it.m.rating; is Item.S -> it.s.rating },
-                        onFocus = { focused = it }, focusDelayMs = 250, onLongClick = { menu = it }, showYear = false)
+                        onFocus = { focused.value = it }, focusDelayMs = 250, onLongClick = { menu = it }, showYear = false)
                 }
             }
         }
@@ -124,6 +125,18 @@ fun MediaScreen(kind: String) {
         }) { menu = null }
     }
 }
+
+/** Odaktaki içeriğin görselini çözer; sonucu durum nesnesine yazar (bu bileşenin yeniden çizimi ebeveyni etkilemez) */
+@Composable
+fun FocusedArtEffect(list: List<Item>, focused: State<Item?>, out: MutableState<Pair<Item?, HeroArt>>) {
+    val f = focused.value
+    val shown = f?.takeIf { x -> list.any { it.key == x.key } } ?: list.firstOrNull()
+    val art = rememberArt(shown)
+    SideEffect { out.value = shown to art }
+}
+
+@Composable
+fun BackdropLayer(state: State<Pair<Item?, HeroArt>>) { FullBleedBackdrop(state.value.second) }
 
 /** Sinematik başlık bloğu: logo/ad, yıl · türler · ★ puan · süre, 2 satır özet, oyuncular (TMDB) */
 @Composable

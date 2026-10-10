@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ChannelEditScreen(onBack: () -> Unit) {
-    val channels by LiveManager.getChannels().collectAsStateWithLifecycle(emptyList())
+    val channels by LiveManager.getChannels().collectAsStateWithLifecycle()
     var movingChannelId by remember { mutableStateOf<Int?>(null) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()

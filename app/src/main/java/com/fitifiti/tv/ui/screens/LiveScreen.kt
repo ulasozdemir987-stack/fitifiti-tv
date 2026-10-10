@@ -21,6 +21,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,6 +42,7 @@ import com.fitifiti.tv.domain.LiveManager
 import com.fitifiti.tv.domain.categoryLabel
 import com.fitifiti.tv.domain.programmeHeadline
 import com.fitifiti.tv.ui.LocalActions
+import com.fitifiti.tv.ui.rememberFocus
 import com.fitifiti.tv.ui.LocalScreenActive
 import com.fitifiti.tv.ui.Route
 import com.fitifiti.tv.ui.components.*
@@ -81,8 +83,8 @@ fun LiveScreen() {
     val app = App.instance
     val actions = LocalActions.current
     val cat by app.catalog.catalog.collectAsStateWithLifecycle()
-    val all by LiveManager.getVisibleChannels().collectAsStateWithLifecycle(emptyList())
-    val lists by LiveManager.getVisibleLists().collectAsStateWithLifecycle(emptyList())
+    val all by LiveManager.getVisibleChannels().collectAsStateWithLifecycle()
+    val lists by LiveManager.getVisibleLists().collectAsStateWithLifecycle()
     val recent by app.user.recentChannels.collectAsStateWithLifecycle()
     var filter by androidx.compose.runtime.saveable.rememberSaveable(stateSaver = LiveFilterSaver) { mutableStateOf(LiveFilter("all", null, "Tüm kanallar")) }
     val channels = remember(all, filter) {
@@ -92,8 +94,7 @@ fun LiveScreen() {
             else -> all
         }.distinctBy { it.channel.id }
     }
-    var focused by remember { mutableStateOf<LiveChannel?>(null) }
-    val shown = focused?.takeIf { f -> channels.any { it.channel.id == f.channel.id } } ?: channels.firstOrNull()
+    val focused = remember { mutableStateOf<LiveChannel?>(null) }
     var dialog by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf<LiveChannel?>(null) }
     val listState = rememberLazyListState()
@@ -102,10 +103,27 @@ fun LiveScreen() {
     }
     LaunchedEffect(channels.size, filter) { if (channels.isNotEmpty()) runCatching { listState.scrollToItem((startIndex - 3).coerceAtLeast(0)) } }
 
+    // uydu alıcısı gibi: rakamlarla kanal numarası yaz → 1,3 sn sonra o kanala (yoksa sonraki numaraya) atlar
+    var digits by remember { mutableStateOf("") }
+    var jumpId by remember { mutableStateOf<Int?>(null) }
+    val digitTarget = remember(digits, channels) { digits.toIntOrNull()?.let { n -> channels.firstOrNull { it.num == n } ?: channels.firstOrNull { it.num > n } } }
+    LaunchedEffect(digits) {
+        if (digits.isEmpty()) return@LaunchedEffect
+        delay(1600)
+        digitTarget?.let { t -> val i = channels.indexOf(t); runCatching { listState.scrollToItem((i - 3).coerceAtLeast(0)) }; jumpId = t.channel.id }
+        digits = ""
+    }
     val preview = rememberPreviewPlayer()
-    fun watch(c: LiveChannel) { preview.stopNow(); actions.playChannel(c.channel.id, channels.map { it.channel.id }) }
+    fun watch(c: LiveChannel) { preview.handOff(c.channel.id); actions.playChannel(c.channel.id, channels.map { it.channel.id }) }
 
-    Box(Modifier.fillMaxSize().background(C.bg).background(Brush.radialGradient(listOf(C.primary.copy(alpha = 0.16f), Color.Transparent), center = androidx.compose.ui.geometry.Offset.Zero, radius = 900f))) {
+    Box(Modifier.fillMaxSize().background(C.bg).background(Brush.radialGradient(listOf(C.primary.copy(alpha = 0.16f), Color.Transparent), center = androidx.compose.ui.geometry.Offset.Zero, radius = 900f))
+        .onPreviewKeyEvent { e ->
+            val code = e.key.nativeKeyCode
+            if (code in android.view.KeyEvent.KEYCODE_0..android.view.KeyEvent.KEYCODE_9) {
+                if (e.type == KeyEventType.KeyDown) digits = (digits + (code - android.view.KeyEvent.KEYCODE_0)).take(5)
+                true
+            } else false
+        }) {
         Row(Modifier.fillMaxSize().padding(start = 48.dp, end = 40.dp, top = 22.dp, bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(28.dp)) {
             // sol: başlık + araç çubuğu + kanal listesi
             Column(Modifier.weight(0.52f).fillMaxHeight()) {
@@ -125,21 +143,26 @@ fun LiveScreen() {
                 if (channels.isEmpty()) Text(if (cat.channels.isEmpty()) "Bu hesapta canlı kanal yok" else "Bu listede kanal yok", color = C.muted, modifier = Modifier.padding(top = 20.dp))
                 LazyColumn(state = listState, modifier = Modifier.fillMaxWidth().weight(1f), contentPadding = PaddingValues(vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     itemsIndexed(channels, key = { _, c -> c.channel.id }) { _, c ->
-                        ChannelRow(c, onClick = { watch(c) }, onLong = { menu = c }, onFocus = { focused = c })
+                        ChannelRow(c, onClick = { watch(c) }, onLong = { menu = c }, onFocus = { focused.value = c },
+                            jump = c.channel.id == jumpId, onJumped = { jumpId = null })
                     }
                 }
             }
             // sağ: önizleme + program
             Column(Modifier.weight(0.48f).fillMaxHeight().padding(top = 64.dp)) {
-                LivePreviewBox(shown, preview)
-                Spacer(Modifier.height(14.dp))
-                if (shown != null) ProgrammeInfo(shown)
+                LiveSide(channels, focused, preview)
                 Spacer(Modifier.weight(1f))
                 Row(Modifier.align(Alignment.End)) { KeyHint("OK", "İzle"); KeyHint("Basılı OK", "Seçenekler"); KeyHint("◀", "Menü") }
             }
         }
     }
 
+    if (digits.isNotEmpty()) Box(Modifier.fillMaxSize().padding(top = 18.dp, end = 40.dp), contentAlignment = Alignment.TopEnd) {
+        Column(horizontalAlignment = Alignment.End, modifier = Modifier.clip(RoundedCornerShape(18.dp)).background(Color(0xF00E0E17)).padding(horizontal = 22.dp, vertical = 12.dp)) {
+            Text(digits, style = Display.copy(fontSize = 54.sp, brush = Brush.horizontalGradient(listOf(C.primary, C.teal))))
+            Text(digitTarget?.let { "${it.num} · ${it.name}" } ?: "Kanal yok", fontSize = 14.sp, color = if (digitTarget != null) Color.White else C.muted, maxLines = 1)
+        }
+    }
     if (dialog) {
         val opts = buildList {
             add("Tüm kanallar" to { filter = LiveFilter("all", null, "Tüm kanallar") })
@@ -156,6 +179,16 @@ fun LiveScreen() {
     }
 }
 
+/** Sağ taraf (önizleme + program): odak değişince yalnız burası yeniden çizilir */
+@Composable
+private fun LiveSide(channels: List<LiveChannel>, focused: State<LiveChannel?>, preview: PreviewPlayer) {
+    val f = focused.value
+    val shown = f?.takeIf { x -> channels.any { it.channel.id == x.channel.id } } ?: channels.firstOrNull()
+    LivePreviewBox(shown, preview)
+    Spacer(Modifier.height(14.dp))
+    if (shown != null) ProgrammeInfo(shown)
+}
+
 @Composable
 private fun LiveChip(icon: ImageVector, label: String, onClick: () -> Unit) {
     Surface(onClick = onClick, shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
@@ -170,14 +203,16 @@ private fun LiveChip(icon: ImageVector, label: String, onClick: () -> Unit) {
 
 /** Kanal satırı: numara · logo · ad / şimdiki program · kalan süre / ilerleme */
 @Composable
-fun ChannelRow(c: LiveChannel, onClick: () -> Unit, onLong: () -> Unit, onFocus: () -> Unit, modifier: Modifier = Modifier) {
+fun ChannelRow(c: LiveChannel, onClick: () -> Unit, onLong: () -> Unit, onFocus: () -> Unit, modifier: Modifier = Modifier, jump: Boolean = false, onJumped: () -> Unit = {}) {
     val epg = rememberNowNext(c.channel)
+    val fr = remember { FocusRequester() }
+    LaunchedEffect(jump) { if (jump) { withFrameNanos {}; runCatching { fr.requestFocus() }; onJumped() } }
     var focused by remember { mutableStateOf(false) }
     LaunchedEffect(focused) { if (focused) { delay(120); onFocus() } }
     val now = epg.now()
     Surface(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth().height(58.dp).onFocusChanged { focused = it.isFocused }.okClicks(onClick, onLong),
+        modifier = modifier.fillMaxWidth().height(58.dp).focusRequester(fr).rememberFocus().onFocusChanged { focused = it.isFocused }.okClicks(onClick, onLong),
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(12.dp)),
         colors = ClickableSurfaceDefaults.colors(containerColor = Color.Transparent, focusedContainerColor = C.primary.copy(alpha = 0.16f), contentColor = Color.White, focusedContentColor = Color.White),
         border = FocusRing,
@@ -209,6 +244,13 @@ fun minutesLeft(e: EpgItem): String {
     return if (m >= 60) "${m / 60} sa ${m % 60} dk kaldı" else "$m dk kaldı"
 }
 
+/** Önizlemeden tam ekrana devredilen oynatıcı (bir kez alınır) */
+object LiveHandoff {
+    private var held: Pair<ExoPlayer, Int>? = null
+    fun put(p: ExoPlayer, id: Int) { held?.first?.release(); held = p to id }
+    fun take(id: Int): ExoPlayer? = held?.takeIf { it.second == id }?.first.also { held = null } ?: run { held?.first?.release(); held = null; null }
+}
+
 /** Önizleme oynatıcısı: tek örnek, ekran arkada kalınca / sekmeden çıkınca durur ve bırakılır */
 class PreviewPlayer(private val make: () -> ExoPlayer) {
     var player by mutableStateOf<ExoPlayer?>(null); private set
@@ -220,6 +262,16 @@ class PreviewPlayer(private val make: () -> ExoPlayer) {
         p.setMediaItem(androidx.media3.common.MediaItem.fromUri(url)); p.prepare(); p.playWhenReady = true
     }
     fun stopNow() { player?.stop(); player?.clearMediaItems(); playingId = null }
+    /**
+     * Tam ekrana geçiş: aynı kanal zaten oynuyorsa oynatıcı kapatılmadan tam ekran oynatıcıya devredilir → kanal
+     * anında açılır (yeniden bağlanma / tamponlama yok, tek bağlantı korunur). Değilse durdurulur.
+     */
+    fun handOff(id: Int) {
+        val p = player
+        if (p != null && playingId == id && p.playbackState != androidx.media3.common.Player.STATE_IDLE) {
+            LiveHandoff.put(p, id); player = null; playingId = null
+        } else stopNow()
+    }
     fun release() { player?.release(); player = null; playingId = null }
 }
 

@@ -33,6 +33,7 @@ import com.fitifiti.tv.domain.LiveChannel
 import com.fitifiti.tv.domain.LiveManager
 import com.fitifiti.tv.domain.programmeHeadline
 import com.fitifiti.tv.ui.LocalActions
+import com.fitifiti.tv.ui.rememberFocus
 import com.fitifiti.tv.ui.LocalScreenActive
 import com.fitifiti.tv.ui.components.*
 import com.fitifiti.tv.ui.player.VideoSurface
@@ -53,7 +54,7 @@ private const val WINDOW = 3 * 3600_000L
 fun GuideScreen() {
     val app = App.instance
     val actions = LocalActions.current
-    val channels by LiveManager.getVisibleChannels().collectAsStateWithLifecycle(emptyList())
+    val channels by LiveManager.getVisibleChannels().collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var nowT by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) { while (true) { delay(30_000); nowT = System.currentTimeMillis() } }
@@ -75,7 +76,7 @@ fun GuideScreen() {
 
     fun open(c: LiveChannel, p: EpgItem?) {
         val t = System.currentTimeMillis()
-        if (p == null || p.start <= t) { preview.stopNow(); actions.playChannel(c.channel.id, channels.map { it.channel.id }) }
+        if (p == null || p.start <= t) { preview.handOff(c.channel.id); actions.playChannel(c.channel.id, channels.map { it.channel.id }) }
         else scope.launch(kotlinx.coroutines.Dispatchers.IO) {
             app.db.reminders().upsert(ReminderEntity("${c.channel.id}-${p.start}", app.user.profileId.value, programmeHeadline(p.title), c.channel.id, p.start, p.end))
             toast = "Hatırlatıcı kuruldu · ${hhmm(p.start)} ${programmeHeadline(p.title)}"
@@ -183,7 +184,7 @@ private fun GuideBlock(p: EpgItem?, title: String, x: Dp, w: Dp, live: Boolean, 
                        first: Boolean, last: Boolean, onShift: (Int) -> Boolean, nowT: Long = 0) {
     Surface(
         onClick = onOpen,
-        modifier = Modifier.offset(x = x).width((w - 4.dp).coerceAtLeast(6.dp)).fillMaxHeight()
+        modifier = Modifier.offset(x = x).width((w - 4.dp).coerceAtLeast(6.dp)).fillMaxHeight().rememberFocus()
             .onFocusChanged { if (it.isFocused) onFocus() }
             .onPreviewKeyEvent { e ->
                 if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false

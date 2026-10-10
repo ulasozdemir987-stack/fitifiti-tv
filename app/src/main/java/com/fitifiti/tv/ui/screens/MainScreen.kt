@@ -28,6 +28,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -95,6 +96,7 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
         return
     }
 
+    var railOpen by remember { mutableStateOf(false) }
     CompositionLocalProvider(LocalTopBar provides bar) {
         Box(Modifier.fillMaxSize()) {
             // İçerikte solda gidilecek öğe kalmayınca ← = sol menüdeki seçili sekme; menüden → = içerikte en son
@@ -107,6 +109,9 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
                 } else false
             }) {
             CompositionLocalProvider(com.fitifiti.tv.ui.LocalFocusMemory provides contentMem) {
+            // Not: sekme geçişine saydamlık katmanı (graphicsLayer alpha) KONMAZ — Canlı TV önizlemesindeki video yüzeyi
+            // (SurfaceView) böyle bir katmanın içinde görüntü vermiyor (kutuda denendi: ses var, görüntü siyah).
+            Box(Modifier.fillMaxSize()) {
             holder.SaveableStateProvider(tab.name) {
                 when (tab) {
                     Tab.Home -> HomeScreen()
@@ -118,6 +123,7 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
                     Tab.Search -> SearchScreen(searchKick) { searchKick = 0 }
                     Tab.Settings -> SettingsScreen(onProfiles, onEditAccount, onAddAccount, onEditChannels)
                 }
+            }
             }
             }
             }
@@ -136,14 +142,24 @@ fun MainScreen(onProfiles: () -> Unit, onEditAccount: (String) -> Unit, onAddAcc
                     RailItem(Tab.Settings.name, Icons.Default.Settings, "Ayarlar"),
                 )
             }
+            // menü genişleyince arkadaki içerik soldan kararır
+            val scrim by androidx.compose.animation.core.animateFloatAsState(if (railOpen) 1f else 0f, androidx.compose.animation.core.tween(220), label = "scrim")
+            if (scrim > 0.01f) Box(Modifier.fillMaxSize().graphicsLayer { alpha = scrim }
+                .background(Brush.horizontalGradient(0f to Color.Black.copy(alpha = 0.82f), 0.35f to Color.Black.copy(alpha = 0.55f), 0.7f to Color.Transparent)))
             NavRail(
                 railItems, tab.name,
                 onSelect = { k -> val t = Tab.valueOf(k); if (t != tab) { tab = t; bar.hidden = false }; if (t == Tab.Search) searchKick++ },
                 selectedFocus = tabFocus,
                 modifier = Modifier.align(Alignment.CenterStart).padding(start = 14.dp)
-                    .focusProperties { right = contentMem.last ?: contentFocus }.focusGroup(),
+                    .focusProperties {
+                        right = contentMem.last ?: contentFocus
+                        // yön tuşuyla menüye girilince her zaman seçili sekmeye (aynı hizadaki öğeye değil → sayfa değişmesin)
+                        enter = { tabFocus }
+                    }.focusGroup(),
                 profile = profile?.let { p -> { Avatar(p.name, p.avatar, 34.dp) } },
+                profileName = profile?.name,
                 onProfile = onProfiles,
+                onExpandedChange = { railOpen = it },
             )
         }
     }

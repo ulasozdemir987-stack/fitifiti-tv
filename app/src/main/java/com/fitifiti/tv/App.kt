@@ -72,6 +72,8 @@ class App : Application(), ImageLoaderFactory {
         .memoryCache { MemoryCache.Builder(this).maxSizePercent(0.2).build() }
         .diskCache { DiskCache.Builder().directory(cacheDir.resolve("img")).maxSizeBytes(256L * 1024 * 1024).build() }
         .crossfade(true)
+        // sağlayıcıların afiş sunucuları çoğu zaman "no-cache" der → her açılışta yeniden iniyordu; disk önbelleği hep kullanılsın
+        .respectCacheHeaders(false)
         .build()
 
     companion object { lateinit var instance: App }
