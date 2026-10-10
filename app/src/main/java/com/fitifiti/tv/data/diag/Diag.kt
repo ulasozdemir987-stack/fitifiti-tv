@@ -30,7 +30,9 @@ object Diag {
     private val clock = SimpleDateFormat("HH:mm:ss", Locale.US)
 
     fun log(s: String) = synchronized(ring) {
-        ring.addLast("${clock.format(Date())} ${redact(s)}")
+        val r = redact(s)
+        android.util.Log.i("FitiDiag", r) // kutu ajanıyla okunur: {"logcat":"FitiDiag"}
+        ring.addLast("${clock.format(Date())} $r")
         while (ring.size > 80) ring.removeFirst()
     }
     fun snapshot(): String = synchronized(ring) { ring.joinToString("\n") }

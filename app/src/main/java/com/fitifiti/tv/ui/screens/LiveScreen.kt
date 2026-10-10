@@ -191,8 +191,8 @@ private fun LiveSide(channels: List<LiveChannel>, focused: State<LiveChannel?>, 
 
 @Composable
 private fun LiveChip(icon: ImageVector, label: String, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
-        colors = ClickableSurfaceDefaults.colors(containerColor = Color(0x14FFFFFF), focusedContainerColor = Color.White, contentColor = Color.White, focusedContentColor = Color.Black),
+    Surface(onClick = onClick, modifier = Modifier.glass(RoundedCornerShape(10.dp), strength = 0.85f), shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
+        colors = ClickableSurfaceDefaults.colors(containerColor = Color.Transparent, focusedContainerColor = Color.White, contentColor = Color.White, focusedContentColor = Color.Black),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.04f)) {
         Row(Modifier.padding(horizontal = 12.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, Modifier.size(15.dp)); Spacer(Modifier.width(6.dp))

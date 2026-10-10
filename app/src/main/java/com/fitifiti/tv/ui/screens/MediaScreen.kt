@@ -178,8 +178,8 @@ private fun CinematicInfo(item: Item?, art: HeroArt, kind: String) {
 /** Araç çubuğu düğmesi: "Sırala: Yeni eklenen ▾" */
 @Composable
 private fun ToolChip(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
-        colors = ClickableSurfaceDefaults.colors(containerColor = Color(0x14FFFFFF), focusedContainerColor = Color.White, contentColor = Color.White, focusedContentColor = Color.Black),
+    Surface(onClick = onClick, modifier = Modifier.glass(RoundedCornerShape(10.dp), strength = 0.85f), shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
+        colors = ClickableSurfaceDefaults.colors(containerColor = Color.Transparent, focusedContainerColor = Color.White, contentColor = Color.White, focusedContentColor = Color.Black),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.04f)) {
         Row(Modifier.padding(horizontal = 12.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, Modifier.size(16.dp)); Spacer(Modifier.width(6.dp))

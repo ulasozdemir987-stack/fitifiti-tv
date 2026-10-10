@@ -28,23 +28,38 @@ class TrailerRepository(private val http: OkHttpClient) {
         if (offline) return null
         val key = "$kind|$title|${year ?: ""}"
         ids[key]?.let { return it.ifEmpty { null } }
-        val id = withContext(Dispatchers.IO) {
-            runCatching {
-                val url = "$REMOTE_BASE/api/trailer".toHttpUrl().newBuilder().apply {
-                    addQueryParameter("kind", if (kind == "series") "series" else "movie")
-                    addQueryParameter("title", title.take(140))
-                    if (!year.isNullOrBlank() && year.length == 4) addQueryParameter("year", year)
-                    // sağlayıcı bazen tam adres, bazen yalnız kimlik verir; site ikisini de anlar
-                    if (!provider.isNullOrBlank()) addQueryParameter("yt", provider.take(200))
-                }.build()
-                http.newCall(Request.Builder().url(url).build()).execute().use { r ->
-                    if (!r.isSuccessful) return@runCatching null
-                    ((AppJson.parseToJsonElement(r.body?.string().orEmpty()) as? JsonObject)?.str("id")).orEmpty()
-                }
-            }.getOrNull()
-        } ?: return null // ağ hatası: önbelleğe yazma
+        // Sağlayıcının ham adı ("Konferans - The Conference (2023)", "[4K] …") sitede bulunamıyor → önce sade Türkçe ad,
+        // sonra özgün ad, en son ham ad
+        val (tr, alt) = com.fitifiti.tv.domain.splitTitle(title)
+        val names = listOf(tr, alt, title).map { it.trim() }.filter { it.length > 1 }.distinct()
+        var netError = false
+        var found = ""
+        for (n in names) {
+            val r = query(kind, n, year, provider)
+            if (r == null) { netError = true; break }
+            if (r.isNotEmpty()) { found = r; break }
+        }
+        if (netError && found.isEmpty()) return null // ağ hatası: önbelleğe yazma
+        val id = found
         ids[key] = id
         return id.ifEmpty { null }
+    }
+
+    /** Sitede tek ad için arama: kimlik, "" (yok) ya da null (ağ hatası) */
+    private suspend fun query(kind: String, title: String, year: String?, provider: String?): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val url = "$REMOTE_BASE/api/trailer".toHttpUrl().newBuilder().apply {
+                addQueryParameter("kind", if (kind == "series") "series" else "movie")
+                addQueryParameter("title", title.take(140))
+                if (!year.isNullOrBlank() && year.length == 4) addQueryParameter("year", year)
+                // sağlayıcı bazen tam adres, bazen yalnız kimlik verir; site ikisini de anlar
+                if (!provider.isNullOrBlank()) addQueryParameter("yt", provider.take(200))
+            }.build()
+            http.newCall(Request.Builder().url(url).build()).execute().use { r ->
+                if (!r.isSuccessful) return@runCatching null
+                ((AppJson.parseToJsonElement(r.body?.string().orEmpty()) as? JsonObject)?.str("id")).orEmpty()
+            }
+        }.getOrNull()
     }
 
     /** MP4 hazır mı? Hazır değilse sunucu bu soruyla indirmeye başlar. */

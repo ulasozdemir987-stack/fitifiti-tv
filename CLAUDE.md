@@ -151,3 +151,10 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 * **Neden sıkışık görünüyordu:** OwnTV ekran görüntüleriyle piksel karşılaştırması (1920×1080): bizde her öğe ~1,35-1,5 kat büyüktü (kanal satırı 124 px ↔ 82, gövde yazısı 30 px ↔ 22, kart 440 px ↔ 340, düğme 80 px ↔ 56). Aynı ekrana iri öğeler → kalabalık.
 * **Çözüm:** `FitifitiTheme` `LocalDensity`'yi `uiScale` ile çarpar (tüm yazı/kart/boşluk tek oranla). Ayar `AppSettings.uiScale` (varsayılan 0,75; Ayarlar → Görünüm → Arayüz boyutu: Kompakt 0,7 · Ferah 0,75 · Orta 0,85 · Büyük 1). Diyaloglar da aynı yoğunluğu alır.
 * **Dikkat:** `LocalConfiguration.screenHeightDp/screenWidthDp` ölçeği BİLMEZ → ekran boyutuna göre hesapta `ui.theme.screenHeightDp()` kullan. Video yüzeyi (PlayerView) piksel bazlı, etkilenmez.
+
+
+## Güncelleme — 2026-10-10 (Claude): fragman düzeltmesi + "liquid glass" (3.2.0, dal `yeni-duzen`)
+
+* **Fragman çıkmıyordu:** `TrailerRepository.find` sağlayıcının ham adını gönderiyordu ("Konferans - The Conference (2023)"); site `/api/trailer` bu adla `null` dönüyor, sade adla buluyor. Artık sırayla `splitTitle` Türkçe adı → özgün ad → ham ad denenir (ilk bulunan; ağ hatası önbelleğe yazılmaz). İlk açılışta MP4 sitede hazırlanırken ~25 sn sürebilir, sonra anında.
+* **`Diag.log` artık logcat'e de yazar** (`FitiDiag`): kutu ajanıyla `{"logcat":"FitiDiag"}` (fragman, ekran geçişleri, oynatıcı olayları).
+* **Cam görünümü (`components/Glass.kt`, `Modifier.glass(shape, strength, tint)`):** gerçek arka plan bulanıklaştırması YOK (zayıf GPU'da her karede pahalı); koyu yarı saydam renk + azalan beyaz dolgu + üst parlama + alt yansıma + sol üstten parlayan kenar. Çocukları kırpmaz (odak büyümesi/parıltı kesilmez). Kullananlar: `Btn` (Primary/Secondary), `IconAction`, seçili olmayan `Chip`, sol menü (açılınca koyu tonu artar), Filmler/Canlı TV araç çubuğu çipleri. Odakta hâlâ düz beyaz (TV'de odak net görünsün). Kaydırma ölçümü değişmedi.

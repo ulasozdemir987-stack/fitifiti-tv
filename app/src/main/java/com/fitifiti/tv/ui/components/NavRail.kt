@@ -78,9 +78,9 @@ fun NavRail(
     Column(
         modifier.width(width)
             .onFocusChanged { if (it.hasFocus != expanded) { expanded = it.hasFocus; onExpandedChange(it.hasFocus) } }
+            // cam hap (Glass.kt); açılınca koyu renk biraz artar ki yazılar okunsun
+            .glass(RoundedCornerShape(25.dp), strength = 0.9f, tint = androidx.compose.ui.graphics.lerp(Color(0x8C0B0B12), Color(0xD90E0E17), t))
             .clip(RoundedCornerShape(25.dp))
-            .background(androidx.compose.ui.graphics.lerp(Color(0xCC0B0B12), Color(0xF20E0E17), t))
-            .border(1.dp, C.line, RoundedCornerShape(25.dp))
             .padding(vertical = 12.dp, horizontal = 6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {

@@ -75,11 +75,16 @@ enum class BtnKind { Primary, Secondary, Ghost }
  */
 @Composable
 fun Btn(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, kind: BtnKind = BtnKind.Primary, icon: ImageVector? = null, enabled: Boolean = true) {
-    val rest = when (kind) { BtnKind.Ghost -> Color.Transparent; BtnKind.Primary -> Color(0x33FFFFFF); BtnKind.Secondary -> Color(0x24FFFFFF) }
     Button(
-        onClick = onClick, enabled = enabled, modifier = modifier.rememberFocus(),
+        onClick = onClick, enabled = enabled,
+        // dinlenirken cam (Glass.kt), odakta düz beyaz
+        modifier = modifier.rememberFocus().then(when (kind) {
+            BtnKind.Ghost -> Modifier
+            BtnKind.Primary -> Modifier.glass(RoundedCornerShape(50), strength = 1.15f)
+            BtnKind.Secondary -> Modifier.glass(RoundedCornerShape(50))
+        }),
         shape = ButtonDefaults.shape(RoundedCornerShape(50)),
-        colors = ButtonDefaults.colors(containerColor = rest, contentColor = Color.White, focusedContainerColor = Color.White, focusedContentColor = Color.Black),
+        colors = ButtonDefaults.colors(containerColor = Color.Transparent, contentColor = Color.White, focusedContainerColor = Color.White, focusedContentColor = Color.Black),
         scale = ButtonDefaults.scale(focusedScale = 1.05f),
         glow = ButtonDefaults.glow(focusedGlow = Glow(Color.White.copy(alpha = 0.25f), 10.dp)),
         contentPadding = PaddingValues(start = if (icon != null) 16.dp else 20.dp, end = 20.dp, top = 9.dp, bottom = 9.dp),
@@ -99,9 +104,9 @@ fun IconAction(icon: ImageVector, label: String, onClick: () -> Unit, modifier: 
     val focused by src.collectIsFocusedAsState()
     Box(contentAlignment = Alignment.TopCenter) {
         Surface(
-            onClick = onClick, modifier = modifier.size(size).rememberFocus(), interactionSource = src,
+            onClick = onClick, modifier = modifier.size(size).rememberFocus().glass(CircleShape), interactionSource = src,
             shape = ClickableSurfaceDefaults.shape(CircleShape),
-            colors = ClickableSurfaceDefaults.colors(containerColor = Color(0x24FFFFFF), contentColor = if (active) Color(0xFFC4B5FD) else Color.White, focusedContainerColor = Color.White, focusedContentColor = Color.Black),
+            colors = ClickableSurfaceDefaults.colors(containerColor = Color.Transparent, contentColor = if (active) Color(0xFFC4B5FD) else Color.White, focusedContainerColor = Color.White, focusedContentColor = Color.Black),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),
             glow = ClickableSurfaceDefaults.glow(focusedGlow = Glow(Color.White.copy(alpha = 0.25f), 10.dp)),
         ) { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Icon(icon, label, Modifier.size(size * 0.48f)) } }
@@ -113,10 +118,10 @@ fun IconAction(icon: ImageVector, label: String, onClick: () -> Unit, modifier: 
 @Composable
 fun Chip(text: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
-        onClick = onClick, modifier = modifier.rememberFocus(),
+        onClick = onClick, modifier = modifier.rememberFocus().then(if (selected) Modifier else Modifier.glass(RoundedCornerShape(50), strength = 0.8f)),
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(50)),
         colors = ClickableSurfaceDefaults.colors(
-            containerColor = if (selected) Color.White else C.fill2, contentColor = if (selected) Color.Black else Color(0xD9FFFFFF),
+            containerColor = if (selected) Color.White else Color.Transparent, contentColor = if (selected) Color.Black else Color(0xD9FFFFFF),
             focusedContainerColor = if (selected) Color.White else Color(0x33FFFFFF), focusedContentColor = if (selected) Color.Black else Color.White,
         ),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),
