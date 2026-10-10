@@ -92,6 +92,7 @@ fun BoxScope.TrailerVideo(spec: TrailerSpec, visible: Boolean) {
     var videoH by remember(u) { mutableIntStateOf(0) }
     val alpha by animateFloatAsState(if (shown && visible && active && !ended) 1f else 0f, tween(800), label = "trailer")
     LaunchedEffect(st, shown, ended, active) { st?.playing = shown && !ended && active }
+    LaunchedEffect(shown, visible, active, ended) { Diag.log("fragman durum: görünür=$visible gösterildi=$shown etkin=$active bitti=$ended") }
     LaunchedEffect(st) { st?.muted = !settings.trailerSound }
     val muted = st?.muted ?: !settings.trailerSound
 

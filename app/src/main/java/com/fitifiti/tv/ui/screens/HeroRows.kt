@@ -175,7 +175,10 @@ fun FullBleedBackdrop(art: HeroArt, modifier: Modifier = Modifier, hide: () -> F
     val glow = rememberAmbient(art.backdrop ?: art.poster)
     val hidden by remember { derivedStateOf { hide() >= 0.999f } }
     Box(modifier.fillMaxSize()) {
-        if (!hidden) androidx.compose.animation.Crossfade(targetState = art.backdrop to art.poster, animationSpec = tween(600), label = "bleed") { (bd, poster) ->
+        // görsel + karartmalar ÖNBELLEKLİ katmanda: bir kez boyanır, sonraki karelerde tek doku kopyalanır (zayıf TV
+        // ekran kartında görsel + 5 karartma her karede ~20 ms tutuyordu; Filmler ızgarasında gezinirken kumanda takılıyordu)
+        if (!hidden) Box(Modifier.fillMaxSize().graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }) {
+        androidx.compose.animation.Crossfade(targetState = art.backdrop to art.poster, animationSpec = tween(350), label = "bleed") { (bd, poster) ->
             Box(Modifier.fillMaxSize()) {
                 // 1280 px yeter (TV'de fark görünmez): 1920×1080 çözüp yüklemek her vitrin dönüşünde takılma yapıyordu
                 if (bd != null) coil.compose.AsyncImage(model = heroRequest(bd), contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
@@ -196,16 +199,16 @@ fun FullBleedBackdrop(art: HeroArt, modifier: Modifier = Modifier, hide: () -> F
             val g1 = Brush.radialGradient(listOf(glow.copy(alpha = 0.30f), Color.Transparent), center = Offset.Zero, radius = r1)
             val g2 = Brush.radialGradient(listOf(glow.copy(alpha = 0.10f), Color.Transparent), center = Offset(w, h), radius = r2)
             onDrawBehind {
-                val k = hide()
-                if (k >= 0.999f) return@onDrawBehind // zemin zaten uygulamanın arka planı
                 drawRect(left, size = Size(w * 0.7f, h))
                 drawRect(top, size = Size(w, h * 0.14f))
                 drawRect(bottom, topLeft = Offset(0f, h * 0.5f), size = Size(w, h * 0.5f))
                 drawRect(g1, size = Size(r1, minOf(r1, h)))
                 drawRect(g2, topLeft = Offset(w - r2, (h - r2).coerceAtLeast(0f)), size = Size(r2, minOf(r2, h)))
-                if (k > 0.001f) drawRect(C.bg.copy(alpha = k))
             }
         })
+        }
+        // kaydırınca sönme: önbellekli katmanın DIŞINDA (katman her karede yeniden boyanmasın)
+        Spacer(Modifier.fillMaxSize().drawBehind { val k = hide(); if (k > 0.001f && k < 0.999f) drawRect(C.bg.copy(alpha = k)) })
     }
 }
 

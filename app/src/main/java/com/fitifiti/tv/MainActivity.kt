@@ -70,7 +70,14 @@ class MainActivity : ComponentActivity() {
             if (now - lastRepeatAt < 90) return true
             lastRepeatAt = now
         }
-        return super.dispatchKeyEvent(event)
+        val handled = super.dispatchKeyEvent(event)
+        // hiçbir öğe işlemediyse odak kaybolmuştur → geri ver (yoksa tuşlar boşa gider, uygulama donmuş görünür)
+        if (!handled && event.action == KeyEvent.ACTION_DOWN && (event.keyCode in DPAD || event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER || event.keyCode == KeyEvent.KEYCODE_ENTER)) {
+            val v = window.decorView.findFocus()
+            com.fitifiti.tv.data.diag.Diag.log("tuş işlenmedi (${KeyEvent.keyCodeToString(event.keyCode)}) · odak: ${v?.javaClass?.simpleName ?: "yok"}")
+            com.fitifiti.tv.ui.FocusRescue.requests.tryEmit(Unit)
+        }
+        return handled
     }
     private val DPAD = setOf(KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT)
 

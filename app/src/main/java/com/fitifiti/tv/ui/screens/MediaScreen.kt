@@ -136,8 +136,20 @@ fun FocusedArtEffect(list: List<Item>, focused: State<Item?>, out: MutableState<
     SideEffect { out.value = shown to art }
 }
 
+/**
+ * Arka plan görseli bilgi yazılarından GEÇ değişir: ızgarada gezinirken her afişte tam ekran görsel çapraz geçişi
+ * ekran kartını dolduruyor, kumanda takılıyordu. Bir afişte ~0,6 sn durunca değişir.
+ */
 @Composable
-fun BackdropLayer(state: State<Pair<Item?, HeroArt>>) { FullBleedBackdrop(state.value.second) }
+fun BackdropLayer(state: State<Pair<Item?, HeroArt>>) {
+    var shown by remember { mutableStateOf(state.value.second) }
+    val target = state.value.second
+    LaunchedEffect(target.backdrop, target.poster) {
+        if (shown.backdrop != null || shown.poster != null) kotlinx.coroutines.delay(600)
+        shown = target
+    }
+    FullBleedBackdrop(shown)
+}
 
 /** Sinematik başlık bloğu: logo/ad, yıl · türler · ★ puan · süre, 2 satır özet, oyuncular (TMDB) */
 @Composable

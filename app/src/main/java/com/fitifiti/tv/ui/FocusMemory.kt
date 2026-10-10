@@ -47,3 +47,12 @@ fun Modifier.rememberFocus(): Modifier {
     DisposableEffect(mem, fr) { onDispose { mem.gone(fr) } }
     return this.focusRequester(fr).onFocusChanged { if (it.isFocused) mem.focused(fr) else mem.blurred(fr) }
 }
+
+/**
+ * Odak kurtarma: kumanda yön/OK tuşu hiçbir öğe tarafından işlenmezse (odak kaybolmuşsa) MainActivity buraya haber
+ * verir; etkin ekran katmanı odağı son öğeye, o yoksa sayfanın ilk öğesine geri verir. Eskiden odak kaybolunca
+ * (ör. fragmanlı detaydan geri dönüş) tuşların hepsi boşa gidiyor, uygulama "donmuş" sanılıyordu.
+ */
+object FocusRescue {
+    val requests = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+}

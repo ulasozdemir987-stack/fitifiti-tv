@@ -2,6 +2,8 @@ package com.fitifiti.tv.ui.screens
 
 import android.view.KeyEvent as AKey
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -179,32 +181,38 @@ private fun GuideRow(c: LiveChannel, from: Long, to: Long, nowT: Long, chCol: Dp
     }
 }
 
+/**
+ * Program hücresi — hafif: tv-material Surface yerine düz odaklanabilir kutu (her hücre için grafik katmanı, ölçek ve
+ * etkileşim animasyonu kurulmaz). Çizelgede ekranda ~60 hücre olduğundan Surface'li sürümde kareler 0,9 sn'ye çıkıyordu.
+ */
 @Composable
 private fun GuideBlock(p: EpgItem?, title: String, x: Dp, w: Dp, live: Boolean, past: Boolean, onFocus: () -> Unit, onOpen: () -> Unit,
                        first: Boolean, last: Boolean, onShift: (Int) -> Boolean, nowT: Long = 0) {
-    Surface(
-        onClick = onOpen,
-        modifier = Modifier.offset(x = x).width((w - 4.dp).coerceAtLeast(6.dp)).fillMaxHeight().rememberFocus()
-            .onFocusChanged { if (it.isFocused) onFocus() }
+    var focused by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(8.dp)
+    Box(
+        Modifier.offset(x = x).width((w - 4.dp).coerceAtLeast(6.dp)).fillMaxHeight().rememberFocus()
+            .onFocusChanged { val f = it.isFocused; if (f != focused) { focused = f; if (f) onFocus() } }
             .onPreviewKeyEvent { e ->
-                if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 when (e.key.nativeKeyCode) {
-                    AKey.KEYCODE_DPAD_LEFT -> if (first) onShift(-1) else false
-                    AKey.KEYCODE_DPAD_RIGHT -> if (last) onShift(1) else false
+                    AKey.KEYCODE_DPAD_LEFT -> e.type == KeyEventType.KeyDown && first && onShift(-1)
+                    AKey.KEYCODE_DPAD_RIGHT -> e.type == KeyEventType.KeyDown && last && onShift(1)
+                    AKey.KEYCODE_DPAD_CENTER, AKey.KEYCODE_ENTER, AKey.KEYCODE_NUMPAD_ENTER -> { if (e.type == KeyEventType.KeyUp) onOpen(); true }
                     else -> false
                 }
-            },
-        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
-        colors = ClickableSurfaceDefaults.colors(
-            containerColor = if (live) Color(0x24FFFFFF) else Color(0x12FFFFFF), focusedContainerColor = C.primary.copy(alpha = 0.22f),
-            contentColor = if (past) C.muted else Color.White, focusedContentColor = Color.White),
-        border = FocusRing,
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+            }
+            .focusable()
+            .clip(shape)
+            .background(if (focused) C.primary.copy(alpha = 0.24f) else if (live) Color(0x24FFFFFF) else Color(0x12FFFFFF))
+            .then(if (focused) Modifier.border(2.dp, RingBrush, shape) else Modifier)
+            .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.CenterStart,
     ) {
-        Column(Modifier.fillMaxSize().padding(horizontal = 8.dp), verticalArrangement = Arrangement.Center) {
-            Text(title, fontSize = 13.sp, fontWeight = if (live) FontWeight.Bold else FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (p != null) Text("${hhmm(p.start)} – ${hhmm(p.end)}", fontSize = 10.sp, color = LocalContentColor.current.copy(alpha = 0.6f), maxLines = 1)
+        val color = if (past && !focused) C.muted else Color.White
+        Column {
+            Text(title, fontSize = 13.sp, fontWeight = if (live) FontWeight.Bold else FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, color = color)
+            if (p != null) Text("${hhmm(p.start)} – ${hhmm(p.end)}", fontSize = 10.sp, color = color.copy(alpha = 0.6f), maxLines = 1)
         }
-        if (live && p != null) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomStart) { ProgressLine(p.fraction(nowT), Modifier.fillMaxWidth(), height = 2.dp, track = Color.Transparent) }
+        if (live && p != null) Box(Modifier.fillMaxSize().padding(bottom = 1.dp), contentAlignment = Alignment.BottomStart) { ProgressLine(p.fraction(nowT), Modifier.fillMaxWidth(), height = 2.dp, track = Color.Transparent) }
     }
 }

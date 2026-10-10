@@ -17,6 +17,7 @@ import androidx.compose.ui.focus.onFocusEvent
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -48,15 +49,14 @@ fun DetailScaffold(art: HeroArt, trailer: TrailerSpec? = null, content: LazyList
     Box(Modifier.fillMaxSize().background(C.bg)) {
         CompositionLocalProvider(LocalTrailerState provides trailerState) {
         // Arka plan sahnesi: aşağı kaydırırken alttan kesilip havada kalmaz, yumuşakça siyah zemine kararır (alpha fade)
-        HeroBackdrop(
-            art,
-            modifier = Modifier.fillMaxSize().graphicsLayer {
-                alpha = if (list.firstVisibleItemIndex == 0) {
-                    (1f - (list.firstVisibleItemScrollOffset.toFloat() / (density.density * 220f))).coerceIn(0f, 1f)
-                } else 0f
-            },
-            video = trailer?.let { t -> { TrailerVideo(t, atTop) } }
-        )
+        // Kaydırınca sahne zemin rengine karışır: saydamlık katmanı (tüm sahneyi her karede ekran dışı tampona çizer)
+        // YERİNE üstüne zemin rengi çizilir; tamamen kaybolunca sahne hiç çizilmez
+        val hideBackdrop by remember { derivedStateOf { list.firstVisibleItemIndex > 0 } }
+        if (!hideBackdrop) HeroBackdrop(art, modifier = Modifier.fillMaxSize(), video = trailer?.let { t -> { TrailerVideo(t, atTop) } })
+        Spacer(Modifier.fillMaxSize().drawBehind {
+            val k = if (list.firstVisibleItemIndex == 0) (list.firstVisibleItemScrollOffset.toFloat() / (density.density * 220f)).coerceIn(0f, 1f) else 1f
+            if (k > 0.001f) drawRect(C.bg.copy(alpha = k))
+        })
         // TV'de varsayılan kaydırma odaktaki öğeyi ekranın üst %30'una çeker: "Oynat"a odaklanınca sayfa ~300 px
         // aşağı kayıyor, başlığın üstü kesiliyordu. Yalnız gerektiği kadar kaydır (öğe zaten görünüyorsa hiç kaydırma).
         CompositionLocalProvider(LocalDetailList provides list, LocalBringIntoViewSpec provides rememberRowSpec(24.dp)) {

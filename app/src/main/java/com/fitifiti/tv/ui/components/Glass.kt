@@ -14,33 +14,38 @@ import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.unit.dp
+import com.fitifiti.tv.ui.theme.C
 
 /**
- * "Liquid glass" görünümü — gerçek arka plan bulanıklaştırması OLMADAN (zayıf TV ekran kartında bulanıklaştırma her
- * karede pahalı; ana sayfa kaydırmasını takıltıyordu). Cam hissi ışıkla verilir:
- *  - koyu yarı saydam renk + üstten alta azalan beyaz dolgu (camın kalınlığı),
- *  - üst yarıda yumuşak parlama (kavisli yüzeye düşen ışık), alt kenarda hafif yansıma,
- *  - sol üstte parlak, sağ altta hafif dönen kenar çizgisi (ışığı kıran kenar).
- * Çocukları kırpmaz (odaktaki büyüme / parıltı kesilmesin); yalnız arkasına çizer.
+ * "Liquid glass" — sitenin paletinde (mor → turkuaz), gerçek arka plan bulanıklaştırması OLMADAN (zayıf TV ekran
+ * kartında bulanıklaştırma her karede pahalı). Cam hissi ışık ve renkle verilir:
+ *  - çok hafif koyu ton (arkadaki görsel görünür kalır) + üstten alta azalan beyaz dolgu,
+ *  - çapraz mor → turkuaz renk yıkaması (camın içinden geçen marka rengi),
+ *  - üst yarıda parlama, alt kenarda turkuaz yansıma,
+ *  - kenar ışığı: sol üstte beyaz, sağa doğru mor, sağ altta turkuaz.
+ * Çocukları kırpmaz (odaktaki büyüme / parıltı kesilmez); yalnız arkasına çizer.
  */
-fun Modifier.glass(shape: Shape, strength: Float = 1f, tint: Color = Color(0x660B0B12)): Modifier = this.drawWithCache {
+fun Modifier.glass(shape: Shape, strength: Float = 1f, tint: Color = Color(0x2E0B0B12)): Modifier = this.drawWithCache {
     val outline: Outline = shape.createOutline(size, layoutDirection, this)
     val path = Path().apply { addOutline(outline) }
-    val fill = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.18f * strength), Color.White.copy(alpha = 0.06f * strength)))
-    val sheen = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.17f * strength), Color.Transparent), endY = size.height * 0.55f)
-    val glow = Brush.verticalGradient(listOf(Color.Transparent, Color.White.copy(alpha = 0.07f * strength)), startY = size.height * 0.7f, endY = size.height)
+    val fill = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.11f * strength), Color.White.copy(alpha = 0.025f * strength)))
+    val wash = Brush.linearGradient(listOf(C.primary.copy(alpha = 0.16f * strength), Color.Transparent, C.teal.copy(alpha = 0.10f * strength)),
+        start = Offset.Zero, end = Offset(size.width, size.height))
+    val sheen = Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.16f * strength), Color.Transparent), endY = size.height * 0.5f)
+    val glow = Brush.verticalGradient(listOf(Color.Transparent, C.teal.copy(alpha = 0.10f * strength)), startY = size.height * 0.68f, endY = size.height)
     val rim = Brush.linearGradient(
-        0f to Color.White.copy(alpha = 0.72f * strength), 0.35f to Color.White.copy(alpha = 0.12f * strength),
-        0.7f to Color.White.copy(alpha = 0.05f * strength), 1f to Color.White.copy(alpha = 0.32f * strength),
+        0f to Color.White.copy(alpha = 0.70f * strength), 0.3f to Color.White.copy(alpha = 0.16f * strength),
+        0.62f to C.primary.copy(alpha = 0.38f * strength), 1f to C.teal.copy(alpha = 0.55f * strength),
         start = Offset.Zero, end = Offset(size.width, size.height),
     )
     val stroke = Stroke(1.dp.toPx())
     onDrawBehind {
         drawOutline(outline, tint)
         drawOutline(outline, fill)
+        drawOutline(outline, wash)
         clipPath(path) {
-            drawRect(sheen, size = Size(size.width, size.height * 0.55f))
-            drawRect(glow, topLeft = Offset(0f, size.height * 0.7f), size = Size(size.width, size.height * 0.3f)) // alttan yansıyan ışık
+            drawRect(sheen, size = Size(size.width, size.height * 0.5f))
+            drawRect(glow, topLeft = Offset(0f, size.height * 0.68f), size = Size(size.width, size.height * 0.32f))
         }
         drawOutline(outline, rim, style = stroke)
     }

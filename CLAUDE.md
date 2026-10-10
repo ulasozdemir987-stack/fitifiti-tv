@@ -166,3 +166,14 @@ GitHub Actions (`.github/workflows/android.yml`) her push'ta testleri çalışt�
 * **Ana sayfa vitrini (`HeroInfo` / `HeroText`):** sabit yuvalar — etiket 20dp, başlık 96dp (logo da yazı da alta hizalı, logo gelince çapraz geçiş), meta 24dp, özet her zaman 3 satır yer (`minLines = 3`). Vitrin dönerken yazı katmanı `AnimatedContent` ile solar; düğmeler ve noktalar yerinden oynamaz. Başlık/özet hafif gölgeli.
 * **Puan:** "TMDB 7.1" düz yazısı yerine `StarRating` rozeti (★ 7.1); `MetaRow(..., rating = …)` en başa koyar. Vitrin, Filmler sinematik bilgi ve detay sayfaları bunu kullanır.
 * **Düğmeler:** odakta altta beliren yazılı yuvarlak ikonlar kaldırıldı (kayıyor gibi görünüyordu). Vitrinde: Oynat/Devam et + "Detaylar"/"Bölümler" (cam) + yazısız +/✓. Film detayında "Baştan · Listem/Listemde · İzledim/İzlendi" yazılı cam düğmeler; dizide "Oynat · S1 B1" / "Devam et · S1 B3". `IconAction(showLabel = false)` ile alt yazı kapatılır (fragman ses düğmesi).
+
+
+## Güncelleme — 2026-10-10 (Claude): kumanda donması + şeffaf cam (3.3.0, dal `yeni-duzen`)
+
+* **Donma (odak kaybı):** fragmanlı detaydan geri dönünce bazen HİÇBİR öğe odakta kalmıyordu → tüm tuşlar boşa gidiyor, uygulama donmuş sanılıyordu (kutuda görüldü, aralıklı). Çözüm: `MainActivity.dispatchKeyEvent` yön/OK tuşu işlenmezse `FocusRescue` (ui/FocusMemory.kt) yayar; etkin `ScreenLayer` katmanda odak YOKSA (`layerHasFocus`) son öğeye, o da yoksa ilk öğeye odak verir. Kayıt: logcat `FitiDiag` "tuş işlenmedi … / odak kurtarıldı".
+* **Film sayfasında sürekli GPU yükü:** fragman (TextureView) her video karesinde pencereyi yeniden birleştiriyor; arka plan görseli ve karartmalar her karede baştan boyanıyordu (~34 ms/kare). Artık `HeroBackdrop`'ta görsel ve karartmalar `CompositingStrategy.Offscreen` önbellekli katmanlarda (bir kez boyanır) → ~12 ms/kare. `DetailScaffold`'da kaydırma solması saydamlık katmanı yerine üstüne zemin rengi.
+* **SurfaceView DENENDİ, OLMADI:** fragmanı SurfaceView'a almak GPU'yu tamamen kurtarırdı ama bu kutuda detay sayfasında video yüzeyi siyah kaldı (yüzey hazır, kareler çiziliyor, ekranda yok). TextureView'da kalındı.
+* **Filmler ızgarası:** `FullBleedBackdrop` görsel+karartmalar önbellekli katmanda (sönme overlay'i dışarıda); arka plan görseli bir afişte ~0,6 sn durunca değişir (`BackdropLayer`); çapraz geçiş 350 ms. GPU 33-53 ms → 10-18 ms.
+* **Yayın akışı:** program hücresi tv-material `Surface` yerine düz odaklanabilir kutu (`GuideBlock`); kareler 0,9 sn'den ~0,25 sn altına.
+* **Cam (`Glass.kt`):** daha saydam (ton %18), içinde mor → turkuaz çapraz renk, alt kenarda turkuaz yansıma, kenar ışığı beyaz → mor → turkuaz. Sol menü kapalıyken ton %30.
+* Fragman bileşeni durum kaydı: `FitiDiag` "fragman durum: görünür/gösterildi/etkin/bitti".

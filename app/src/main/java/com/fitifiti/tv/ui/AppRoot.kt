@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.layout.layout
 import com.fitifiti.tv.App
@@ -150,6 +151,15 @@ internal fun ScreenLayer(active: Boolean, content: @Composable () -> Unit) {
     val fr = remember { FocusRequester() }
     val mem = remember { FocusMemory() }
     var wasInactive by remember { mutableStateOf(false) }
+    var layerHasFocus by remember { mutableStateOf(false) }
+    if (active) LaunchedEffect(Unit) {
+        FocusRescue.requests.collect {
+            if (layerHasFocus) return@collect // bir öğe odakta (ör. listenin kenarı): dokunma
+            val ok = mem.restore()
+            if (!ok) runCatching { fr.requestFocus() }
+            com.fitifiti.tv.data.diag.Diag.log("odak kurtarıldı (${if (ok) "son öğe" else "ilk öğe"})")
+        }
+    }
     LaunchedEffect(active) {
         if (!active) wasInactive = true
         else if (wasInactive) {
@@ -168,6 +178,7 @@ internal fun ScreenLayer(active: Boolean, content: @Composable () -> Unit) {
         Modifier.fillMaxSize()
             .layout { m, c -> val p = m.measure(c); layout(p.width, p.height) { if (active) p.place(0, 0) } }
             .focusProperties { canFocus = active }
+            .onFocusChanged { layerHasFocus = it.hasFocus }
             .focusRequester(fr)
             .focusGroup(),
     ) {
