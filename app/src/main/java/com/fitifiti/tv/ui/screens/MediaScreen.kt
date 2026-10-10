@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -213,7 +214,7 @@ fun LazyListScope.categoryRow(kind: String, cats: List<Pair<com.fitifiti.tv.data
     if (cats.isEmpty()) return
     item(key = "kesfet") {
         val actions = LocalActions.current
-        Column(Modifier.padding(bottom = 22.dp)) {
+        Column(Modifier.graphicsLayer().padding(bottom = 22.dp)) { // şerit kendi katmanında: dikey kaydırmada baştan çizilmez
             SectionTitle("Keşfet")
             CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
                 LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {

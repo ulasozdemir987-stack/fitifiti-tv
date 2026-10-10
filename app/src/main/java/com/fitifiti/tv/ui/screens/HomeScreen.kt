@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fitifiti.tv.App
@@ -69,7 +70,7 @@ fun HomeScreen() {
         continueRow(cont, onFocus)
         item(key = "platforms") {
             val actions = LocalActions.current
-            Column(Modifier.padding(bottom = 16.dp)) {
+            Column(Modifier.graphicsLayer().padding(bottom = 16.dp)) { // şerit kendi katmanında: dikey kaydırmada baştan çizilmez
                 SectionTitle("Platformlar")
                 CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
                     LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -98,7 +99,7 @@ fun LazyListScope.channelRow(key: String, title: String, channels: List<Channel>
     item(key = key) {
         val actions = LocalActions.current
         val ids = channels.map { it.id }
-        Column(Modifier.padding(bottom = 22.dp)) {
+        Column(Modifier.graphicsLayer().padding(bottom = 22.dp)) { // şerit kendi katmanında: dikey kaydırmada baştan çizilmez
             SectionTitle(title)
             CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
                 LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {

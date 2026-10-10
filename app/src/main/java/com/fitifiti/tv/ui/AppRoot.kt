@@ -52,7 +52,24 @@ fun AppRoot() {
     LaunchedEffect(Unit) { com.fitifiti.tv.data.remote.RemoteBus.home.collect { while (nav.stack.size > 1 && nav.top != Route.Main) nav.back() } }
     var crash by remember { mutableStateOf(runCatching { app.crashFile().takeIf { it.exists() }?.readText() }.getOrNull()) }
 
-    CompositionLocalProvider(LocalActions provides actions) {
+    // Tüm listelerde odak kaydırması kısa ve keskin (varsayılan yay kumandada gecikmeli hissettiriyordu); ekranlar kendi
+    // konumlandırmalarını içeride yine verebilir
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val snappy = remember(density) {
+        val pad = with(density) { 24.dp.toPx() }
+        @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+        object : androidx.compose.foundation.gestures.BringIntoViewSpec {
+            override val scrollAnimationSpec = com.fitifiti.tv.ui.screens.SnappyScroll
+            override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float = when {
+                size >= containerSize -> offset
+                offset < pad -> offset - pad
+                offset + size > containerSize - pad -> offset + size - (containerSize - pad)
+                else -> 0f
+            }
+        }
+    }
+    @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+    CompositionLocalProvider(LocalActions provides actions, androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides snappy) {
         Box(Modifier.fillMaxSize().background(C.bg)) {
             val stack = nav.stack.toList()
             stack.forEachIndexed { i, entry ->

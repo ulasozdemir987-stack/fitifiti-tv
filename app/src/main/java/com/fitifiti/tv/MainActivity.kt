@@ -16,6 +16,9 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.fitifiti.tv.data.diag.FrameStats.attach(this)
+        // pencere zemini her karede tam ekran boyanıyordu; zemini zaten Compose çiziyor (AppRoot) → bir boyama eksik
+        window.setBackgroundDrawable(null)
         setContent {
             FitifitiTheme {
                 // Soğuk açılışta kedili logo animasyonu (sitedeki açılış gibi), sonra uygulama

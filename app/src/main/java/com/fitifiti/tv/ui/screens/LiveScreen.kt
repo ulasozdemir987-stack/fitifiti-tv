@@ -116,7 +116,7 @@ fun LiveScreen() {
     val preview = rememberPreviewPlayer()
     fun watch(c: LiveChannel) { preview.handOff(c.channel.id); actions.playChannel(c.channel.id, channels.map { it.channel.id }) }
 
-    Box(Modifier.fillMaxSize().background(C.bg).background(Brush.radialGradient(listOf(C.primary.copy(alpha = 0.16f), Color.Transparent), center = androidx.compose.ui.geometry.Offset.Zero, radius = 900f))
+    Box(Modifier.fillMaxSize().cornerGlow()
         .onPreviewKeyEvent { e ->
             val code = e.key.nativeKeyCode
             if (code in android.view.KeyEvent.KEYCODE_0..android.view.KeyEvent.KEYCODE_9) {

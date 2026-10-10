@@ -161,3 +161,9 @@ fun CornerClock(modifier: Modifier = Modifier) {
         Text(SimpleDateFormat("d MMMM EEE", tr).format(Date(now)), fontSize = 12.sp, color = C.muted)
     }
 }
+
+/** Sol üst köşede hafif mor ışıma — yalnız kendi çevresine çizilir (tam ekran radyal dolgu zayıf TV'de pahalı) */
+fun Modifier.cornerGlow(radius: Float = 900f): Modifier = this.drawBehind {
+    drawRect(Brush.radialGradient(listOf(C.primary.copy(alpha = 0.16f), Color.Transparent), center = Offset.Zero, radius = radius),
+        size = androidx.compose.ui.geometry.Size(minOf(radius, size.width), minOf(radius, size.height)))
+}

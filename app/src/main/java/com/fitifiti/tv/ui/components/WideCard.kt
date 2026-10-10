@@ -68,7 +68,8 @@ fun WideCard(
                     val bd = backdrop
                     if (bd != null) AsyncImage(model = bd, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                     else if (!item.image.isNullOrBlank()) {
-                        AsyncImage(model = item.image, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().blur(18.dp), alpha = 0.55f)
+                        // (bulanık kopya kaldırıldı: kart başına bulanıklaştırma zayıf TV'lerde kaydırmayı takıltıyordu)
+                        Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF1C1A2E), C.panel))))
                         AsyncImage(model = item.image, contentDescription = null, contentScale = ContentScale.Fit, alignment = Alignment.CenterEnd, modifier = Modifier.fillMaxSize().padding(8.dp))
                     }
                     // alttan karartma: logo/ad okunur kalsın

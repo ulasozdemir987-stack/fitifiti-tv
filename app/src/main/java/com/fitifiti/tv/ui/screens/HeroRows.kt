@@ -25,6 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.FocusRequester
@@ -107,6 +109,7 @@ fun HeroRowsLayout(
     val spec = remember(density) {
         val rowTop = with(density) { (22 + 34).dp.toPx() } // üst boşluk + SectionTitle
         object : BringIntoViewSpec {
+            override val scrollAnimationSpec: androidx.compose.animation.core.AnimationSpec<Float> = SnappyScroll
             override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float =
                 if (hero.focused) {
                     if (listState.firstVisibleItemIndex == 0) -listState.firstVisibleItemScrollOffset.toFloat() else offset - hero.buttonsOffset
@@ -118,8 +121,8 @@ fun HeroRowsLayout(
     // tam ekran vitrin görseli: sayfanın arkasında sabit durur, şeritlere inildikçe söner (OwnTV düzeni)
     val heroAlpha by remember { derivedStateOf { if (listState.firstVisibleItemIndex > 0) 0f else 1f - (listState.firstVisibleItemScrollOffset / (heroPx * 0.8f)).coerceIn(0f, 1f) } }
 
-    Box(Modifier.fillMaxSize().bleedStart().cinematicBackground().onPreviewKeyEvent { hero.lastKey = SystemClock.uptimeMillis(); false }) {
-        Box(Modifier.fillMaxSize().graphicsLayer { alpha = heroAlpha }) { FullBleedBackdrop(art) }
+    Box(Modifier.fillMaxSize().bleedStart().onPreviewKeyEvent { hero.lastKey = SystemClock.uptimeMillis(); false }) {
+        FullBleedBackdrop(art, hide = { 1f - heroAlpha })
         CompositionLocalProvider(LocalBringIntoViewSpec provides spec) {
             LazyColumn(state = listState, modifier = Modifier.fillMaxSize().padding(start = RailInset), contentPadding = PaddingValues(bottom = 120.dp)) {
                 item(key = "hero") {
@@ -147,32 +150,55 @@ fun HeroRowsLayout(
     }
 }
 
+@Composable
+private fun heroRequest(url: String): coil.request.ImageRequest {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    return remember(url) { coil.request.ImageRequest.Builder(ctx).data(url).size(1280, 720).build() }
+}
+
 /**
  * Tam ekran vitrin görseli (OwnTV): sahne görseli tüm ekranı kaplar, sağ üste yaslı; soldan yazı okunsun diye koyulaşır,
  * alttan zemine karışır. Görsel yoksa afişin bulanık rengi + sağda afiş.
  */
 @Composable
-fun FullBleedBackdrop(art: HeroArt, modifier: Modifier = Modifier) {
+fun FullBleedBackdrop(art: HeroArt, modifier: Modifier = Modifier, hide: () -> Float = { 0f }) {
+    // Performans (zayıf TV ekran kartı): eskiden üst üste 5-6 tam ekran katman + saydamlık katmanı vardı (kare başına
+    // ~27 ms GPU). Şimdi görsel + tek bir çizim katmanı; karartmalar yalnız gereken bantlara çizilir, ışımalar yalnız
+    // kendi çevrelerine. Sayfa aşağı kaydıkça görsel saydamlık katmanıyla değil üstüne zemin rengi çizilerek söner,
+    // tamamen gizlenince görsel hiç çizilmez.
+    val glow = rememberAmbient(art.backdrop ?: art.poster)
+    val hidden by remember { derivedStateOf { hide() >= 0.999f } }
     Box(modifier.fillMaxSize()) {
-        androidx.compose.animation.Crossfade(targetState = art.backdrop to art.poster, animationSpec = tween(700), label = "bleed") { (bd, poster) ->
+        if (!hidden) androidx.compose.animation.Crossfade(targetState = art.backdrop to art.poster, animationSpec = tween(600), label = "bleed") { (bd, poster) ->
             Box(Modifier.fillMaxSize()) {
-                if (bd != null) coil.compose.AsyncImage(model = bd, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                // 1280 px yeter (TV'de fark görünmez): 1920×1080 çözüp yüklemek her vitrin dönüşünde takılma yapıyordu
+                if (bd != null) coil.compose.AsyncImage(model = heroRequest(bd), contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                     alignment = Alignment.TopEnd, modifier = Modifier.fillMaxSize())
                 else if (poster != null) {
-                    coil.compose.AsyncImage(model = poster, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize().blur(60.dp).graphicsLayer { alpha = 0.3f; scaleX = 1.25f; scaleY = 1.25f })
+                    // sahne görseli yoksa: sağda afişin kendisi (bulanık tam ekran kopya ekran kartını çok yoruyordu)
                     coil.compose.AsyncImage(model = poster, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                         modifier = Modifier.align(Alignment.TopEnd).padding(top = 80.dp, end = 110.dp).fillMaxHeight(0.55f).aspectRatio(2f / 3f).clip(RoundedCornerShape(14.dp)))
                 }
             }
         }
-        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to C.bg.copy(alpha = 0.94f), 0.30f to C.bg.copy(alpha = 0.72f), 0.52f to C.bg.copy(alpha = 0.2f), 0.7f to Color.Transparent)))
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to C.bg.copy(alpha = 0.45f), 0.14f to Color.Transparent, 0.5f to Color.Transparent, 0.82f to C.bg.copy(alpha = 0.85f), 1f to C.bg)))
-        // sol üstte ortam ışıması: görselin baskın renginde (yoksa sitenin moru) — OwnTV'deki yeşil ışımanın bizim hali
-        val glow = rememberAmbient(art.backdrop ?: art.poster)
-        Box(Modifier.fillMaxSize().drawBehind {
-            drawRect(Brush.radialGradient(listOf(glow.copy(alpha = 0.30f), Color.Transparent), center = Offset(0f, 0f), radius = size.width * 0.42f))
-            drawRect(Brush.radialGradient(listOf(glow.copy(alpha = 0.10f), Color.Transparent), center = Offset(size.width, size.height), radius = size.width * 0.5f))
+        Spacer(Modifier.fillMaxSize().drawWithCache {
+            val w = size.width; val h = size.height
+            val left = Brush.horizontalGradient(0f to C.bg.copy(alpha = 0.94f), 0.43f to C.bg.copy(alpha = 0.72f), 0.74f to C.bg.copy(alpha = 0.2f), 1f to Color.Transparent, endX = w * 0.7f)
+            val top = Brush.verticalGradient(0f to C.bg.copy(alpha = 0.45f), 1f to Color.Transparent, endY = h * 0.14f)
+            val bottom = Brush.verticalGradient(0f to Color.Transparent, 0.64f to C.bg.copy(alpha = 0.85f), 1f to C.bg, startY = h * 0.5f, endY = h)
+            val r1 = w * 0.42f; val r2 = w * 0.5f
+            val g1 = Brush.radialGradient(listOf(glow.copy(alpha = 0.30f), Color.Transparent), center = Offset.Zero, radius = r1)
+            val g2 = Brush.radialGradient(listOf(glow.copy(alpha = 0.10f), Color.Transparent), center = Offset(w, h), radius = r2)
+            onDrawBehind {
+                val k = hide()
+                if (k >= 0.999f) return@onDrawBehind // zemin zaten uygulamanın arka planı
+                drawRect(left, size = Size(w * 0.7f, h))
+                drawRect(top, size = Size(w, h * 0.14f))
+                drawRect(bottom, topLeft = Offset(0f, h * 0.5f), size = Size(w, h * 0.5f))
+                drawRect(g1, size = Size(r1, minOf(r1, h)))
+                drawRect(g2, topLeft = Offset(w - r2, (h - r2).coerceAtLeast(0f)), size = Size(r2, minOf(r2, h)))
+                if (k > 0.001f) drawRect(C.bg.copy(alpha = k))
+            }
         })
     }
 }
@@ -187,12 +213,6 @@ private class HeroState {
     val buttonsOffset get() = buttonsTop - heroTop
 }
 
-/** Sitedeki `.cinematic-bg`: zemin + sol üstte mor, sağ üstte turkuaz çok hafif ışıma */
-private fun Modifier.cinematicBackground() = drawBehind {
-    drawRect(C.bg)
-    drawRect(Brush.radialGradient(listOf(C.primary.copy(alpha = 0.10f), Color.Transparent), center = Offset(size.width * 0.2f, -size.height * 0.1f), radius = size.width * 0.5f))
-    drawRect(Brush.radialGradient(listOf(C.teal.copy(alpha = 0.07f), Color.Transparent), center = Offset(size.width * 0.9f, 0f), radius = size.width * 0.42f))
-}
 
 /** Vitrin sırası (sitedeki noktalar): etkin olan uzun beyaz çizgi */
 @Composable
@@ -205,6 +225,9 @@ private fun HeroDots(count: Int, active: Int, modifier: Modifier) {
     }
 }
 
+/** Odak kaydırması: varsayılan yay (~0,5 sn) kumandada gecikmeli hissettiriyordu → kısa ve keskin */
+val SnappyScroll: androidx.compose.animation.core.AnimationSpec<Float> = tween(220, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+
 /** Yatay şerit: odaktaki kart kenar boşluğunun içinde kalacak kadar kaydır */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -213,6 +236,7 @@ fun rememberRowSpec(pad: Dp = 48.dp): BringIntoViewSpec {
     return remember(density, pad) {
         val p = with(density) { pad.toPx() }
         object : BringIntoViewSpec {
+            override val scrollAnimationSpec: androidx.compose.animation.core.AnimationSpec<Float> = SnappyScroll
             override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float = when {
                 offset < p -> offset - p
                 offset + size > containerSize - p -> offset + size - (containerSize - p)
@@ -283,7 +307,7 @@ fun LazyListScope.posterRow(
         val app = App.instance
         val actions = LocalActions.current
         val progress by app.user.progressMap.collectAsStateWithLifecycle()
-        Column(Modifier.padding(bottom = 14.dp)) {
+        Column(Modifier.graphicsLayer().padding(bottom = 14.dp)) { // şerit kendi katmanında: dikey kaydırmada baştan çizilmez
             SectionTitle(title)
             CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
                 LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -323,7 +347,7 @@ fun LazyListScope.continueRow(list: List<ProgressEntity>, onFocusItem: (Item) ->
                 add("Devam et'ten kaldır" to { app.user.removeFromContinue(p) })
             }) { menu = null }
         }
-        Column(Modifier.padding(bottom = 14.dp)) {
+        Column(Modifier.graphicsLayer().padding(bottom = 14.dp)) { // şerit kendi katmanında: dikey kaydırmada baştan çizilmez
             SectionTitle("İzlemeye devam et")
             CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
             LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {

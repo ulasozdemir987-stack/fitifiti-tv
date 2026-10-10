@@ -83,7 +83,7 @@ fun GuideScreen() {
         }
     }
 
-    Column(Modifier.fillMaxSize().background(C.bg).background(Brush.radialGradient(listOf(C.primary.copy(alpha = 0.16f), Color.Transparent), center = androidx.compose.ui.geometry.Offset.Zero, radius = 900f))
+    Column(Modifier.fillMaxSize().cornerGlow()
         .padding(start = 48.dp, end = 40.dp, top = 20.dp)) {
         // üst: önizleme + bilgi
         Row(Modifier.fillMaxWidth().height(178.dp), horizontalArrangement = Arrangement.spacedBy(26.dp)) {
