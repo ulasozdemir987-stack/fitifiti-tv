@@ -123,7 +123,7 @@ fun LazyListScope.castRow(cast: List<CastMember>) {
             SectionTitle("Oyuncular")
             CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowSpec()) {
                 LazyRow(contentPadding = PaddingValues(horizontal = 48.dp), horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                    items(cast.distinctBy { it.name + it.role }, key = { it.name + it.role }) { c -> CastCard(c) }
+                    items(cast.distinctBy { it.name + it.role }.take(4), key = { it.name + it.role }) { c -> CastCard(c) }
                 }
             }
         }

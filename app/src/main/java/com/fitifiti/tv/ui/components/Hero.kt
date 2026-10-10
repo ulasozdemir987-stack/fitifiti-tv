@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -65,21 +66,23 @@ private fun initialArt(item: Item?): HeroArt {
 fun HeroBackdrop(art: HeroArt, modifier: Modifier = Modifier, video: (@Composable BoxScope.() -> Unit)? = null) {
     // görsel ve karartmalar önbellekli katmanlarda (bir kez boyanır); arada fragmanın video yüzeyi
     val cached = Modifier.fillMaxSize().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    // Görsel/fragman tam ekran değil: sağda bir pencere, dört kenarı zemine eriyerek karışır (sağ taraf boş kalmasın,
+    // solda başlık/logo için yer açılsın). Kenar erimeleri önbellekli katmanda: fragman karelerinde yeniden boyanmaz.
     Box(modifier.fillMaxSize()) {
-        Box(cached) {
-        Crossfade(targetState = art.backdrop to art.poster, animationSpec = tween(500), label = "hero") { (bd, poster) ->
-            Box(Modifier.fillMaxSize()) {
-                if (bd != null) AsyncImage(model = bd, contentDescription = null, contentScale = ContentScale.Crop, alignment = Alignment.TopEnd, modifier = Modifier.fillMaxWidth(0.78f).fillMaxHeight().align(Alignment.TopEnd))
-                else if (poster != null) AsyncImage(model = poster, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.padding(top = 70.dp, end = 70.dp).width(250.dp).aspectRatio(2f / 3f).align(Alignment.TopEnd))
+        Box(Modifier.align(Alignment.TopEnd).fillMaxWidth(0.68f).fillMaxHeight(0.84f).clipToBounds()) {
+            Box(cached) {
+                Crossfade(targetState = art.backdrop to art.poster, animationSpec = tween(500), label = "hero") { (bd, poster) ->
+                    Box(Modifier.fillMaxSize()) {
+                        if (bd != null) AsyncImage(model = bd, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                        else if (poster != null) AsyncImage(model = poster, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.padding(top = 70.dp, end = 70.dp).width(250.dp).aspectRatio(2f / 3f).align(Alignment.TopEnd))
+                    }
+                }
             }
-        }
-        }
-        video?.invoke(this)
-        // fragman (TextureView) her karesinde pencere yeniden birleşir: karartmalar önbellekli katmanda → her karede iki
-        // tam ekran degrade yerine tek doku kopyası (zayıf TV ekran kartında film sayfası takılıyordu)
-        Box(cached) {
-            Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to C.bg, 0.38f to C.bg.copy(alpha = 0.96f), 0.58f to C.bg.copy(alpha = 0.65f), 0.78f to C.bg.copy(alpha = 0.15f), 1f to Color.Transparent)))
-            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to C.bg.copy(alpha = 0.55f), 0.18f to Color.Transparent, 0.62f to Color.Transparent, 1f to C.bg)))
+            video?.invoke(this)
+            Box(cached) {
+                Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(0f to C.bg, 0.12f to C.bg.copy(alpha = 0.85f), 0.38f to C.bg.copy(alpha = 0.25f), 0.55f to Color.Transparent, 0.86f to Color.Transparent, 1f to C.bg.copy(alpha = 0.9f))))
+                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(0f to C.bg.copy(alpha = 0.9f), 0.14f to Color.Transparent, 0.62f to Color.Transparent, 0.86f to C.bg.copy(alpha = 0.8f), 1f to C.bg)))
+            }
         }
     }
 }

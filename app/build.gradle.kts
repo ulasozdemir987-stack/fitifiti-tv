@@ -14,8 +14,8 @@ android {
         applicationId = "com.fitifiti.tv"
         minSdk = 23
         targetSdk = 35
-        versionCode = 56
-        versionName = "3.3.2"
+        versionCode = 57
+        versionName = "3.4.0"
     }
 
     signingConfigs {

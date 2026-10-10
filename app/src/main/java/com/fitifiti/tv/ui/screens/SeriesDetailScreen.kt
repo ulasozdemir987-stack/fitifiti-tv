@@ -118,7 +118,7 @@ fun SeriesDetailScreen(s: Series, focusEpisodeId: String?) {
                     .padding(start = 48.dp, end = 54.dp, top = 40.dp, bottom = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                HeroTitle(title, art.logo, maxWidthFraction = 0.36f, maxLogoHeight = 78.dp)
+                HeroTitle(title, art.logo, maxWidthFraction = 0.4f, maxLogoHeight = 120.dp)
                 if (alt.isNotBlank() && art.logo == null) {
                     Text(alt, style = MaterialTheme.typography.titleMedium, color = C.muted)
                 }

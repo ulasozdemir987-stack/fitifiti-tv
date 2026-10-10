@@ -60,12 +60,14 @@ fun MovieDetailScreen(m: Movie) {
             // ikincil eylemler yazısız yuvarlak düğmeler; bilgi listesi ayrı öğede
             // JetStream tasarım dili: ferah sol üst başlangıç, nefes alan tipografi ve hiyerarşi
             Column(
+                // ilk ekranda yalnız başlık bloğu: oyuncular / benzer filmler aşağı kaydırınca gelir
                 Modifier
                     .detailHead()
-                    .padding(start = 48.dp, end = 54.dp, top = 40.dp, bottom = 22.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .heightIn(min = h.dp)
+                    .padding(start = 48.dp, end = 54.dp, top = 40.dp, bottom = 36.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp, androidx.compose.ui.Alignment.Bottom)
             ) {
-                HeroTitle(title, art.logo, maxWidthFraction = 0.36f, maxLogoHeight = 78.dp)
+                HeroTitle(title, art.logo, maxWidthFraction = 0.42f, maxLogoHeight = 150.dp)
                 if (alt.isNotBlank() && art.logo == null) {
                     Text(alt, style = MaterialTheme.typography.titleMedium, color = C.muted)
                 }
@@ -81,7 +83,7 @@ fun MovieDetailScreen(m: Movie) {
                 AwardLaurels(laurels)
                 val overview = art.overview?.takeIf { it.isNotBlank() } ?: info.plot ?: m.plot
                 if (!overview.isNullOrBlank()) {
-                    Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.52f))
+                    Text(overview, style = MaterialTheme.typography.bodyMedium, color = C.muted, maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth(0.42f))
                 }
 
                 if (resume) {
